@@ -1,0 +1,258 @@
+---
+title: "Base poblacional covid"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+summary(cars)
+```
+
+
+```{#r}
+
+[9:33, 26/1/2021] Juli (NavarraBioMed): mejor dejarlo escrito
+[9:33, 26/1/2021] Juli (NavarraBioMed): la base poblacional que tendra unas 90 variables
+[9:33, 26/1/2021] Ibai Tamayo: ok
+[9:34, 26/1/2021] Juli (NavarraBioMed): esta en covid19/pcr
+[9:34, 26/1/2021] Juli (NavarraBioMed): hay hay un rmd pobna210125.rmd
+[9:35, 26/1/2021] Juli (NavarraBioMed): donde esta el montaje de la base poblacional
+[9:35, 26/1/2021] Juli (NavarraBioMed): pero, casi en paralelo, se iba trabajando lo de las vacunas,
+[9:36, 26/1/2021] Juli (NavarraBioMed): por lo que hay cosas que se iban pasando a covid19/proyectos/vgripe
+[9:37, 26/1/2021] Juli (NavarraBioMed): de hecho la actulizacion de vacunas.. esta en vgripe/Rdata
+[9:37, 26/1/2021] Juli (NavarraBioMed): es ahi donde quiero meter lo de los domicilios
+[9:38, 26/1/2021] Juli (NavarraBioMed): lo ultimo es pobna46en25.rdata
+[9:39, 26/1/2021] Juli (NavarraBioMed): le agrego ahora la variable que codifica los domicilios
+[9:39, 26/1/2021] Juli (NavarraBioMed): domi
+[9:40, 26/1/2021] Ibai Tamayo: OK. Entonces me baso en ese último Rdata "pobna46en25.Rdata", y agrupo los ID por los domicilios
+[9:40, 26/1/2021] Ibai Tamayo: Eso me daría sólo domicilios o también si están en la misma residencia?
+[9:41, 26/1/2021] Juli (NavarraBioMed): esta la variable res, para residencia
+[9:41, 26/1/2021] Juli (NavarraBioMed): metere resl, con el literal de la residencia
+[9:42, 26/1/2021] Juli (NavarraBioMed): tambien esta la variable ucv8 (numero de personas en unidad de convivencia truncada en 8)
+[9:42, 26/1/2021] Ibai Tamayo: ok, pero pregunto si en la variable domi, me aparecería el mismo domi para las personas que comparten residencia o directamente sólo son daomicilios particulares
+[9:43, 26/1/2021] Juli (NavarraBioMed): domi con res==0 (particular), domi + res==1 (residencia) y en resl su nombre
+[9:43, 26/1/2021] Ibai Tamayo: ok.
+[9:43, 26/1/2021] Juli (NavarraBioMed): hay unos 250000 domis distintos
+
+```
+
+
+```{r cargar librerías necesarias}
+
+library(readxl)
+library(readr)
+library(EpiEstim)
+library(tidyverse)
+library(ggplot2)
+library(lme4)
+
+```
+
+```{r}
+
+# Partimos de los datos de la base de datos poblacional generada por Gorricho y Juli.
+
+load("F:/Navarrabiomed/Teletrabajo/Dropbox/ju/covid19/proyectos/vgripe/Rdata/pobna50en25.Rdata")# esta tabla correspone a lo extraído de la base poblacional en la que se incluyen 50 variables.
+
+          # > names(pobna50en25)
+          #  [1] "id"         "gdep"       "gen"        "edad"       "pnac"       "migran"     "ctsi"       "gma"        "peso"       "domi"      
+          # [11] "res"        "resl"       "ucn8"       "cpob"       "seccion"    "lzbs"       "rentasc"    "ptipo"      "bsgr"       "deme"      
+          # [21] "diab"       "ainm"       "corp"       "irc"        "epoc"       "hlip"       "hta"        "ictu"       "obes"       "cimc"      
+          # [31] "nhos"       "hf1"        "hfu"        "mhos"       "nvc"        "vcf2d"      "fvac19"     "tvac19"     "fvac20"     "tvac20"    
+          # [41] "mfpcr"      "mct"        "mfinh"      "mfinu"      "tesf1"      "tesfu"      "tesn"       "test"       "fdef210115" "vcf1d"   
+          
+          
+          # nhos: numero de hospitalizaciones urgentes desde 2019-01-01 a 2021-01-23
+          # hf1, hfu: fechas de la primera y la ultima
+          # mhos: muere en el hospital?
+          # nvc= numero de vacunas covid
+          # vcf1d / vcf2d= vacuna covid fecha primera y segunda dosis+
+          # aparte de las fechas de vacuna gripe
+          # mfpcr=fecha de positivo en pcr
+
+
+
+
+
+#Añadimos los casos contactos de los rastreadores:
+
+
+test_rastreadores <-read_delim("F:/Navarrabiomed/Teletrabajo/Dropbox/Intercambio JGorricho-Juli/Resultados_pruebas_01_2021.csv", 
+    ";", escape_double = FALSE, col_names = FALSE, na = "-1",
+    col_types = cols(X1= col_character(),X2 = col_character(), X3 = col_character(), X4 = col_character(),X5 = col_character(),X6 = col_character(),X7 = col_character(),X8 = col_character(), X9 = col_character(),X10 = col_character(),X11 = col_character()), trim_ws = TRUE)
+0
+#La idea es minimizar el efecto del comportamiento autoprotector de las personas ante el covid al representar la situación de riesgo una vez que la infección está en un entorno en el que lo probable es que no hayas tomado medidas como el domicilio.
+# Para esto construimos una tabla relacionando a un caso con cada conviviente y analizando si el conviviente pasa a ser positivo en una ventana de tiempo determinada (21 días---a valorar)Para ello:
+
+
+# 1.Definamos casos y conviviente: un caso será todo el que sea positivo en covid, y un contacto será todo aquel que comparte domicilio.
+# 2.De todos los contactos, definiremos un positivo domiciliario si en los  21 días posteriores al caso ha resultado positivo.
+
+
+
+            #generamos variables de vacuna para toda la población.
+            #año de vacunación: 
+
+                    # tenemos dos campañas estudiadas. 2019 y 2020 junto con la fecha a que se administra. Se genera una variable que identifica si el paciente se ha puesto la vacuna en 2019, 2020 , ambas o ninguna.
+                    #calculamos el número de días transcurridos entre la vacuna y la infección para cada vacuna puesta. Si esto es negativo significa que se infectó antes de ponerse la vacuna, por lo que todo efecto se deberá en todo caso a una vacuna anterior. 
+
+                    #pensar si esto es correcto para los convivientes, ya que la el tiempo habrá que calcularlo para la fecha de exposición, es decir, la fecha en la que se infecta su contacto. (pensando en los NAs de los convivientes para esa vacuna)
+
+
+pobna50en25<-pobna50en25%>%mutate(year_vac=ifelse(is.na(fvac19)&is.na(fvac20),NA,ifelse(is.na(fvac19)&is.na(fvac20)==FALSE,"2020",ifelse(is.na(fvac20)&is.na(fvac19)==FALSE,"2019","2019-2020"))),dias_vac_inf_19=mfpcr-fvac19,dias_vac_inf_20=mfpcr-fvac20)%>%mutate(tipo_vacuna=ifelse(is.na(year_vac)|(dias_vac_inf_19<0 &dias_vac_inf_20<0 ),"nunca vacunado",ifelse(dias_vac_inf_19>0 & dias_vac_inf_20<0,"campaña 19",ifelse(dias_vac_inf_20>0,"campaña 20",NA))))%>%mutate(tipo_vacuna=ifelse(is.na(tipo_vacuna),"nunca vacunado",tipo_vacuna))
+
+
+
+#una vez hecho esto identificamos a los casos. Serán los positivos
+caso=pobna50en25%>%filter(!is.na(mfpcr))
+caso<-caso%>%rename_(.dots =setNames(names(.),paste0(names(caso),"_caso")))%>%rename(domi=domi_caso)
+# 43136 casos
+
+
+
+#Después a los convivientes: Para tener los convivientes, cruzamos  a toda la población navarra otra vez, pero agrupados por domicilio. (habrá que ver cómo tratamos a los que viven en residencia)
+conviviente=left_join(pobna50en25,caso,by="domi")%>%filter(!is.na(id_caso))
+
+colnames(conviviente)[-grep(x=colnames(conviviente),pattern = "_caso")]<-paste0(colnames(conviviente)[-grep(x=colnames(conviviente),pattern = "_caso")],"_conviviente")#si no tiene puesto "caso" en la variable es que es conviviente
+conviviente<-conviviente%>%filter(id_conviviente!=id_caso)
+
+
+
+
+
+
+                                            ######################################################
+                                            #####ESTO ES NUEVO, HAY QUE PENSARLO!!#################
+                              # Al incluir este cambio, la vacunación sí muestra un efecto en protección y transmisión###
+
+
+
+
+
+conviviente<-conviviente%>%mutate(dias_vac_inf_19_conviviente=mfpcr_caso-fvac19_conviviente,dias_vac_inf_20_conviviente=mfpcr_caso-fvac20_conviviente)%>%mutate(tipo_vacuna_conviviente=ifelse(is.na(year_vac_conviviente)|(dias_vac_inf_19_conviviente<0 &dias_vac_inf_20_conviviente<0 ),"nunca vacunado",ifelse(dias_vac_inf_19_conviviente>0 & dias_vac_inf_20_conviviente<0,"campaña 19",ifelse(dias_vac_inf_20_conviviente>0,"campaña 20",NA))))%>%mutate(tipo_vacuna_conviviente=ifelse(is.na(tipo_vacuna_conviviente),"nunca vacunado",tipo_vacuna_conviviente))
+
+######################################################
+
+# Para ser considerado caso y no contacto, la fecha de la pcr tiene que ser anterior en el caso que en el contacto. Calculamos el número de días transcurridos entre que una persona infectada entra en el domicilio y se infecta la siguiente--serial interval
+
+casos_contactos<-conviviente%>%filter(mfpcr_caso<=mfpcr_conviviente|is.na(mfpcr_conviviente))%>%mutate(serial_interval=mfpcr_conviviente-mfpcr_caso)#dejo los na para identificar aquellos que no pasan la enfermedad, mi idea es hacer una logística distinguiendo a los que enferman de los que no
+
+                #430018 parejas de casos-conviventes (personas en riesgo)
+
+
+
+
+
+#selecciono las variables de interés para hacer la logística, genero los factores y adjudico las categorías de referencia
+
+
+casos_contactos%>%dplyr::select(id_caso,edad_caso,gma_caso,mfpcr_caso,tipo_vacuna_caso,domi_conviviente,id_conviviente,mfpcr_conviviente,tipo_vacuna_conviviente,edad_conviviente,gma_conviviente,serial_interval)->prueba
+prueba$tipo_vacuna_conviviente<-as.factor(prueba$tipo_vacuna_conviviente)
+prueba$tipo_vacuna_conviviente<-relevel(prueba$tipo_vacuna_conviviente,ref = "nunca vacunado")
+prueba$tipo_vacuna_caso<-as.factor(prueba$tipo_vacuna_caso)
+prueba$tipo_vacuna_caso<-relevel(prueba$tipo_vacuna_caso,ref = "nunca vacunado")
+
+
+
+prueba%>%mutate(serial_interval=ifelse(serial_interval<21|serial_interval>3,NA,serial_interval))->prueba
+#si no se ha infectado en esa ventana de tiempo, pasamos a NA
+
+
+
+
+####logistica####
+
+
+glm(data=prueba%>%filter(edad_conviviente>60),formula = is.na(mfpcr_conviviente) ~ tipo_vacuna_conviviente+ edad_conviviente+ gma_conviviente,family = binomial)->glm_prueba_vacuna_convivientes
+summary(glm_prueba_vacuna_convivientes)
+
+glm(data=prueba,formula = is.na(mfpcr_conviviente) ~ tipo_vacuna_conviviente+ edad_conviviente+ gma_conviviente,family = binomial)->glm_prueba_vacuna_convivientes
+summary(glm_prueba_vacuna_convivientes)
+
+
+glm(data=prueba%>%filter(edad_caso>60),formula = is.na(mfpcr_conviviente) ~ tipo_vacuna_caso+ edad_conviviente+ gma_conviviente,family = binomial)->glm_prueba_vacuna_casos
+summary(glm_prueba_vacuna_casos)
+glm(data=prueba,formula = is.na(mfpcr_conviviente) ~ tipo_vacuna_caso+ edad_conviviente+ gma_conviviente,family = binomial)->glm_prueba_vacuna_casos
+summary(glm_prueba_vacuna_casos)
+
+####
+###modelo mixto
+lmer(data=prueba,formula = is.na(mfpcr_conviviente) ~ tipo_vacuna_conviviente+ edad_conviviente+ (1|domi_conviviente) + (1|id_caso)+gma_conviviente)->glmer_prueba_vacuna_convivientes
+summary(glmer_prueba_vacuna_convivientes)
+lmer(data=prueba,formula = is.na(mfpcr_conviviente) ~ tipo_vacuna_caso+ edad_conviviente+ gma_conviviente+ (1|domi_conviviente) + (1|id_caso))->glmer_prueba_vacuna_casos
+summary(glmer_prueba_vacuna_casos)
+
+
+
+#repito lo mismo para tratar de que sea una función y facilitar hacer gráficos
+# ventana de tiempo de entre 0 y 14 días
+ventana=c(0,14)
+
+function(tabla_poblacional=pobna50en25,ventana=c(0,14),contacto_over_60=TRUE,tipo_pob_conviviente=NULL){
+  
+  tabla_poblacional<-tabla_poblacional%>%mutate(year_vac=ifelse(is.na(fvac19)&is.na(fvac20),NA,ifelse(is.na(fvac19)&is.na(fvac20)==FALSE,"2020",ifelse(is.na(fvac20)&is.na(fvac19)==FALSE,"2019","2019-2020"))),dias_vac_inf_19=mfpcr-fvac19,dias_vac_inf_20=mfpcr-fvac20)%>%mutate(tipo_vacuna=ifelse(is.na(year_vac)|(dias_vac_inf_19<0 &dias_vac_inf_20<0 ),"nunca vacunado",ifelse(dias_vac_inf_19>0 & dias_vac_inf_20<0,"campaña 19",ifelse(dias_vac_inf_20>0,"campaña 20",NA))))%>%mutate(tipo_vacuna=ifelse(is.na(tipo_vacuna),"nunca vacunado",tipo_vacuna))
+  
+  
+  caso=tabla_poblacional%>%filter(!is.na(mfpcr))
+  caso<-caso%>%rename_(.dots =setNames(names(.),paste0(names(caso),"_caso")))%>%rename(domi=domi_caso)
+  
+
+  conviviente=left_join(tabla_poblacional,caso,by="domi")%>%filter(!is.na(id_caso))
+  colnames(conviviente)[-grep(x=colnames(conviviente),pattern = "_caso")]<-paste0(colnames(conviviente)[-grep(x=colnames(conviviente),pattern = "_caso")],"_conviviente")
+  conviviente<-conviviente%>%filter(id_conviviente!=id_caso)
+  
+  casos_contactos<-conviviente%>%filter(fecha_caso<=fecha_contacto|is.na(fecha_contacto))%>%mutate(serial_interval=fecha_contacto-fecha_caso)
+
+  if(contacto_over_60==TRUE){
+    casos_contactos<-casos_contactos%>%filter(edad_conviviente>=60)
+  }
+  if(!is.null(tipo_pob)){
+    casos_contactos<-casos_contactos%>%filter(ptipo_conviviente==tipo_pob_conviviente)
+  }
+  
+  casos_contactos<-casos_contactos%>%mutate(serial_interval=fecha_contacto-fecha_caso)
+  
+  
+  
+  return()
+  
+  
+  
+}
+
+
+
+
+
+
+# %>%dplyr::select(id_caso,fecha_caso,fvac19_caso,fvac20_caso,domi,id_contacto,fecha_contacto,fvac19_contacto,fvac20_contacto)%>%filter(id_contacto!=id_caso)#convivientes son los que tienen la misma dirección que los psoitivos definidos anteriormente
+
+# Para ser considerado caso y no contacto, la fecha de la pcr tiene que ser anterior en el caso que en el contacto
+
+casos_contactos<-conviviente%>%filter(fecha_caso<=fecha_contacto|is.na(fecha_contacto))
+
+
+pobna50en25%>%filter(!is.na(domi))%>%group_by(domi)%>%transmute(gente=id)
+
+
+```
+
+
+```{r}
+
+View(prueba%>%group_by(id_caso)%>%summarise(n=n()))
+
+```
+ 
+ 
