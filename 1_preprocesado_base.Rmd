@@ -149,11 +149,31 @@ names(dat220613) = c("id",
 # machacar la base hace difícil ir a un punto intermedio
 dat220613_step1 <- dat220613 %>% 
   mutate(id = as.character(id), 
-         sexm=as.numeric(sexm=="Masculino"), fnac2=as.Date(fnac2), vuln=fnull0(vuln), vgp20=vgp20=="Si", vgp21=vgp21=="Si", fvc1=fymd(fvc1) , fvc2=fymd(fvc2), fvc3=fymd(fvc3), fcv1=fnullna(fcv1) , fcv2=fnullna(fcv2),  fih1=fnullna(fih1),   fuci=fnullna(fuci),  fcv1=fymd(fcv1) , fcv2=fymd(fcv2),   fih1=fymd(fih1), fuci=fymd(fuci), fdef=as.Date.numeric(ifelse(str_sub(fdef,1,4)=="9999",NA,as.Date(ymd(str_sub(fdef,1,10)))), origin="1970-01-01"))
+         sexm = as.numeric( sexm == "Masculino"),
+         fnac2 = as.Date(fnac2),
+         vuln = fnull0(vuln),
+         vgp20 = vgp20 == "Si",
+         vgp21 = vgp21 == "Si",
+         fvc1 = fymd(fvc1),
+         fvc2 = fymd(fvc2),
+         fvc3 = fymd(fvc3),
+         fcv1 = fnullna(fcv1),
+         fcv2 = fnullna(fcv2),
+         fih1 = fnullna(fih1),
+         fuci = fnullna(fuci),
+         fcv1 = fymd(fcv1),
+         fcv2 = fymd(fcv2),
+         fih1 = fymd(fih1),
+         fuci = fymd(fuci),
+         # pasar fechas de defunción 9999 a NA 
+         fdef = as.Date.numeric(ifelse(str_sub(fdef, 1, 4) == "9999", 
+                                       NA, 
+                                       as.Date(ymd(str_sub(fdef,1,10)))), origin="1970-01-01"))
 
-dat220613 <- dat220613 %>% mutate_at(vars(tvc1,tvc2,tvc3), fnullna)
+# pasar categoría NULL a NA
+dat220613_step2 <- dat220613_step1 %>% mutate_at(vars(tvc1,tvc2,tvc3), fnullna)
 
-## en lugar de quitar los duplicados sin criterio, selecciono
+##En lugar de quitar los duplicados sin criterio, selecciono
 
 dat220613 <- dat220613 %>% distinct(id, .keep_all = TRUE)  # 691327
 
