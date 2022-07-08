@@ -4,6 +4,8 @@ author: "NAVARRABIOMED-FISABIO"
 date: "2022-07-08"
 ---
 
+![](logo_compuesto.png)
+
 # Introducción
 
 ***
