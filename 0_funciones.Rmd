@@ -1,20 +1,7 @@
 ---
 title: "Funciones"
-output: 
-  html_document:
-    code_folding: show
-    highlight: espresso
-    css: style.css
-    keep_md: yes
-    number_sections: yes
-    theme: readable
-    toc: yes  
-    toc_float:
-      collapsed: yes
-      smooth_scroll: yes
-      toc_depth: 3     
-editor_options: 
-  chunk_output_type: console
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output: html_document
 ---
 
 
@@ -24,7 +11,7 @@ knitr::opts_chunk$set(eval = TRUE,
                       cache = FALSE,
                       include = TRUE,
                       collapse = FALSE,
-                       dependson = NULL,
+                      dependson = NULL,
                       engine = "R", # Chunks will always have R code, unless noted
                       error = TRUE,
                       fig.path="Figures/",  # Set the figure options
@@ -63,7 +50,7 @@ library(survival)
 
 En este .Rmd van a estar todas las funciones que se utilizarán para la creación del target trial, así como otras funciones auxiliares que se van a utilizar para el limpiado de la base y la creación de los resultados. El objetivo último, es acabar convirtiendo este .Rmd en un paquete de R. Como manera de estructurar el trabajo, cada función irá por separado en un chunk.
 
-# funciones auxiliares
+# Funciones auxiliares
 
 ***
 
@@ -85,7 +72,7 @@ Función que transforma una cadena con texto "NULL" a un real 0.
 
 ```{r fnull0}
 # de texto "NULL" a 0
-fnull0 <- function(x) {x=as.numeric(ifelse(x == "NULL", 0, x))}
+fnull0 <- function(x) {x = as.numeric(ifelse(x == "NULL", 0, x))}
 
 ```
 
@@ -93,9 +80,15 @@ Función que transforma una cadena con texto "NULL" a NA.
 
 ```{r fnullna}
 
-fnullna <- function(x) {x=ifelse(x=="NULL", NA, x)}
+fnullna <- function(x) {x = ifelse(x == "NULL", NA, x)}
 
 ```
 
-Función
+# Funciones del Target Trial
+
+***
+
+```{r}
+
+```
 
