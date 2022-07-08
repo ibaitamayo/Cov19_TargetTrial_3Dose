@@ -97,5 +97,5 @@ fnullna <- function(x) {x=ifelse(x=="NULL", NA, x)}
 
 ```
 
-Funciónvvv
+Función
 
