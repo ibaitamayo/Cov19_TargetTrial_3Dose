@@ -70,8 +70,9 @@ fnullna <- function(x) {x=ifelse(x=="NULL", NA, x)}
 
 ```{r datos}
 # cargar datos-----------------------------------------------------------------
-# file.path permite separar las carpetas con comas y vale para windows y mac
-dat220613 <- fread(file.path("Datos","poblacion_Vacunas_Infecc_06_2022.csv",  
+# file.path separa las carpetas de la ruta con comas y vale para windows y mac
+dat220613 <- fread(file.path("Datos", "Brutos",
+                             "poblacion_Vacunas_Infecc_06_2022.csv",  
         # Import columns
         select = c("Pac#Unif_Cod", 
                    "Tipo_Persona", 
@@ -140,9 +141,15 @@ names(dat220613) = c("id",
                                       # ibai dice que la correccion es la coherencia de fvc
                                       # lo aplicare en la filtracion final
 
+```
 
 
-dat220613 <- dat220613 %>% mutate(id=as.character(id), sexm=as.numeric(sexm=="Masculino"), fnac2=as.Date(fnac2), vuln=fnull0(vuln), vgp20=vgp20=="Si", vgp21=vgp21=="Si", fvc1=fymd(fvc1) , fvc2=fymd(fvc2), fvc3=fymd(fvc3), fcv1=fnullna(fcv1) , fcv2=fnullna(fcv2),  fih1=fnullna(fih1),   fuci=fnullna(fuci),  fcv1=fymd(fcv1) , fcv2=fymd(fcv2),   fih1=fymd(fih1), fuci=fymd(fuci), fdef=as.Date.numeric(ifelse(str_sub(fdef,1,4)=="9999",NA,as.Date(ymd(str_sub(fdef,1,10)))), origin="1970-01-01"))
+```{r datos}
+# Arreglar algunas variables de estudio----------------------------------------
+# machacar la base hace difícil ir a un punto intermedio
+dat220613_step1 <- dat220613 %>% 
+  mutate(id = as.character(id), 
+         sexm=as.numeric(sexm=="Masculino"), fnac2=as.Date(fnac2), vuln=fnull0(vuln), vgp20=vgp20=="Si", vgp21=vgp21=="Si", fvc1=fymd(fvc1) , fvc2=fymd(fvc2), fvc3=fymd(fvc3), fcv1=fnullna(fcv1) , fcv2=fnullna(fcv2),  fih1=fnullna(fih1),   fuci=fnullna(fuci),  fcv1=fymd(fcv1) , fcv2=fymd(fcv2),   fih1=fymd(fih1), fuci=fymd(fuci), fdef=as.Date.numeric(ifelse(str_sub(fdef,1,4)=="9999",NA,as.Date(ymd(str_sub(fdef,1,10)))), origin="1970-01-01"))
 
 dat220613 <- dat220613 %>% mutate_at(vars(tvc1,tvc2,tvc3), fnullna)
 
