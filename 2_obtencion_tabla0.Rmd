@@ -1,0 +1,278 @@
+---
+title: "Target Trial: Efectividad de la tercera dosis vacunal contra la infección por la variante Omicron en Navarra"
+output: 
+  html_document:
+    code_folding: show
+    highlight: espresso
+    css: style.css
+    keep_md: yes
+    number_sections: yes
+    theme: readable
+    toc: yes  
+    toc_float:
+      collapsed: yes
+      smooth_scroll: yes
+      toc_depth: 3     
+editor_options: 
+  chunk_output_type: console
+---
+
+
+```{r set-global-options, echo = FALSE}
+knitr::opts_chunk$set(eval = TRUE, 
+                      echo = TRUE, 
+                      cache = FALSE,
+                      include = TRUE,
+                      collapse = FALSE,
+                       dependson = NULL,
+                      engine = "R", # Chunks will always have R code, unless noted
+                      error = TRUE,
+                      fig.path="Figures/",  # Set the figure options
+                      fig.align = "center", 
+                      fig.width = 12,
+                      fig.height = 12)
+```
+
+
+```{r libraries, echo=FALSE, message=FALSE, include = FALSE, warning=FALSE}
+library(readxl)
+library(readr)
+library(data.table)
+library(lubridate)
+
+library(tidyverse)
+library(knitr)
+library(kableExtra)
+library(plyr)
+library(dplyr)
+library(ggpubr)
+library(scales)
+library(stringr)
+
+library(plotly)
+library(Matching)
+#library(MatchIt)
+
+library(plotrix)  # para sacar piramides descriptivas de las tablas_analisis
+
+library(ggpmisc) # para series temporales
+
+library(survminer)
+library(survival)
+
+```
+
+
+```{r datos dat220613/pobna50en25/pobnadic20/pobid/pobana/test220613, echo=FALSE, eval=FALSE, warning=FALSE}
+## poblacion_Vacunas_Infecc_06_2022.csv ####
+
+fymd <- function(x) {x=as.Date(ymd(str_sub(x,1,10)))}
+fnull0 <- function(x) {x=as.numeric(ifelse(x=="NULL",0,x))}
+fnullna <- function(x) {x=ifelse(x=="NULL",NA,x)}
+
+```
+
+
+```{r describe la tabla 1 pobana, echo=FALSE, eval=TRUE, message=FALSE, warning=FALSE}
+
+load("~/Dropbox/ju/Asesorias/FranciscoSanchezSaez/targettrial/covidvacunas/Rdata/ttcvc3d_220628.Rdata")
+
+## 86
+## 86
+e_pres<-c()
+e_pres[1]<-"Código paciente (pac_unif_cod)"
+e_pres[2]<-"genero"
+e_pres[3]<-"Fecha nacimiento (exclusion)"
+e_pres[4]<-"grupo de edad, quinquenal salvo  (0,40],(90,110]"
+e_pres[5]<-"fecha defuncion"
+e_pres[6]<-"migrante (pais de nacimiento no España)"
+e_pres[7]<-"area (grupo de paises) de nacimiento"
+e_pres[8]<-"codigo aportacion farmaceutica (tsi)"
+e_pres[9]<-"vive en residencia true"
+e_pres[10]<-"unidad de convivencia, truncado (8 ó mas)"
+e_pres[11]<-"indicador numerico de domicilio"
+e_pres[12]<-"renta seccion censal categorizada -promedio 2011-2016-"
+e_pres[13]<-"codigo de zona basica -por centro de atencion-"
+e_pres[14]<-"profesional sociosanitario true"
+e_pres[15]<-"profesional educativo true"
+e_pres[16]<-"vulnerable"
+e_pres[17]<-"dependiente true"
+e_pres[18]<-"demencia"
+e_pres[19]<-"diabetes"
+e_pres[20]<-"enf. autoinmune"
+e_pres[21]<-"coronariopatia"
+e_pres[22]<-"insuficiencia renal cronica"
+e_pres[23]<-"enf pulmonar obstructiva cronica-EPOC"
+e_pres[24]<-"hiperlipemia"
+e_pres[25]<-"hipertension arterial (hta)"
+e_pres[26]<-"ictus"
+e_pres[27]<-"obesidad (imc>30)"
+e_pres[28]<-"indice masa corporal (imc)"
+e_pres[29]<-"indice masa corporal, categorias"
+e_pres[30]<-"recibe vacuna gripe campaña 2020"
+e_pres[31]<-"recibe vacuna gripe campaña 2021"
+e_pres[32]<-"tipo vacuna covid 1"
+e_pres[33]<-"vacunacion incompleta true"
+e_pres[34]<-"fecha vacuna covid 1"
+e_pres[35]<-"tipo vacuna covid 2"
+e_pres[36]<-"fecha vacuna covid 2"
+e_pres[37]<-"tipo vacuna covid 3"
+e_pres[38]<-"fecha vacuna covid 3"
+e_pres[39]<-"infeccion covid si/no (ref junio 2022)"
+e_pres[40]<-"fecha infeccion covid 1"
+e_pres[41]<-"fecha infeccion covid 2"
+e_pres[42]<-"fecha primer ingreso hospitalario"
+e_pres[43]<-"ingreso UCI si/no"
+e_pres[44]<-"fecha ingreso UCI"
+
+
+
+
+descripcion<- tibble(Etiqueta=e_pres,Variable=names(pobana))
+#, `Descripción`=d_pres)
+kable(descripcion, format="html")%>%  
+        kable_styling(bootstrap_options = c("striped","hover", "condensed"), full_width = F, fixed_thead = F) %>%
+        column_spec(1:2, border_right = T) %>% column_spec(1, bold=T) %>%
+        column_spec(2, )
+
+
+```
+
+
+## Time series of exposure and outcome (T0= Jan 3, 2022)
+
+```{r series temporales, echo=FALSE, eval=TRUE, message=FALSE, include = TRUE, warning=FALSE}
+
+
+
+## como son las distribuciones de vacunacion e infeccion####
+### serie temporal de vacunaciones ####
+
+min <- as.Date("2021-01-01")
+max <- NA
+
+ggplotly(ggplot(data = pobana  %>% group_by(fvc2) %>% summarise(n=n()) %>% na.omit(), aes(x = fvc2, y = n))+ geom_line(color = "#E7B800", size = 1) + scale_x_date(limits = c(min, max), date_labels = "%b/%y") +stat_peaks(colour = "purple") +ggtitle("Segunda dosis"))
+
+
+ggplotly(ggplot(data = pobana  %>% group_by(fcv1) %>% summarise(n=n()) %>% na.omit(), aes(x = fcv1, y = n))+ geom_line(color = "#E7B800", size = 1) + scale_x_date(limits = c(min, max), date_labels = "%b/%y") +stat_peaks(colour = "purple") +ggtitle("Infecciones"))
+
+
+min <- as.Date("2021-09-01")
+max <- NA
+
+ggplotly(ggplot(data = pobana  %>% group_by(fvc3) %>% summarise(n=n()) %>% na.omit(), aes(x = fvc3, y = n))+ geom_line(color = "#E7B800", size = 1) + scale_x_date(limits = c(min, max), date_labels = "%b/%y") +stat_peaks(colour = "purple") +ggtitle("Tercera dosis"))
+         
+        
+
+```
+
+# Programación
+
+## f_tabla0: genera la tabla de análisis inicial
+
+ * *parametro*: fecha 0 de arranque -primera cohorte-(por defecto 2022-01-14)
+ * *entrada*: 
+    + a. tabla de poblacion-vacunas-infecciones: pobana
+    + b. tabla de test previos
+ * *salida*: tabla de analisis 
+            * a la que se agrega el numero de test negativos previos (0,1,2,3+)
+            * filtra                  y excluye aquellos con  infeccion previa/
+                                                      # sociosanitario/
+                                                      # educación/
+                                                      # viven en residencia/
+                                                      # dependientes/ 
+                                                      # zbs desconocida
+             * selecciona variables para el analisis, pasando a numericas las candidatas para el matching 
+             
+             
+```{r f_tabla0, message=FALSE, include = TRUE, warning=FALSE}
+
+f_tabla0<-function(fecha0="2022-01-14", file_Rdata_poblacion="Rdata/pobana.Rdata",file_Rdata_test="Rdata/test220613.Rdata") {
+  fecha0=ymd(fecha0)
+  print("Asegurate de que Knit Directory es Current working directory")
+  if (!"pobana"%in% ls(envir = .GlobalEnv)){
+    load(file_Rdata_poblacion,envir = .GlobalEnv)
+  }
+  if (!"test220613"%in% ls(envir = .GlobalEnv)){
+  load(file_Rdata_test,envir = .GlobalEnv )
+  }
+  get("pobana", envir = .GlobalEnv)->pobana
+  get("test220613", envir = .GlobalEnv)->test220613
+  print(paste("n de partida :",nrow(pobana)))
+  print("Excluyendo: socio y/o sanitarios...") 
+  pobana %>% filter(is.na(prfss) | prfss!=TRUE)->pobana
+    print(paste("n :",nrow(pobana)))
+  print("Excluyendo: trabj educacion...") 
+    pobana %>% filter(is.na(educa) | educa!=TRUE)->pobana 
+    print(paste("n :",nrow(pobana)))  
+  print("Excluyendo: viven en residencia...") 
+  pobana %>% filter(is.na(resn) | resn!=TRUE)->pobana
+    print(paste("n :",nrow(pobana)))
+  print("Excluyendo:dependientes...")   
+  pobana %>% filter(is.na(depe) | depe!=TRUE)->pobana
+    print(paste("n :",nrow(pobana)))
+  print("Excluyendo: zona basica desconocida...")   
+  pobana %>% filter(!is.na(czbs))->pobana 
+    print(paste("n :",nrow(pobana)))
+  print("Excluyendo: tuvo infección previa...")
+  pobana %>% filter(cvsn==0|fcv1>=ymd(fecha0))->pobana
+    print(paste("n :",nrow(pobana)))
+  print("Excluyendo: no finalizo vacunacion completa 90 dias antes...")
+  pobana %>% filter(fecha0-fvc2>90)->tabla_0_pobana
+     print(paste("n :",nrow(tabla_0_pobana))) 
+  print("calculando tests negativos previos...[aplicar la t0!!]")
+  test220613%>% filter(id %in% tabla_0_pobana$id &tpos==FALSE & ftes<ymd(fecha0)) %>% group_by(id)%>% summarise(n_0=max(n)) %>% right_join(tabla_0_pobana, by="id") %>% mutate(n_0=ifelse(is.na(n_0),0,ifelse(n_0>3,3,n_0)), tv2=as.numeric(ymd(fecha0)-fvc2))->pobana_n_tabla0
+  
+ pobana_n_tabla0 <- pobana_n_tabla0 %>% mutate(
+    genn=as.numeric(gen)-1,
+    gedadn=as.numeric(gedad),
+    czbs=as.numeric(czbs),
+    migran=as.numeric(migran),
+    vgp20=as.numeric(vgp20),
+    vgp21=as.numeric(vgp21),
+    tvc2n=as.numeric(as.factor(tvc2))) %>% dplyr::select(id,fvc2,fvc3,fdef,fcv1,fih1,genn,gedad,gedadn,czbs,n_0,tvc2n,tvc3,tv2,migran,vgp20,vgp21,ucn8) 
+ 
+  return(pobana_n_tabla0)
+}
+
+
+# lo aplico empleando como inicio 2022-01-03": genera el flow_chart
+ 
+
+ f_tabla0(fecha0="2022-01-03")->tab0220103  # 437897
+ table(tab0220103$n_0)
+#      0      1      2      3 
+# 117739  68311  49929  68391 
+
+#     0      1      2      3 
+# 130922  69452  48407  55589 
+
+
+```
+
+
+## f_exclusion: criterios de exclusión tiempo-dependientes
+
+* *parametro*: datos + fecha 0 de arranque -primera cohorte-
+* *entrada*: tabla filtrada por f_tabla0
+* *salida*: tabla de analisis 
+            * filtra y excluye aquellos con:
+            
+                     + con fecha de 3 dosis anterior al t0/
+                     + fallecidos o /
+                     + infectados previamente/
+                                                     
+
+```{r, message=FALSE, include = TRUE, warning=FALSE}
+
+f_exclusion= function(data, fecha0) {
+data= data %>% filter(is.na(fvc3) | fecha0 <= fvc3,
+           is.na(fcv1) | fecha0 < fcv1,
+           is.na(fdef) |  fecha0 < fdef)
+return(data)           
+}
+
+
+```
+
+
