@@ -1,0 +1,215 @@
+---
+title: "Preprocesado"
+output: 
+  html_document:
+    code_folding: show
+    highlight: espresso
+    css: style.css
+    keep_md: yes
+    number_sections: yes
+    theme: readable
+    toc: yes  
+    toc_float:
+      collapsed: yes
+      smooth_scroll: yes
+      toc_depth: 3     
+editor_options: 
+  chunk_output_type: inline
+---
+
+
+```{r set-global-options, echo = FALSE}
+knitr::opts_chunk$set(eval = TRUE, 
+                      echo = TRUE, 
+                      cache = FALSE,
+                      include = TRUE,
+                      collapse = FALSE,
+                       dependson = NULL,
+                      engine = "R", # Chunks will always have R code, unless noted
+                      error = TRUE,
+                      fig.path="Figures/",  # Set the figure options
+                      fig.align = "center", 
+                      fig.width = 12,
+                      fig.height = 12)
+
+```
+
+
+```{r libraries, echo=FALSE, message=FALSE, include = FALSE, warning=FALSE}
+library(readxl)
+library(readr)
+library(data.table)
+library(lubridate)
+library(tidyverse)
+library(knitr)
+library(kableExtra)
+library(plyr)
+library(dplyr)
+library(ggpubr)
+library(scales)
+library(stringr)
+library(plotly)
+library(Matching)
+#library(MatchIt)
+library(plotrix)  # para sacar piramides descriptivas de las tablas_analisis
+library(ggpmisc) # para series temporales
+library(survminer)
+library(survival)
+
+```
+
+```{r}
+# función para cargar un .Rmd como si se hiciese source de un .r---------------
+source_rmd = function(file, ...) {
+  tmp_file = tempfile(fileext=".R")
+  on.exit(unlink(tmp_file), add = TRUE)
+  knitr::purl(file, output=tmp_file)
+  source(file = tmp_file, ...)
+}
+
+```
+
+```{r}
+# cargar funciones de 0_funciones----------------------------------------------
+source_rmd("0_funciones.rmd")
+
+```
+
+```{r cargar-datos}
+# cargar datos-----------------------------------------------------------------
+# file.path separa las carpetas de la ruta con comas y vale para windows y mac
+dat220613 <- fread(file.path("Datos", "Brutos",
+                             "poblacion_Vacunas_Infecc_06_2022.csv"),  
+        # Import columns
+        select = c("Pac#Unif_Cod", 
+                   "Tipo_Persona", 
+                   "Sexo#Nom", 
+                   "Pac#Fecha_Nacimiento", 
+                   "Pac#Fecha_Fallecimiento", 
+                   "ZBS#Cod", "Pac#Flag_Vulnerable", 
+                   "Es_Gran_Dependiente", 
+                   "Es_Residente",
+                   "Vacunacion_Tipo", 
+                   "Vacuna_Gripe_2020",
+                   "Vacuna_Gripe_2021",
+                   "VacCovid#Lab_1Dosis",
+                   "VacCovid#Fecha_1Dosis_Vacuna",
+                   "VacCovid#Lab_2Dosis",
+                   "VacCovid#Fecha_2Dosis_Vacuna",
+                   "VacCovid#Lab_3Dosis",
+                   "VacCovid#Fecha_3Dosis_Vacuna",
+                   "Ha_Tenido_Covid",	
+                   "Fecha_Ini_Covid_1",
+                   "Fecha_Ini_Covid_2",
+                   "Fecha_Ingreso_1",
+                   "Hospitalizado_En_UCI",
+                   "Fecha_Estancia_UCI"))  #  691394
+
+```
+
+
+```{r datos}
+# cambiar nombres--------------------------------------------------------------
+names(dat220613) = c("id",
+                     "tper",
+                     "sexm",
+                     "fnac2",
+                     "fdef",
+                     "czbs",
+                     "vuln",
+                     "depe",
+                     "resi",
+                     "aseg",
+                     "vgp20",
+                     "vgp21",
+                     "tvc1",
+                     "fvc1",
+                     "tvc2",
+                     "fvc2",
+                     "tvc3",
+                     "fvc3",
+                     "cvsn",
+                     "fcv1",
+                     "fcv2",
+                     "fih1",
+                     "ucisn",
+                     "fuci")
+
+```
+
+```{r datos2}
+# Arreglar algunas variables de estudio----------------------------------------
+# machacar la base hace difícil ir a un punto intermedio
+
+# arreglar variables
+dat220613_step1 <- dat220613 %>% 
+  mutate(id = as.character(id), 
+         sexm = as.numeric( sexm == "Masculino"),
+         fnac2 = as.Date(fnac2),
+         vuln = fnull0(vuln),
+         vgp20 = vgp20 == "Si",
+         vgp21 = vgp21 == "Si",
+         fvc1 = fymd(fvc1),
+         fvc2 = fymd(fvc2),
+         fvc3 = fymd(fvc3),
+         fcv1 = fnullna(fcv1),
+         fcv2 = fnullna(fcv2),
+         fih1 = fnullna(fih1),
+         fuci = fnullna(fuci),
+         fcv1 = fymd(fcv1),
+         fcv2 = fymd(fcv2),
+         fih1 = fymd(fih1),
+         fuci = fymd(fuci),
+         # pasar fechas de defunción 9999 a NA 
+         fdef = as.Date.numeric(ifelse(str_sub(fdef, 1, 4) == "9999", 
+                                       NA, 
+                                       as.Date(ymd(str_sub(fdef,1,10)))), origin="1970-01-01"))
+
+# pasar categoría NULL a NA
+dat220613_step2 <- dat220613_step1 %>% 
+  mutate_at(vars(tvc1,tvc2,tvc3), fnullna)
+
+```
+
+```{r duplicados}
+# ver duplicados---------------------------------------------------------------
+dat220613_step2 %>% 
+  dplyr::count(id, sort = TRUE) 
+# obtener ids duplicados-------------------------------------------------------
+ids_duplicados <- dat220613_step2 %>%
+  # contar duplicados
+  dplyr::count(id, sort = TRUE) %>% 
+  # filtrar duplicados
+  filter(n > 1) %>% 
+  # guardar ids
+  pull(id)
+# ver observaciones con ids duplicados-----------------------------------------
+dups <- dat220613_step2 %>% 
+  # filtrar observaciones con duplicados
+  filter(id %in% ids_duplicados) %>% 
+  # ordenar por id
+  arrange(id)
+
+```
+
+Muchos duplicados son porque presentan diferente hora y minuto de vacunación, aunque el mismo día. Así que después de aplicar la función *fymd* a las variables que contenían fechas se reducen con un *distinct* por todas las variables. Para el resto de observaciones duplicadas, se recupera el primer elemento no-NA (o el primero) para cada una de las variables.
+
+```{r duplicados2}
+# eliminar observaciones iguales por todas las variables-----------------------
+dat220613_sin_dup <- dat220613_step2 %>%
+  # la librería tidylog imprime en pantalla cuantas filas se eliminan
+  tidylog::distinct() %>%
+  # cambiar "NULL" por <NA>
+  # mutate(across(where(is.character), 
+  #                      .fns = ~ if_else(.x == "NULL", NA_character_, .x))) %>% 
+  # # agrupar duplicados y seleccionar variables completadas frente a <NA>
+  group_by(id) %>% 
+  summarise(across(.fns = ~dplyr::first(na.omit(.))))
+
+# guardar datos----------------------------------------------------------------
+saveRDS(dat220613_sin_dup, file.path("Datos", "Procesados",
+                                     "dat220613_sin_dup.RDS"))
+
+```
+
+

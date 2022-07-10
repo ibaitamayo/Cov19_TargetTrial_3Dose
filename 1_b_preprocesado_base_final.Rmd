@@ -14,7 +14,7 @@ output:
       smooth_scroll: yes
       toc_depth: 3     
 editor_options: 
-  chunk_output_type: console
+  chunk_output_type: inline
 ---
 
 
@@ -31,6 +31,7 @@ knitr::opts_chunk$set(eval = TRUE,
                       fig.align = "center", 
                       fig.width = 12,
                       fig.height = 12)
+
 ```
 
 
@@ -57,125 +58,36 @@ library(survival)
 
 ```
 
-
-```{r funciones}
-## poblacion_Vacunas_Infecc_06_2022.csv ####
-
-fymd <- function(x) {x=as.Date(ymd(str_sub(x, 1, 10)))}
-fnull0 <- function(x) {x=as.numeric(ifelse(x == "NULL", 0, x))}
-fnullna <- function(x) {x=ifelse(x=="NULL", NA, x)}
-
-```
-
-
-```{r datos}
-# cargar datos-----------------------------------------------------------------
-# file.path separa las carpetas de la ruta con comas y vale para windows y mac
-dat220613 <- fread(file.path("Datos", "Brutos",
-                             "poblacion_Vacunas_Infecc_06_2022.csv",  
-        # Import columns
-        select = c("Pac#Unif_Cod", 
-                   "Tipo_Persona", 
-                   "Sexo#Nom", 
-                   "Pac#Fecha_Nacimiento", 
-                   "Pac#Fecha_Fallecimiento", 
-                   "ZBS#Cod", "Pac#Flag_Vulnerable", 
-                   "Es_Gran_Dependiente", 
-                   "Es_Residente",
-                   "Vacunacion_Tipo", 
-                   "Vacuna_Gripe_2020",
-                   "Vacuna_Gripe_2021",
-                   "VacCovid#Lab_1Dosis",
-                   "VacCovid#Fecha_1Dosis_Vacuna",
-                   "VacCovid#Lab_2Dosis",
-                   "VacCovid#Fecha_2Dosis_Vacuna",
-                   "VacCovid#Lab_3Dosis",
-                   "VacCovid#Fecha_3Dosis_Vacuna",
-                   "Ha_Tenido_Covid",	
-                   "Fecha_Ini_Covid_1",
-                   "Fecha_Ini_Covid_2",
-                   "Fecha_Ingreso_1",
-                   "Hospitalizado_En_UCI",
-                   "Fecha_Estancia_UCI"))  #  691394
+```{r}
+# función para cargar un .Rmd como si se hiciese source de un .r---------------
+source_rmd = function(file, ...) {
+  tmp_file = tempfile(fileext=".R")
+  on.exit(unlink(tmp_file), add = TRUE)
+  knitr::purl(file, output=tmp_file)
+  source(file = tmp_file, ...)
+}
 
 ```
 
-
-```{r datos}
-# cambiar nombres--------------------------------------------------------------
-names(dat220613) = c("id",
-                     "tper",
-                     "sexm",
-                     "fnac2",
-                     "fdef",
-                     "czbs",
-                     "vuln",
-                     "depe",
-                     "resi",
-                     "aseg",
-                     "vgp20",
-                     "vgp21",
-                     "tvc1",
-                     "fvc1",
-                     "tvc2",
-                     "fvc2",
-                     "tvc3",
-                     "fvc3",
-                     "cvsn",
-                     "fcv1",
-                     "fcv2",
-                     "fih1",
-                     "ucisn",
-                     "fuci")
+```{r}
+# cargar funciones de 0_funciones----------------------------------------------
+source_rmd("0_funciones.rmd")
 
 ```
 
-
 ```{r datos}
-# repetidos--------------------------------------------------------------------
-#dat220613 <- dat220613 %>% group_by(id) %>% summarise(n=n())
-#table(dat220613$n)
-
-#     1      2      4      8     16 
-# 691290     30      5      1      1   ## son pocos, no voy a intentar corregjirlo, 
-                                      # ibai dice que la correccion es la coherencia de fvc
-                                      # lo aplicare en la filtracion final
+# cargar datos----------------------------------------------------------------
+dat220613_sin_dup <- readRDS(file.path("Datos", "Procesados",
+                                     "dat220613_sin_dup.RDS"))
 
 ```
 
+# VOY POR AQUÍ
 
 ```{r datos}
-# Arreglar algunas variables de estudio----------------------------------------
-# machacar la base hace difícil ir a un punto intermedio
-dat220613_step1 <- dat220613 %>% 
-  mutate(id = as.character(id), 
-         sexm = as.numeric( sexm == "Masculino"),
-         fnac2 = as.Date(fnac2),
-         vuln = fnull0(vuln),
-         vgp20 = vgp20 == "Si",
-         vgp21 = vgp21 == "Si",
-         fvc1 = fymd(fvc1),
-         fvc2 = fymd(fvc2),
-         fvc3 = fymd(fvc3),
-         fcv1 = fnullna(fcv1),
-         fcv2 = fnullna(fcv2),
-         fih1 = fnullna(fih1),
-         fuci = fnullna(fuci),
-         fcv1 = fymd(fcv1),
-         fcv2 = fymd(fcv2),
-         fih1 = fymd(fih1),
-         fuci = fymd(fuci),
-         # pasar fechas de defunción 9999 a NA 
-         fdef = as.Date.numeric(ifelse(str_sub(fdef, 1, 4) == "9999", 
-                                       NA, 
-                                       as.Date(ymd(str_sub(fdef,1,10)))), origin="1970-01-01"))
-
-# pasar categoría NULL a NA
-dat220613_step2 <- dat220613_step1 %>% mutate_at(vars(tvc1,tvc2,tvc3), fnullna)
-
 ##En lugar de quitar los duplicados sin criterio, selecciono
-
-dat220613 <- dat220613 %>% distinct(id, .keep_all = TRUE)  # 691327
+dat220613_step3 <- dat220613_sin_dup %>%
+  distinct(id, .keep_all = TRUE)  # 691327
 
 
 # fnac fnacimiento
