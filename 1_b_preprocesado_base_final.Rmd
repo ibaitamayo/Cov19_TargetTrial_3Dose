@@ -1,0 +1,432 @@
+---
+title: "Preprocesado"
+output: 
+  html_document:
+    code_folding: show
+    highlight: espresso
+    css: style.css
+    keep_md: yes
+    number_sections: yes
+    theme: readable
+    toc: yes  
+    toc_float:
+      collapsed: yes
+      smooth_scroll: yes
+      toc_depth: 3     
+editor_options: 
+  chunk_output_type: inline
+---
+
+
+```{r set-global-options, echo = FALSE}
+knitr::opts_chunk$set(eval = TRUE, 
+                      echo = TRUE, 
+                      cache = FALSE,
+                      include = TRUE,
+                      collapse = FALSE,
+                       dependson = NULL,
+                      engine = "R", # Chunks will always have R code, unless noted
+                      error = TRUE,
+                      fig.path="Figures/",  # Set the figure options
+                      fig.align = "center", 
+                      fig.width = 12,
+                      fig.height = 12)
+
+```
+
+
+```{r libraries, echo=FALSE, message=FALSE, include = FALSE, warning=FALSE}
+library(readxl)
+library(readr)
+library(data.table)
+library(lubridate)
+library(tidyverse)
+library(knitr)
+library(kableExtra)
+library(plyr)
+library(dplyr)
+library(ggpubr)
+library(scales)
+library(stringr)
+library(plotly)
+library(Matching)
+#library(MatchIt)
+library(plotrix)  # para sacar piramides descriptivas de las tablas_analisis
+library(ggpmisc) # para series temporales
+library(survminer)
+library(survival)
+
+```
+
+```{r}
+# función para cargar un .Rmd como si se hiciese source de un .r---------------
+source_rmd = function(file, ...) {
+  tmp_file = tempfile(fileext=".R")
+  on.exit(unlink(tmp_file), add = TRUE)
+  knitr::purl(file, output=tmp_file)
+  source(file = tmp_file, ...)
+}
+
+```
+
+```{r}
+# cargar funciones de 0_funciones----------------------------------------------
+source_rmd("0_funciones.rmd")
+
+```
+
+```{r datos}
+# cargar datos----------------------------------------------------------------
+dat220613_sin_dup <- readRDS(file.path("Datos", "Procesados",
+                                     "dat220613_sin_dup.RDS"))
+
+```
+
+# VOY POR AQUÍ
+
+```{r datos}
+##En lugar de quitar los duplicados sin criterio, selecciono
+dat220613_step3 <- dat220613_sin_dup %>%
+  distinct(id, .keep_all = TRUE)  # 691327
+
+
+# fnac fnacimiento
+# fdef fdefuncion
+# res Es_R esidente
+# pdvac Pob_Diana_Vacunacion
+# gvac20/21 Vacuna_Gripe_2020/21
+# fvcv1/2/3 VacCovid.Fecha_1Dosis_Vacuna/2/3"
+# fcv1/2/3 Fecha_Ini_Covid_1/2/3
+# fih1/2/3 Fecha_Ingreso_1/2/3
+# fuci Fecha_Estancia_UCI
+# cvsn ha_tenido_covid
+# cvhsn Ha_Tenido_Hospitalizacion
+# cvhusn Hospitalizado_En_UCI
+
+# {r datos de población pobna20en25, pobna88 (pobnadic20.Rdata)} ####
+
+## genera pobana: uso dos fuentes de datos de poblacion pobna50en25 (ref a 21-01-21 ) y pobanadic20 ####
+# es la tabla 1 del analisis, de la que se extraen los individuos aplicando el tiempo 0.. y a la que solo falta vincular el numero de testnegativos previos.. que sale de la tabla 2 (test)
+
+load("~/Dropbox/ju/covid19/Rdata/pobna50en25.Rdata")
+
+names(pobna50en25)
+#  [1] "id"         "gdep"       "gen"        "edad"       "pnac"      
+#  [6] "migran"     "ctsi"       "gma"        "peso"       "domi"      
+# [11] "res"        "resl"       "ucn8"       "cpob"       "seccion"   
+# [16] "lzbs"       "rentasc"    "ptipo"      "bsgr"       "deme"      
+# [21] "diab"       "ainm"       "corp"       "irc"        "epoc"      
+# [26] "hlip"       "hta"        "ictu"       "obes"       "cimc"      
+# [31] "nhos"       "hf1"        "hfu"        "mhos"       "nvc"       
+# [36] "vcf2d"      "fvac19"     "tvac19"     "fvac20"     "tvac20"    
+# [41] "mfpcr"      "mct"        "mfinh"      "mfinu"      "tesf1"     
+# [46] "tesfu"      "tesn"       "test"       "fdef210115" "vcf1d"   
+
+pob <- pobna50en25 %>% select(id,gen,migran,ctsi,res,ucn8,rentasc,ptipo,deme:cimc)
+
+load("~/Dropbox/ju/covid19/Rdata/pobnadic20.Rdata")
+
+pob <- left_join(pob, select(pobna88,id,fnac,lapna,imc))
+
+## la fuente de poblacion es pob (665077), en vacunas-infeccion hay más poblacion (dat220613 -691394-) trabajamos sobre los datos coincidentes (645635) ###
+
+##  pobid #### 645635
+#como cuadran dat220613 y pob  ####
+
+#  pobch= pob %>% select(id) %>% mutate(pob=TRUE)
+#  datvich=dat220613 %>% select(id) %>% mutate(dvi=TRUE)
+#  pobdat <- full_join(pobch,datvich)
+# # 
+#  table(pobdat$pob, pobdat$dvi, useNA = "always")
+
+#
+#            TRUE   <NA>   pob    hay 19472 aprox casos de pob que no aparecen en dvi
+# dvi  TRUE 645605  19472   
+#      <NA>  45722      0             45722 de dvi que no aparecen en pob
+
+## coinciden en 645635 personas trabajamos sobre ellas.. 
+
+pobid <- pobdat  %>% filter(dvi==TRUE & pob==TRUE) %>% select(id)  # 645605
+
+
+## aplico el filtro a pobid a pob ####
+
+pob <- left_join(pobid,pob)  # 645605
+
+
+## agregos datos de  dat220613 ####
+
+names(dat220613)
+#  [1] "id"    "tper"  "sexm"  "fnac2"  "fdef"  "czbs"  "vuln"  "depe"  "resi" 
+# [10] "aseg"  "vgp20" "vgp21" "tvc1"  "fvc1"  "tvc2"  "fvc2"  "tvc3"  "fvc3" 
+# [19] "cvsn"  "fcv1"  "fcv2"  "fih1"  "ucisn" "fuci" 
+
+
+pob <- left_join(pob,select(dat220613, id:aseg))  # 645605
+
+## relocate
+names(pob)
+
+pob <- pob %>% relocate(fnac2, .after = gen)
+pob <- pob %>% relocate(fnac, .after = gen)
+pob <- pob %>% relocate(resi, .after = res)
+pob <- pob %>% relocate(imc, .after = obes)
+pob <- pob %>% relocate(tper, .after = ptipo)
+pob <- pob %>% relocate(aseg, .after = migran)
+pob <- pob %>% relocate(sexm, .after = gen)
+pob <- pob %>% relocate(czbs, .after = rentasc)
+pob <- pob %>% relocate(lat:lng, .after = czbs)
+pob <- pob %>% relocate(vuln:depe, .before = deme)
+pob <- pob %>% relocate(fdef, .after = fnac2)
+pob <- pob %>% relocate(lapna, .after = migran)
+
+
+## simplificando
+
+
+### problemas con el id?  miro incoherencia de edad y sexo y depuro####
+
+## incoherencia de genero y fecha de nacimiento ####
+#table(pob$gen, pob$sexm)  ## eliminamos los casos de incohencia de género (142+162)
+  #             0      1
+  # Hombre    148 318701
+  # Mujer  326594    162
+
+## voy a sacar fnac de pob y dativ ...para contrastar 
+# pob <- left_join(pob, select(pobna88,id,fnac))
+# pob <- pob %>% relocate(fnac, .before = fnac2)
+
+#table(pob$fnac!=pob$fnac2)
+#  FALSE   TRUE 
+# 644086   1519 
+
+
+ pob <- pob %>% mutate(inc_g=((gen=="Hombre" & sexm==0) |(gen=="Mujer" & sexm==1)), inc_e=abs(round(as.numeric(fnac - fnac2)/365.25))>2)
+# 
+ pob <- pob %>% mutate(inc=as.numeric(inc_g)+as.numeric(inc_e))
+# table(pob$inc)
+#     0      1 
+# 645209    396 
+
+## es verdad que son pocos si la diferencia de edad las fijamos en 2 años
+pob <- pob %>% filter(inc_g==FALSE & inc_e==FALSE)  # 645209
+
+pob <-  pob %>% select(-c(sexm,fnac2,inc_g:inc))
+
+## variable resn (vive en residencia si no) a partir de res (pob) y resi(vacuna_inf).. y quitar "NULL" de tvc ####
+## viven en residencia ####
+#table(pob$res, pob$resi)   ## usaremos la combinacion para excluir residencias
+  #        0      1
+  # 0 635563   1941
+  # 1   2039   6062
+
+pob <- pob %>% mutate(resn=res+resi)
+pob <- pob %>% relocate(resn, .after = ctsi)
+pob <- pob %>% mutate(resn=resn>0)
+
+#table(pob$resn)
+#     0      1      2 
+# 635179   3970   6060 
+
+pob <- pob %>% select(-c(res,resi))
+
+table(pob$resn)
+# FALSE   TRUE 
+# 635179  10030 
+
+
+## a esta pob le podemos agregar la informacion de vacuna, solo quedaría el numero de test diagnosticos previos que se generan en la funcion de creaccion de la tabla de analisis a partir de la fecha definida como cero? #####
+
+pobana <- left_join(pob,select(dat220613,id,vgp20:fuci)) # 645209
+
+
+## dependientes!. ####
+
+pobana <- left_join(pobana,select(pobna50en25,id,gdep))
+pobana <- pobana %>% relocate(gdep, .after = depe)
+
+pobana <- pobana %>% mutate(depex=(gdep=="Dependencia Severa" | gdep=="Gran Dependencia" | (gdep=="No valorado" & depe==1)))
+
+
+# table(pobana$depex)
+#  FALSE   TRUE 
+# 634173  11036
+# 
+
+pobana <- pobana %>% relocate(depex, .after = depe) %>% select(-c(gdep, depe))
+
+names(pobana)
+names(pobana)[18]="depe"
+
+
+## sanitario o sociosan ####
+
+# pobana <- left_join(pobana,select(pobna50en25,id,ptipo))  ## esto ya estaba
+# pobana <- pobana %>% relocate(ptipo, .after = tper)
+
+
+
+#table(pobana$ptipo, pobana$tper)             
+
+# bastante incoherente ese cruze.. de nuevo (como en dependiente) extraemos siguiendo un criterio mixto:
+
+pobana <- pobana %>% mutate(prfss=tper=="CUN" | tper=="Profesional Sanitario" | tper=="CUN" | tper=="San Miguel" | tper=="SPRL" | ptipo=="residencias" |  ptipo=="sanitarios")
+
+# EL ARTICULO EXCLUYE, AL MENOS LO DICE EN EL TEXTO, A LOS DE EDUCACION, aqui no (estan en ptipo) ####
+
+table(pobana$prfss, useNA = "always")
+
+#  FALSE   TRUE   <NA> 
+# 231040  22719 391450 
+
+pobana <- pobana %>% relocate(prfss, .after = tper) %>% select(-ptipo)
+names(pobana)
+
+## educación ####
+
+pobana <- left_join(pobana,dplyr::select(dat220613,id,tper))
+pobana <- pobana %>% mutate(educa=tper=="Educacion")
+pobana <- pobana %>% dplyr::select(-tper)
+pobana <- pobana %>% relocate(educa, .after = prfss)
+
+### sin pauta completa (previa a 3 dosis) ###
+ table(is.na(pobana$fvc2))   # no tiene segunda dosis (pero hay que sacar la jansen que solo era una)
+#  FALSE   TRUE 
+# 465530 179679 
+
+# table(pobana$tvc1)
+
+  #     Bharat Biotech      BioNTech/Pfizer         C N Gamaleya 
+  #                  1               383349                   15 
+  #         CansinoBio      Centro Chumakov                 CIGB 
+  #                  2                    3                    4 
+  # Institute of India        J&J / Janssen        Moderna/Lonza 
+  #                  5                23418                73107 
+  #            Novavax   Oxford/AstraZeneca            Sinopharm 
+  #                 12                67329                   82 
+  # Sinopharm Abu Dabi              SINOVAC Sinovac Biotech Ltd. 
+  #                  1                    1                  142
+
+
+# vacunacion incompleta: no primera dosis o no segunda dosis si es diferente de Janssen
+
+
+
+pobana <- pobana %>% mutate(vcix=is.na(fvc1) | (tvc1!="J&J / Janssen" & is.na(fvc2)))
+#table(pobana$vcix)
+# FALSE   TRUE 
+# 488775 156434 
+
+pobana <- pobana %>% relocate(vcix, .after = tvc1)
+
+
+## mayores de 40 años (cumplen 40 años en 2021) ####
+
+#table(year(pobana$fnac)>1981)
+#  FALSE   TRUE 
+# 379032 266177 
+
+
+### czbs ####
+
+
+# table(is.na(pobana$czbs))
+#  FALSE   TRUE 
+# 629649  15560 
+pobana <- pobana %>% mutate(czbs=fnullna((czbs)))
+
+## grupos de edad ####
+## edad a 2022/01/01
+
+pobana <- pobana %>% mutate(gedad=cut(round(as.numeric(ymd("2022-01-01") - fnac)/365.25),breaks=c(0,40,45,50,55,60,65,70,75,80,85,90,110)))
+
+pobana <- pobana %>% relocate(gedad, .after = fnac)
+pobana <- pobana %>% dplyr::select(-aseg)
+
+#table(pobana$gedad, useNA = "always")
+
+pobana <- pobana %>% dplyr::select(-tv2)
+
+
+## domicilio ####
+pobana <-  left_join(pobana, dplyr::select(pobna50en25, id,domi)) 
+pobana <- pobana %>% mutate(domi=as.numeric(as.factor(domi)))
+pobana <- pobana %>% relocate(domi, .after = ucn8)
+
+
+setwd("~/Dropbox/ju/Asesorias/FranciscoSanchezSaez/targettrial/covidvacunas/Rdata")
+  
+save(pobid,dat220613,pob,pobana,file="pobana_ext.Rdata")  ## AQUI QUEDA UNA VERSION DE POBANA PREVIA A CREAR LAS EXCLUSIONES 
+save(pobana,file="pobana.Rdata")
+
+## define exclusiones flow chart ####
+
+# 0 mayores de 40 años (cumplen 40 años en 2021) FNAC 266177 o GEDAD 270654 (años cumplidos a 2022/01/01)
+
+# table(pobana$gedad=="(0,40]")
+#  FALSE   TRUE 
+# 374552 270654 
+#table(year(pobana$fnac)>1981)
+#  FALSE   TRUE 
+# 379032 266177 
+
+# 1 unable to link to National Registry (registro de personas con cupo en AP-publica)
+# 2 health-care workers or social workers PRFSS TRU 22719
+
+# 3 resident in nursing home or in an institution: RESN TRUE  3970+6060=10030 
+# 4 high level of functional dependency severa:5127, grandep 2712  (como se hace en jerarquia este 7839 n - no tiene porque corresponder.. sera el n tras excluir los casos anteriores).. tenemos otra variable.. mirar en el chunck, al final hago un mix entre gdep y depe de vacunas-infeccion.. total 11036 DEPE TRUE
+
+# 5 invalid post code is.na(CZBS)
+
+
+
+# {r test220613} #####
+
+test220613 <- read_delim("poblacion_Pruebas_dtcas_06_2022.csv", 
+    delim = ";", escape_double = FALSE, trim_ws = TRUE, col_names = FALSE)  # 1633910
+
+  names(test220613) <- c("tori" ,"id" ,"tfreg", "tfval" ,  "ct","tmot", "tres" , "tcen" , "tamb" , "tprof" , "tmot2") # , "x"
+ 
+
+## nos interesa sacar o bien un basal (antes de mayo 2020), o bien hacer algo dinamico, de modo que lo que guardemos sea las pcr realizadas antes de estar infectado o vacunarse, o 28/05/21...
+
+##  solo con pcr-antigeno
+
+test220613 <- test220613 %>% select(-c(tamb,tmot,tcen,tfval))
+
+test220613 <- test220613 %>% filter(tori %in% c("PCR","Antigenos"))  # 1627129
+
+## quitar repetidos
+
+test220613 <- test220613 %>% mutate(id=as.character(id), tpos=tres=="Positivo", profr=tprof=="Profesional") %>% select(-c(tres))
+test220613 <- test220613 %>% mutate(ftes=as.Date(tfreg)) %>% select(-tfreg)
+
+test220613 <- test220613 %>% distinct(id,ftes, .keep_all = TRUE)   # 1581855
+
+## cuando situamos el punto 0 (en Navarra a ppios de diciembre ya comenzaba la escalada).. no se porque el paper plantea enero2022, quizas porque es entonces cuando empieza la tercera dosis?
+
+## por lo que veo para octubre ya estaban las dos primeras dosis... 
+
+## esto es importante para aplicar el calculo de los test previos al punto 0/ exclusiones de casos positivos...// voy a hacerlo ahora con los datos del articulo... pero entiendo que lo suyo es llevarlo a un mes (211201) o mes y medio (211115) antes!
+
+
+#PRFSS RESN DEPE CZBS
+
+## tiempo dependientes
+# 6 SARS-CoV-2 infection before Dec 23, 2021  (SACAR DE LA FUNCION TABLA0 -EN RELACION AL T0-)
+# 7 not completely vaccinated  VCIX 156434 (no tiEmpo dependiente) o se ha completado al menos tres meses antes del T0..[#9 989 156 booster dose before Dec 23, 2021]
+
+
+## NO
+# first vaccine before general recommendation by age  (? - TENDRIA QUE ELABORAR) (Only individuals who received their first dose after the recommended vaccination date for their age group were included (appendix p 2))
+# received ChAdOx1 nCoV-19 or mRNA heterologous vaccination
+# booster dose with unknown type of mRNA vaccine  (NO) NO DISTINGUIREMOS ENTRE VACUNAS O RNA-OTRAS
+
+test220613 <- test220613 %>% group_by(id) %>% arrange(ftes) %>% mutate(n=1:n())  %>% ungroup()
+
+setwd("~/Dropbox/ju/Asesorias/FranciscoSanchezSaez/targettrial/covidvacunas/Rdata")
+save(test220613, file="test220613.Rdata")
+
+```
+
+
