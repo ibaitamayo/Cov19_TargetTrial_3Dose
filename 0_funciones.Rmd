@@ -68,7 +68,7 @@ fymd <- function(x) {x=as.Date(ymd(str_sub(x, 1, 10)))}
 
 ## fnull0
 
-Función que transforma una cadena con texto "NULL" a un real 0.
+Función que transforma una cadena con texto "NULL" a un real 0. Esta función es un poco chunga, ya que pide cambiar de carácteres a numérico.
 
 ```{r fnull0}
 # de texto "NULL" a 0
