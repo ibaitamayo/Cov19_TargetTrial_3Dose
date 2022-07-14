@@ -1,5 +1,5 @@
 ---
-title: "Target Trial: Efectividad de la tercera dosis vacunal contra la infección por la variante Omicron en Navarra"
+title: "Criterios de exclusión estáticos"
 output: 
   html_document:
     code_folding: show
@@ -82,7 +82,7 @@ load("~/Dropbox/ju/Asesorias/FranciscoSanchezSaez/targettrial/covidvacunas/Rdata
 
 ```
 
-# Creación de pobana
+## Creación de pobana
 
 ***
 
@@ -100,6 +100,29 @@ Definir exclusiones flow chart
 # 3 resident in nursing home or in an institution: RESN TRUE  3970+6060=10030 
 # 4 high level of functional dependency severa:5127, grandep 2712  (como se hace en jerarquia este 7839 n - no tiene porque corresponder.. sera el n tras excluir los casos anteriores).. tenemos otra variable.. mirar en el chunck, al final hago un mix entre gdep y depe de vacunas-infeccion.. total 11036 DEPE TRUE
 # 5 invalid post code is.na(CZBS)
+
+```
+
+
+
+
+```{r exclusión}
+#PRFSS RESN DEPE CZBS
+
+## tiempo dependientes
+# 6 SARS-CoV-2 infection before Dec 23, 2021  (SACAR DE LA FUNCION TABLA0 -EN RELACION AL T0-)
+# 7 not completely vaccinated  VCIX 156434 (no tiEmpo dependiente) o se ha completado al menos tres meses antes del T0..[#9 989 156 booster dose before Dec 23, 2021]
+
+
+## NO
+# first vaccine before general recommendation by age  (? - TENDRIA QUE ELABORAR) (Only individuals who received their first dose after the recommended vaccination date for their age group were included (appendix p 2))
+# received ChAdOx1 nCoV-19 or mRNA heterologous vaccination
+# booster dose with unknown type of mRNA vaccine  (NO) NO DISTINGUIREMOS ENTRE VACUNAS O RNA-OTRAS
+
+test220613 <- test220613 %>% group_by(id) %>% arrange(ftes) %>% mutate(n=1:n())  %>% ungroup()
+
+setwd("~/Dropbox/ju/Asesorias/FranciscoSanchezSaez/targettrial/covidvacunas/Rdata")
+save(test220613, file="test220613.Rdata")
 
 ```
 

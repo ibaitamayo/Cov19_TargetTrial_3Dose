@@ -113,52 +113,41 @@ test220613 <- fread(file.path("Datos", "Brutos",
 Nos interesa sacar o bien un basal (antes de mayo 2020), o bien hacer algo dinamico, de modo que lo que guardemos sea las pcr realizadas antes de estar infectado o vacunarse, o 28/05/21.
 
 ```{r datos}
-#Escogemos pruebas con pcr-antigeno--------------------------------------------
+# Escoger pruebas con pcr-antigeno---------------------------------------------
 test220613 %>% count(tori)
-# test220613 <- test220613 %>% select(-c(tamb,tmot,tcen,tfval))
+# test220613 <- test220613 
 
-test0 <- test220613 %>% 
+test0 <- test220613 %>%
+  # quitar algunas variables
+  select(-c(tamb,tmot,tcen,tfval)) %>% 
+  # seleccionar PCR y antígenos
   filter(tori %in% c("PCR","Antigenos"))  # 1627129
 
 ```
 
 
 ```{r repetidos}
-##Quitar repetidos
+# Quitar repetidos-------------------------------------------------------------
 test1 <- test0 %>% 
   mutate(id = as.character(id), 
          tpos = tres == "Positivo", 
          profr = tprof == "Profesional") %>%
-  select( -c(tres))
-
-test220613 <- test220613 %>% mutate(ftes=as.Date(tfreg)) %>% select(-tfreg)
-
-test220613 <- test220613 %>% distinct(id,ftes, .keep_all = TRUE)   # 1581855
-
-##Cuando situamos el punto 0 (en Navarra a ppios de diciembre ya comenzaba la escalada).. no se porque el paper plantea enero2022, quizas porque es entonces cuando empieza la tercera dosis?
-
-## por lo que veo para octubre ya estaban las dos primeras dosis... 
-
-## esto es importante para aplicar el calculo de los test previos al punto 0/ exclusiones de casos positivos...// voy a hacerlo ahora con los datos del articulo... pero entiendo que lo suyo es llevarlo a un mes (211201) o mes y medio (211115) antes!
-
-
-#PRFSS RESN DEPE CZBS
-
-## tiempo dependientes
-# 6 SARS-CoV-2 infection before Dec 23, 2021  (SACAR DE LA FUNCION TABLA0 -EN RELACION AL T0-)
-# 7 not completely vaccinated  VCIX 156434 (no tiEmpo dependiente) o se ha completado al menos tres meses antes del T0..[#9 989 156 booster dose before Dec 23, 2021]
-
-
-## NO
-# first vaccine before general recommendation by age  (? - TENDRIA QUE ELABORAR) (Only individuals who received their first dose after the recommended vaccination date for their age group were included (appendix p 2))
-# received ChAdOx1 nCoV-19 or mRNA heterologous vaccination
-# booster dose with unknown type of mRNA vaccine  (NO) NO DISTINGUIREMOS ENTRE VACUNAS O RNA-OTRAS
-
-test220613 <- test220613 %>% group_by(id) %>% arrange(ftes) %>% mutate(n=1:n())  %>% ungroup()
-
-setwd("~/Dropbox/ju/Asesorias/FranciscoSanchezSaez/targettrial/covidvacunas/Rdata")
-save(test220613, file="test220613.Rdata")
+  select( -c(tres)) %>% 
+  mutate(ftes = as.Date(tfreg)) %>% 
+  select(-tfreg) %>% 
+  # seleccionar como mucho un test por persona y día
+  tidylog::distinct(id, ftes, .keep_all = TRUE)   # 1581855
 
 ```
 
+Cuando situamos el punto 0 (en Navarra a ppios de diciembre ya comenzaba la escalada). no se porque el paper plantea enero2022, ¿quizás porque es entonces cuando empieza la tercera dosis?
 
+por lo que veo para octubre ya estaban las dos primeras dosis...esto es importante para aplicar el calculo de los test previos al punto 0/ exclusiones de casos positivos...// voy a hacerlo ahora con los datos del articulo... pero entiendo que lo suyo es llevarlo a un mes (211201) o mes y medio (211115) antes!
+
+```{r}
+# guardar base test------------------------------------------------------------
+test220613_cleaned <- test1
+saveRDS(test220613_cleaned, file = file.path("Datos", "Procesados", 
+                                             "test220613_cleaned.RDS"))
+
+```
