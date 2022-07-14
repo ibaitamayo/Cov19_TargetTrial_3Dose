@@ -79,62 +79,27 @@ load("~/Dropbox/ju/Asesorias/FranciscoSanchezSaez/targettrial/covidvacunas/Rdata
 
 ## 86
 ## 86
-e_pres<-c()
-e_pres[1]<-"Código paciente (pac_unif_cod)"
-e_pres[2]<-"genero"
-e_pres[3]<-"Fecha nacimiento (exclusion)"
-e_pres[4]<-"grupo de edad, quinquenal salvo  (0,40],(90,110]"
-e_pres[5]<-"fecha defuncion"
-e_pres[6]<-"migrante (pais de nacimiento no España)"
-e_pres[7]<-"area (grupo de paises) de nacimiento"
-e_pres[8]<-"codigo aportacion farmaceutica (tsi)"
-e_pres[9]<-"vive en residencia true"
-e_pres[10]<-"unidad de convivencia, truncado (8 ó mas)"
-e_pres[11]<-"indicador numerico de domicilio"
-e_pres[12]<-"renta seccion censal categorizada -promedio 2011-2016-"
-e_pres[13]<-"codigo de zona basica -por centro de atencion-"
-e_pres[14]<-"profesional sociosanitario true"
-e_pres[15]<-"profesional educativo true"
-e_pres[16]<-"vulnerable"
-e_pres[17]<-"dependiente true"
-e_pres[18]<-"demencia"
-e_pres[19]<-"diabetes"
-e_pres[20]<-"enf. autoinmune"
-e_pres[21]<-"coronariopatia"
-e_pres[22]<-"insuficiencia renal cronica"
-e_pres[23]<-"enf pulmonar obstructiva cronica-EPOC"
-e_pres[24]<-"hiperlipemia"
-e_pres[25]<-"hipertension arterial (hta)"
-e_pres[26]<-"ictus"
-e_pres[27]<-"obesidad (imc>30)"
-e_pres[28]<-"indice masa corporal (imc)"
-e_pres[29]<-"indice masa corporal, categorias"
-e_pres[30]<-"recibe vacuna gripe campaña 2020"
-e_pres[31]<-"recibe vacuna gripe campaña 2021"
-e_pres[32]<-"tipo vacuna covid 1"
-e_pres[33]<-"vacunacion incompleta true"
-e_pres[34]<-"fecha vacuna covid 1"
-e_pres[35]<-"tipo vacuna covid 2"
-e_pres[36]<-"fecha vacuna covid 2"
-e_pres[37]<-"tipo vacuna covid 3"
-e_pres[38]<-"fecha vacuna covid 3"
-e_pres[39]<-"infeccion covid si/no (ref junio 2022)"
-e_pres[40]<-"fecha infeccion covid 1"
-e_pres[41]<-"fecha infeccion covid 2"
-e_pres[42]<-"fecha primer ingreso hospitalario"
-e_pres[43]<-"ingreso UCI si/no"
-e_pres[44]<-"fecha ingreso UCI"
+
+```
+
+# Creación de pobana
+
+***
+
+Definir exclusiones flow chart
+
+```{r }
 
 
+```
 
 
-descripcion<- tibble(Etiqueta=e_pres,Variable=names(pobana))
-#, `Descripción`=d_pres)
-kable(descripcion, format="html")%>%  
-        kable_styling(bootstrap_options = c("striped","hover", "condensed"), full_width = F, fixed_thead = F) %>%
-        column_spec(1:2, border_right = T) %>% column_spec(1, bold=T) %>%
-        column_spec(2, )
-
+```{r flujo}
+# 1 unable to link to National Registry (registro de personas con cupo en AP-publica)
+# 2 health-care workers or social workers PRFSS TRU 22719
+# 3 resident in nursing home or in an institution: RESN TRUE  3970+6060=10030 
+# 4 high level of functional dependency severa:5127, grandep 2712  (como se hace en jerarquia este 7839 n - no tiene porque corresponder.. sera el n tras excluir los casos anteriores).. tenemos otra variable.. mirar en el chunck, al final hago un mix entre gdep y depe de vacunas-infeccion.. total 11036 DEPE TRUE
+# 5 invalid post code is.na(CZBS)
 
 ```
 

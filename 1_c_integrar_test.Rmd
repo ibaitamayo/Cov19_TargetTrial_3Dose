@@ -88,34 +88,26 @@ source_rmd("0_funciones.rmd")
 pobana_0 <- readRDS(file = file.path("Datos", "Procesados", "pobana_0.RDS"))
 # 645209 
 
+test220613 <- read_delim(delim = ";", file = file.path("Datos", "Brutos",
+                                   "poblacion_Pruebas_dtcas_06_2022.csv"), 
+    escape_double = FALSE, trim_ws = TRUE, col_names = FALSE)  # 1633910
+
+  names(test220613) <- c("tori",
+                         "id",
+                         "tfreg",
+                         "tfval",
+                         "ct",
+                         "tmot",
+                         "tres",
+                         "tcen",
+                         "tamb",
+                         "tprof",
+                         "tmot2") # , "x"
+
 ```
 
-# Creación de pobana
 
-***
-
-Definir exclusiones flow chart
-
-```{r }
-
-
-```
-
-
-```{r flujo}
-# 1 unable to link to National Registry (registro de personas con cupo en AP-publica)
-# 2 health-care workers or social workers PRFSS TRU 22719
-# 3 resident in nursing home or in an institution: RESN TRUE  3970+6060=10030 
-# 4 high level of functional dependency severa:5127, grandep 2712  (como se hace en jerarquia este 7839 n - no tiene porque corresponder.. sera el n tras excluir los casos anteriores).. tenemos otra variable.. mirar en el chunck, al final hago un mix entre gdep y depe de vacunas-infeccion.. total 11036 DEPE TRUE
-# 5 invalid post code is.na(CZBS)
-
-
-test220613 <- read_delim("poblacion_Pruebas_dtcas_06_2022.csv", 
-    delim = ";", escape_double = FALSE, trim_ws = TRUE, col_names = FALSE)  # 1633910
-
-  names(test220613) <- c("tori" ,"id" ,"tfreg", "tfval" ,  "ct","tmot", "tres" , "tcen" , "tamb" , "tprof" , "tmot2") # , "x"
- 
-
+```{r datos}
 ## nos interesa sacar o bien un basal (antes de mayo 2020), o bien hacer algo dinamico, de modo que lo que guardemos sea las pcr realizadas antes de estar infectado o vacunarse, o 28/05/21...
 
 ##  solo con pcr-antigeno

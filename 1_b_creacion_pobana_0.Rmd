@@ -395,3 +395,69 @@ pobana_0 <- pob12
 saveRDS(pobana_0, file = file.path("Datos", "Procesados", "pobana_0.RDS"))
 
 ```
+
+# Descripción de pobana
+
+***
+
+```{r}
+e_pres <- c()
+e_pres[1] <-  "Código paciente (pac_unif_cod)"
+e_pres[2] <-  "Genero"
+e_pres[3] <-  "Fecha nacimiento (exclusion)"
+e_pres[4] <-  "Grupo de edad, quinquenal salvo  (0,40],(90,110]"
+e_pres[5] <-  "Fecha defuncion"
+e_pres[6] <-  "Migrante (pais de nacimiento no España)"
+e_pres[7] <-  "Área (grupo de paises) de nacimiento"
+e_pres[8] <-  "Codigo aportacion farmaceutica (tsi)"
+e_pres[9] <-  "Vive en residencia true"
+e_pres[10] <- "Unidad de convivencia, truncado (8 ó mas)"
+e_pres[11] <- "Indicador numerico de domicilio"
+e_pres[12] <- "Renta seccion censal categorizada -promedio 2011-2016-"
+e_pres[13] <- "Código de zona básica -por centro de atención-"
+e_pres[14] <- "Profesional sociosanitario true"
+e_pres[15] <- "Profesional educativo true"
+e_pres[16] <- "Vulnerable"
+e_pres[17] <- "Dependiente true"
+e_pres[18] <- "Demencia"
+e_pres[19] <- "Diabetes"
+e_pres[20] <- "Enfermedad autoinmune"
+e_pres[21] <- "Coronariopatia"
+e_pres[22] <- "Insuficiencia renal cronica"
+e_pres[23] <- "Enfermedad pulmonar obstructiva cronica-EPOC"
+e_pres[24] <- "Hiperlipemia"
+e_pres[25] <- "Hipertension arterial (hta)"
+e_pres[26] <- "Ictus"
+e_pres[27] <- "Obesidad (imc>30)"
+e_pres[28] <- "Indice masa corporal (imc)"
+e_pres[29] <- "Indice masa corporal, categorias"
+e_pres[30] <- "Recibe vacuna gripe campaña 2020"
+e_pres[31] <- "Recibe vacuna gripe campaña 2021"
+e_pres[32] <- "Tipo vacuna covid 1"
+e_pres[33] <- "Vacunacion incompleta true"
+e_pres[34] <- "Fecha vacuna covid 1"
+e_pres[35] <- "Tipo vacuna covid 2"
+e_pres[36] <- "Fecha vacuna covid 2"
+e_pres[37] <- "Tipo vacuna covid 3"
+e_pres[38] <- "Fecha vacuna covid 3"
+e_pres[39] <- "Infeccion covid si/no (ref junio 2022)"
+e_pres[40] <- "Fecha infeccion covid 1"
+e_pres[41] <- "Fecha infeccion covid 2"
+e_pres[42] <- "Fecha primer ingreso hospitalario"
+e_pres[43] <- "Ingreso UCI si/no"
+e_pres[44] <- "Fecha ingreso UCI"
+
+ 
+
+ 
+descripcion<- tibble(Etiqueta = e_pres,
+                     Variable = names(pobana_0))
+
+kable(descripcion, format = "html")%>%  
+        kable_styling(bootstrap_options = c("striped", "hover", "condensed"), 
+                      full_width = F, fixed_thead = F) %>%
+        column_spec(1:2, border_right = T) %>% column_spec(1, bold=T) %>%
+        column_spec(2, )
+
+```
+
