@@ -35,17 +35,17 @@ knitr::opts_chunk$set(eval = TRUE,
 ```
 
 ```{r librerias, echo=FALSE, message=FALSE, include = FALSE, warning=FALSE}
-source("0_a_librerias.R")
+# source("0_a_librerias.R")
+# ya se cargan cuando se carguen las funciones
 
 ```
-
 
 ```{r}
 # función para cargar un .Rmd como si se hiciese source de un .r---------------
 source_rmd = function(file, ...) {
-  tmp_file = tempfile(fileext = ".R")
+  tmp_file = tempfile(fileext=".R")
   on.exit(unlink(tmp_file), add = TRUE)
-  knitr::purl(file, output = tmp_file)
+  knitr::purl(file, output=tmp_file)
   source(file = tmp_file, ...)
 }
 
@@ -53,7 +53,7 @@ source_rmd = function(file, ...) {
 
 ```{r}
 # cargar funciones de 0_funciones----------------------------------------------
-source_rmd("0_funciones.rmd")
+source_rmd("0_b_funciones.rmd")
 
 ```
 
