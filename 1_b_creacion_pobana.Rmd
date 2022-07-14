@@ -90,13 +90,13 @@ Para crear *POBANA* se usan dos fuentes de datos de poblacion:
 
 - *pobna50en25* (ref a 21-01-21 ).
 
-- *pobanadic20*. 
+- *pobanadic20* (pobna88). 
 
 *POBANA* es la Tabla 1 del análisis, de la que se extraen los individuos aplicando el tiempo 0 y a la que solo falta vincular el numero de test negativos previos (que sale de la Tabla 2: test).
 
 ```{r pobna50en25}
 # cargar base------------------------------------------------------------------
-load(file.path("Datos", "Brutos", "pobna50en25.Rdata"))
+pobna50en25 <- readRDS(file.path("Datos", "Brutos", "pobna50en25.RDS"))
 
 # fnac fnacimiento
 # fdef fdefuncion
@@ -124,7 +124,7 @@ names(pobna50en25)
 # [46] "tesfu"      "tesn"       "test"       "fdef210115" "vcf1d"   
 
 pob <- pobna50en25 %>% 
-  select(id, gen, migran, ctsi, res, ucn8, rentasc, ptipo, deme:cimc)
+  dplyr::select(id, gen, migran, ctsi, res, ucn8, rentasc, ptipo, deme:cimc)
 
 ```
 
