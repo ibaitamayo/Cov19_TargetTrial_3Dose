@@ -84,7 +84,11 @@ dat220613_sin_dup <- readRDS(file.path("Datos", "Procesados",
 
 # Creación de POBANA
 
-```{r datos2}
+***
+
+Uso dos fuentes de datos de poblacion *pobna50en25* (ref a 21-01-21 ) y *pobanadic20*.
+
+```{r pobna50en25}
 # fnac fnacimiento
 # fdef fdefuncion
 # res Es_R esidente
@@ -97,8 +101,6 @@ dat220613_sin_dup <- readRDS(file.path("Datos", "Procesados",
 # cvsn ha_tenido_covid
 # cvhsn Ha_Tenido_Hospitalizacion
 # cvhusn Hospitalizado_En_UCI
-
-# {r datos de población pobna20en25, pobna88 (pobnadic20.Rdata)} ####
 
 ## genera pobana: uso dos fuentes de datos de poblacion pobna50en25 (ref a 21-01-21 ) y pobanadic20 ####
 # es la tabla 1 del analisis, de la que se extraen los individuos aplicando el tiempo 0.. y a la que solo falta vincular el numero de testnegativos previos.. que sale de la tabla 2 (test)
@@ -117,9 +119,14 @@ names(pobna50en25)
 # [41] "mfpcr"      "mct"        "mfinh"      "mfinu"      "tesf1"     
 # [46] "tesfu"      "tesn"       "test"       "fdef210115" "vcf1d"   
 
-pob <- pobna50en25 %>% select(id,gen,migran,ctsi,res,ucn8,rentasc,ptipo,deme:cimc)
+pob <- pobna50en25 %>% 
+  select(id, gen, migran, ctsi, res, ucn8, rentasc, ptipo, deme:cimc)
 
-load("~/Dropbox/ju/covid19/Rdata/pobnadic20.Rdata")
+```
+
+
+```{r pobnadic20}
+load(file.path("Datos", "Brutos", "pobnadic20.Rdata"))
 
 pob <- left_join(pob, select(pobna88,id,fnac,lapna,imc))
 
