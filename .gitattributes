@@ -2,3 +2,5 @@
 *.TeX linguist-detectable=false
 *.css linguist-detectable=false
 *.bib linguist-detectable=false
+*.csl linguist-detectable=false
+
