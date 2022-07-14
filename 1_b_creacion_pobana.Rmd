@@ -55,8 +55,19 @@ library(plotrix)  # para sacar piramides descriptivas de las tablas_analisis
 library(ggpmisc) # para series temporales
 library(survminer)
 library(survival)
+# hay alguna librería que enmascara funciones de dplyr, como select o count
+library(conflicted)
+
 
 ```
+
+```{r}
+# usar fuciones de tidyverse antes que las de otros paquetes-------------------
+conflict_prefer_all("tidyverse")
+conflict_prefer_all("dplyr")
+
+```
+
 
 ```{r}
 # función para cargar un .Rmd como si se hiciese source de un .r---------------
@@ -90,7 +101,7 @@ Para crear *POBANA* se usan dos fuentes de datos de poblacion:
 
 - *pobna50en25* (ref a 21-01-21 ).
 
-- *pobanadic20* (pobna88). 
+- *pobna88* (pobna88). 
 
 *POBANA* es la Tabla 1 del análisis, de la que se extraen los individuos aplicando el tiempo 0 y a la que solo falta vincular el numero de test negativos previos (que sale de la Tabla 2: test).
 
@@ -123,18 +134,27 @@ names(pobna50en25)
 # [41] "mfpcr"      "mct"        "mfinh"      "mfinu"      "tesf1"     
 # [46] "tesfu"      "tesn"       "test"       "fdef210115" "vcf1d"   
 
-pob <- pobna50en25 %>% 
-  dplyr::select(id, gen, migran, ctsi, res, ucn8, rentasc, ptipo, deme:cimc)
+pob_0 <- pobna50en25 %>% 
+  select(id, gen, migran, ctsi, res, ucn8, rentasc, ptipo, deme:cimc)
 
 ```
 
 
-```{r pobnadic20}
+```{r pobna88}
 # cargar base------------------------------------------------------------------
-load(file.path("Datos", "Brutos", "pobnadic20.Rdata"))
+pobna88 <- readRDS(file.path("Datos", "Brutos", "pobna88.RDS"))
 
-pob <- left_join(pob, select(pobna88, id, fnac, lapna, imc))
+# unir pob_0 con pobna88-------------------------------------------------------
+pob <- left_join(pob_0, select(pobna88, id, fnac, lapna, imc))
 
+```
+
+```{r}
+
+```
+
+
+```{r pobana}
 ## la fuente de poblacion es pob (665077), en vacunas-infeccion hay más poblacion (dat220613 -691394-) trabajamos sobre los datos coincidentes (645635) ###
 
 ##  pobid #### 645635
@@ -367,7 +387,7 @@ save(pobid, dat220613, pob, pobana,
      file = "pobana_ext.Rdata")  ## AQUI QUEDA UNA VERSION DE POBANA PREVIA A CREAR LAS EXCLUSIONES 
 save(pobana, file = "pobana.Rdata")
 
-``` 
+```
 
 
 ```{r datos2}
