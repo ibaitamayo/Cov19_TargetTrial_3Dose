@@ -90,34 +90,36 @@ pobana_0 <- readRDS(file = file.path("Datos", "Procesados", "pobana_0.RDS"))
 
 ```
 
-# Creación de POBANA
+# Creación de pobana
+
+***
+
+Definir exclusiones flow chart
+
+```{r }
+# varios criterios de edad-----------------------------------------------------
+# - GEDAD  (años cumplidos a 2022/01/01)
+pobana_0 %>% count(gedad != "(0,40]") 
+# Excluye a 270654 + 3 NA = 270657
+
+# - mayores de 40 años (cumplen 40 años en 2021) FNAC 
+pobana_0 %>% count(lubridate::year(fnac) <= 1981)
+# Excluye a 266177
+
+# - 40 años o mayores de 40 (cumplen 40 años en 2022) FNAC 
+pobana_0 %>% count(lubridate::year(fnac) <= 1982)
+# Excluye a 257298
+
+```
 
 
-
-
-```{r datos2}
-## define exclusiones flow chart ####
-
-# 0 mayores de 40 años (cumplen 40 años en 2021) FNAC 266177 o GEDAD 270654 (años cumplidos a 2022/01/01)
-
-# table(pobana$gedad=="(0,40]")
-#  FALSE   TRUE 
-# 374552 270654 
-#table(year(pobana$fnac)>1981)
-#  FALSE   TRUE 
-# 379032 266177 
-
+```{r flujo}
 # 1 unable to link to National Registry (registro de personas con cupo en AP-publica)
 # 2 health-care workers or social workers PRFSS TRU 22719
-
 # 3 resident in nursing home or in an institution: RESN TRUE  3970+6060=10030 
 # 4 high level of functional dependency severa:5127, grandep 2712  (como se hace en jerarquia este 7839 n - no tiene porque corresponder.. sera el n tras excluir los casos anteriores).. tenemos otra variable.. mirar en el chunck, al final hago un mix entre gdep y depe de vacunas-infeccion.. total 11036 DEPE TRUE
-
 # 5 invalid post code is.na(CZBS)
 
-
-
-# {r test220613} #####
 
 test220613 <- read_delim("poblacion_Pruebas_dtcas_06_2022.csv", 
     delim = ";", escape_double = FALSE, trim_ws = TRUE, col_names = FALSE)  # 1633910

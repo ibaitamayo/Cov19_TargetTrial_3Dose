@@ -1,5 +1,5 @@
 ---
-title: "Preprocesado"
+title: "Preprocesado: a) Arreglar base y eliminar duplicados"
 output: 
   html_document:
     code_folding: show
