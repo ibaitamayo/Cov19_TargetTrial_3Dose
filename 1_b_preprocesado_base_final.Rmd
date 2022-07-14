@@ -78,18 +78,13 @@ source_rmd("0_funciones.rmd")
 ```{r datos}
 # cargar datos----------------------------------------------------------------
 dat220613_sin_dup <- readRDS(file.path("Datos", "Procesados",
-                                     "dat220613_sin_dup.RDS"))
+                                     "dat220613_sin_dup.RDS")) # 691327
 
 ```
 
-# VOY POR AQUÍ
+# Creación de POBANA
 
-```{r datos}
-##En lugar de quitar los duplicados sin criterio, selecciono
-dat220613_step3 <- dat220613_sin_dup %>%
-  distinct(id, .keep_all = TRUE)  # 691327
-
-
+```{r datos2}
 # fnac fnacimiento
 # fdef fdefuncion
 # res Es_R esidente
@@ -108,7 +103,7 @@ dat220613_step3 <- dat220613_sin_dup %>%
 ## genera pobana: uso dos fuentes de datos de poblacion pobna50en25 (ref a 21-01-21 ) y pobanadic20 ####
 # es la tabla 1 del analisis, de la que se extraen los individuos aplicando el tiempo 0.. y a la que solo falta vincular el numero de testnegativos previos.. que sale de la tabla 2 (test)
 
-load("~/Dropbox/ju/covid19/Rdata/pobna50en25.Rdata")
+load(file.path("Datos", "Brutos", "pobna50en25.Rdata"))
 
 names(pobna50en25)
 #  [1] "id"         "gdep"       "gen"        "edad"       "pnac"      
@@ -359,6 +354,10 @@ setwd("~/Dropbox/ju/Asesorias/FranciscoSanchezSaez/targettrial/covidvacunas/Rdat
 save(pobid,dat220613,pob,pobana,file="pobana_ext.Rdata")  ## AQUI QUEDA UNA VERSION DE POBANA PREVIA A CREAR LAS EXCLUSIONES 
 save(pobana,file="pobana.Rdata")
 
+```
+
+
+```{r datos2}
 ## define exclusiones flow chart ####
 
 # 0 mayores de 40 años (cumplen 40 años en 2021) FNAC 266177 o GEDAD 270654 (años cumplidos a 2022/01/01)
