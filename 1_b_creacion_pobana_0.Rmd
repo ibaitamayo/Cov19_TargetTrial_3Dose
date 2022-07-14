@@ -1,5 +1,5 @@
 ---
-title: "Preprocesado: a) Crear base pobana_0"
+title: "Preprocesado: b) Crear base pobana_0"
 output: 
   html_document:
     code_folding: show
@@ -351,11 +351,6 @@ pob10 %>% count(is.na(czbs))
 
 
 ```{r pob11}
-# mayores de 40 años (cumplen 40 años en 2021)---------------------------------
-pob10 %>% count(lubridate::year(fnac) > 1981)
-#  FALSE   TRUE 
-# 379032 266177 
-
 # grupos de edad---------------------------------------------------------------
 ## edad a 2022/01/01
 pob11 <- pob10 %>% 
@@ -365,6 +360,19 @@ pob11 <- pob10 %>%
   select(-aseg)
 
 pob11 %>% count(gedad)
+
+# varios criterios de edad-----------------------------------------------------
+# - GEDAD  (años cumplidos a 2022/01/01)
+pob11 %>% count(gedad != "(0,40]") 
+# Excluye a 270654 + 3 NA = 270657
+
+# - mayores de 40 años (cumplen 40 años en 2021) FNAC 
+pob11 %>% count(lubridate::year(fnac) <= 1981)
+# Excluye a 266177
+
+# - 40 años o mayores de 40 (cumplen 40 años en 2022) FNAC 
+pob11 %>% count(lubridate::year(fnac) <= 1982)
+# Excluye a 257298
 
 ```
 

@@ -97,18 +97,7 @@ pobana_0 <- readRDS(file = file.path("Datos", "Procesados", "pobana_0.RDS"))
 Definir exclusiones flow chart
 
 ```{r }
-# varios criterios de edad-----------------------------------------------------
-# - GEDAD  (años cumplidos a 2022/01/01)
-pobana_0 %>% count(gedad != "(0,40]") 
-# Excluye a 270654 + 3 NA = 270657
 
-# - mayores de 40 años (cumplen 40 años en 2021) FNAC 
-pobana_0 %>% count(lubridate::year(fnac) <= 1981)
-# Excluye a 266177
-
-# - 40 años o mayores de 40 (cumplen 40 años en 2022) FNAC 
-pobana_0 %>% count(lubridate::year(fnac) <= 1982)
-# Excluye a 257298
 
 ```
 
