@@ -34,37 +34,8 @@ knitr::opts_chunk$set(eval = TRUE,
 
 ```
 
-
-```{r libraries, echo=FALSE, message=FALSE, include = FALSE, warning=FALSE}
-library(readxl)
-library(readr)
-library(data.table)
-library(lubridate)
-library(tidyverse)
-library(knitr)
-library(kableExtra)
-library(plyr)
-library(dplyr)
-library(ggpubr)
-library(scales)
-library(stringr)
-library(plotly)
-library(Matching)
-#library(MatchIt)
-library(plotrix)  # para sacar piramides descriptivas de las tablas_analisis
-library(ggpmisc) # para series temporales
-library(survminer)
-library(survival)
-# hay alguna librería que enmascara funciones de dplyr, como select o count
-library(conflicted)
-
-
-```
-
-```{r}
-# usar fuciones de tidyverse antes que las de otros paquetes-------------------
-conflict_prefer_all("tidyverse")
-conflict_prefer_all("dplyr")
+```{r librerias, echo=FALSE, message=FALSE, include = FALSE, warning=FALSE}
+source("0_a_librerias.R")
 
 ```
 
