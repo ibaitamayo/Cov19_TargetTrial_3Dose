@@ -148,6 +148,17 @@ pobna88 <- readRDS(file.path("Datos", "Brutos", "pobna88.RDS"))
 pob <- left_join(pob_0, select(pobna88, id, fnac, lapna, imc))
 
 ```
+<<<<<<< HEAD
+=======
+
+```{r}
+
+```
+
+
+```{r pobana}
+## la fuente de poblacion es pob (665077), en vacunas-infeccion hay más poblacion (dat220613 -691394-) trabajamos sobre los datos coincidentes (645635) ###
+>>>>>>> 93de562a998cf757eb3dce094d9ca6dceb643272
 
 
 ```{r pobana}
