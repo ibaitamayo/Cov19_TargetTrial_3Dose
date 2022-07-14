@@ -1,0 +1,169 @@
+---
+title: "Preprocesado"
+output: 
+  html_document:
+    code_folding: show
+    highlight: espresso
+    css: style.css
+    keep_md: yes
+    number_sections: yes
+    theme: readable
+    toc: yes  
+    toc_float:
+      collapsed: yes
+      smooth_scroll: yes
+      toc_depth: 3     
+editor_options: 
+  chunk_output_type: inline
+---
+
+
+```{r set-global-options, echo = FALSE}
+knitr::opts_chunk$set(eval = TRUE, 
+                      echo = TRUE, 
+                      cache = FALSE,
+                      include = TRUE,
+                      collapse = FALSE,
+                       dependson = NULL,
+                      engine = "R", # Chunks will always have R code, unless noted
+                      error = TRUE,
+                      fig.path="Figures/",  # Set the figure options
+                      fig.align = "center", 
+                      fig.width = 12,
+                      fig.height = 12)
+
+```
+
+
+```{r libraries, echo=FALSE, message=FALSE, include = FALSE, warning=FALSE}
+library(readxl)
+library(readr)
+library(data.table)
+library(lubridate)
+library(tidyverse)
+library(knitr)
+library(kableExtra)
+library(plyr)
+library(dplyr)
+library(ggpubr)
+library(scales)
+library(stringr)
+library(plotly)
+library(Matching)
+#library(MatchIt)
+library(plotrix)  # para sacar piramides descriptivas de las tablas_analisis
+library(ggpmisc) # para series temporales
+library(survminer)
+library(survival)
+library(conflicted)
+
+```
+
+```{r}
+# usar fuciones de tidyverse antes que las de otros paquetes-------------------
+conflict_prefer_all("tidyverse")
+conflict_prefer_all("dplyr")
+
+```
+
+```{r}
+# función para cargar un .Rmd como si se hiciese source de un .r---------------
+source_rmd = function(file, ...) {
+  tmp_file = tempfile(fileext = ".R")
+  on.exit(unlink(tmp_file), add = TRUE)
+  knitr::purl(file, output = tmp_file)
+  source(file = tmp_file, ...)
+}
+
+```
+
+```{r}
+# cargar funciones de 0_funciones----------------------------------------------
+source_rmd("0_funciones.rmd")
+
+```
+
+```{r datos}
+# cargar datos----------------------------------------------------------------
+pobana_0 <- readRDS(file = file.path("Datos", "Procesados", "pobana_0.RDS"))
+# 645209 
+
+```
+
+# Creación de POBANA
+
+
+
+
+```{r datos2}
+## define exclusiones flow chart ####
+
+# 0 mayores de 40 años (cumplen 40 años en 2021) FNAC 266177 o GEDAD 270654 (años cumplidos a 2022/01/01)
+
+# table(pobana$gedad=="(0,40]")
+#  FALSE   TRUE 
+# 374552 270654 
+#table(year(pobana$fnac)>1981)
+#  FALSE   TRUE 
+# 379032 266177 
+
+# 1 unable to link to National Registry (registro de personas con cupo en AP-publica)
+# 2 health-care workers or social workers PRFSS TRU 22719
+
+# 3 resident in nursing home or in an institution: RESN TRUE  3970+6060=10030 
+# 4 high level of functional dependency severa:5127, grandep 2712  (como se hace en jerarquia este 7839 n - no tiene porque corresponder.. sera el n tras excluir los casos anteriores).. tenemos otra variable.. mirar en el chunck, al final hago un mix entre gdep y depe de vacunas-infeccion.. total 11036 DEPE TRUE
+
+# 5 invalid post code is.na(CZBS)
+
+
+
+# {r test220613} #####
+
+test220613 <- read_delim("poblacion_Pruebas_dtcas_06_2022.csv", 
+    delim = ";", escape_double = FALSE, trim_ws = TRUE, col_names = FALSE)  # 1633910
+
+  names(test220613) <- c("tori" ,"id" ,"tfreg", "tfval" ,  "ct","tmot", "tres" , "tcen" , "tamb" , "tprof" , "tmot2") # , "x"
+ 
+
+## nos interesa sacar o bien un basal (antes de mayo 2020), o bien hacer algo dinamico, de modo que lo que guardemos sea las pcr realizadas antes de estar infectado o vacunarse, o 28/05/21...
+
+##  solo con pcr-antigeno
+
+test220613 <- test220613 %>% select(-c(tamb,tmot,tcen,tfval))
+
+test220613 <- test220613 %>% filter(tori %in% c("PCR","Antigenos"))  # 1627129
+
+## quitar repetidos
+
+test220613 <- test220613 %>% mutate(id=as.character(id), tpos=tres=="Positivo", profr=tprof=="Profesional") %>% select(-c(tres))
+test220613 <- test220613 %>% mutate(ftes=as.Date(tfreg)) %>% select(-tfreg)
+
+test220613 <- test220613 %>% distinct(id,ftes, .keep_all = TRUE)   # 1581855
+
+## cuando situamos el punto 0 (en Navarra a ppios de diciembre ya comenzaba la escalada).. no se porque el paper plantea enero2022, quizas porque es entonces cuando empieza la tercera dosis?
+
+## por lo que veo para octubre ya estaban las dos primeras dosis... 
+
+## esto es importante para aplicar el calculo de los test previos al punto 0/ exclusiones de casos positivos...// voy a hacerlo ahora con los datos del articulo... pero entiendo que lo suyo es llevarlo a un mes (211201) o mes y medio (211115) antes!
+
+
+#PRFSS RESN DEPE CZBS
+
+## tiempo dependientes
+# 6 SARS-CoV-2 infection before Dec 23, 2021  (SACAR DE LA FUNCION TABLA0 -EN RELACION AL T0-)
+# 7 not completely vaccinated  VCIX 156434 (no tiEmpo dependiente) o se ha completado al menos tres meses antes del T0..[#9 989 156 booster dose before Dec 23, 2021]
+
+
+## NO
+# first vaccine before general recommendation by age  (? - TENDRIA QUE ELABORAR) (Only individuals who received their first dose after the recommended vaccination date for their age group were included (appendix p 2))
+# received ChAdOx1 nCoV-19 or mRNA heterologous vaccination
+# booster dose with unknown type of mRNA vaccine  (NO) NO DISTINGUIREMOS ENTRE VACUNAS O RNA-OTRAS
+
+test220613 <- test220613 %>% group_by(id) %>% arrange(ftes) %>% mutate(n=1:n())  %>% ungroup()
+
+setwd("~/Dropbox/ju/Asesorias/FranciscoSanchezSaez/targettrial/covidvacunas/Rdata")
+save(test220613, file="test220613.Rdata")
+
+```
+
+
