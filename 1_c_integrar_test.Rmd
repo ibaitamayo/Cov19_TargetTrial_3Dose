@@ -114,13 +114,19 @@ test1 <- test0 %>%
 
 ```
 
-Cuando situamos el punto 0 (en Navarra a ppios de diciembre ya comenzaba la escalada). no se porque el paper plantea enero2022, ¿quizás porque es entonces cuando empieza la tercera dosis?
+```{r}
+# Contar número de test realizado----------------------------------------------
+test220613_cleaned <- test1 %>% 
+  group_by(id) %>%
+  arrange(ftes) %>%
+  mutate(n = 1:n()) %>% 
+  ungroup()
 
-por lo que veo para octubre ya estaban las dos primeras dosis...esto es importante para aplicar el calculo de los test previos al punto 0/ exclusiones de casos positivos...// voy a hacerlo ahora con los datos del articulo... pero entiendo que lo suyo es llevarlo a un mes (211201) o mes y medio (211115) antes!
+```
+
 
 ```{r}
 # guardar base test------------------------------------------------------------
-test220613_cleaned <- test1
 saveRDS(test220613_cleaned, file = file.path("Datos", "Procesados", 
                                              "test220613_cleaned.RDS"))
 

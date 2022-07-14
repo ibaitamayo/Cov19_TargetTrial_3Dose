@@ -14,7 +14,7 @@ output:
       smooth_scroll: yes
       toc_depth: 3     
 editor_options: 
-  chunk_output_type: console
+  chunk_output_type: inline
 ---
 
 
@@ -57,23 +57,25 @@ source_rmd("0_b_funciones.rmd")
 ```
 
 
-```{r describe la tabla 1 pobana, echo=FALSE, eval=TRUE, message=FALSE, warning=FALSE}
+```{r cargar-datos, echo=FALSE, eval=TRUE, message=FALSE, warning=FALSE}
 # cargar datos-----------------------------------------------------------------
 load(file.path("Datos", "Brutos", "ttcvc3d_220628.Rdata"))
 
 ```
 
-## Creación de pobana
+# Introducción
+
+***
+
+Cuando situamos el punto 0 (en Navarra a ppios de diciembre ya comenzaba la escalada). no se porque el paper plantea enero2022, ¿quizás porque es entonces cuando empieza la tercera dosis?
+
+por lo que veo para octubre ya estaban las dos primeras dosis...esto es importante para aplicar el calculo de los test previos al punto 0/ exclusiones de casos positivos...// voy a hacerlo ahora con los datos del articulo... pero entiendo que lo suyo es llevarlo a un mes (211201) o mes y medio (211115) antes!
+
+# Exclusiones estáticas
 
 ***
 
 Definir exclusiones flow chart
-
-```{r }
-
-
-```
-
 
 ```{r flujo}
 # 1 unable to link to National Registry (registro de personas con cupo en AP-publica)
@@ -85,12 +87,10 @@ Definir exclusiones flow chart
 ```
 
 
-
-
 ```{r exclusión}
 #PRFSS RESN DEPE CZBS
 
-## tiempo dependientes
+##Tiempo dependientes
 # 6 SARS-CoV-2 infection before Dec 23, 2021  (SACAR DE LA FUNCION TABLA0 -EN RELACION AL T0-)
 # 7 not completely vaccinated  VCIX 156434 (no tiEmpo dependiente) o se ha completado al menos tres meses antes del T0..[#9 989 156 booster dose before Dec 23, 2021]
 
@@ -100,15 +100,10 @@ Definir exclusiones flow chart
 # received ChAdOx1 nCoV-19 or mRNA heterologous vaccination
 # booster dose with unknown type of mRNA vaccine  (NO) NO DISTINGUIREMOS ENTRE VACUNAS O RNA-OTRAS
 
-test220613 <- test220613 %>% group_by(id) %>% arrange(ftes) %>% mutate(n=1:n())  %>% ungroup()
-
-setwd("~/Dropbox/ju/Asesorias/FranciscoSanchezSaez/targettrial/covidvacunas/Rdata")
-save(test220613, file="test220613.Rdata")
-
 ```
 
 
-## Time series of exposure and outcome (T0= Jan 3, 2022)
+## Time series of exposure and outcome (T0 = Jan 3, 2022)
 
 ```{r series temporales, echo=FALSE, eval=TRUE, message=FALSE, include = TRUE, warning=FALSE}
 
