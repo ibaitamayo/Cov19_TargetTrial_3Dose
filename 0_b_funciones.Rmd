@@ -100,7 +100,7 @@ hacer_flujo <- function(poblacion,
                         exc = lista_exclusion
                    ) 
   {
-  print(glue("n de partida: {nrow(pob)}"))
+  print(glue("n de partida: {nrow(poblacion)}"))
 
   for( i in seq_along(exc$criterios)) {
   poblacion <- excluir(pob = poblacion,

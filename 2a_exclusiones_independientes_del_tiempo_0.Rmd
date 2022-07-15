@@ -59,12 +59,7 @@ source_rmd("0_b_funciones.rmd")
 
 ```{r cargar-datos, echo=FALSE, eval=TRUE, message=FALSE, warning=FALSE}
 # cargar datos-----------------------------------------------------------------
-# load(file.path("Datos", "Brutos", "ttcvc3d_220628.Rdata"))
-
 pobana_0 <- readRDS(file = file.path("Datos", "Procesados", "pobana_0.RDS"))
-
-test220613_cleaned <- readRDS(file = file.path("Datos", "Procesados", 
-                                             "test220613_cleaned.RDS"))
 
 ```
 
@@ -72,7 +67,7 @@ test220613_cleaned <- readRDS(file = file.path("Datos", "Procesados",
 
 ***
 
-En este .Rmd se realizan las exclusiones que no dependen del tiempo 0 y por tanto se realizan antes de determinar la fecha (fechas) de inicio de las emulaciones de los ensayos clínicos. Se alimenta a la función con una lista que contiene el texto del criterio de exclusión, para que se muestre por pantalla, y de las variables que definen dicho criterio. De momento, el tipo de variables que definen las exclusiones son de dos tipos:
+En este .Rmd se realizan las **exclusiones que no dependen del tiempo 0** y por tanto se realizan antes de determinar la fecha (fechas) de inicio de las emulaciones de los ensayos clínicos. Se alimenta a la función con una lista que contiene el texto del criterio de exclusión, para que se muestre por pantalla, y de las variables que definen dicho criterio. De momento, el tipo de variables que definen las exclusiones son de dos tipos:
 
 - Lógicas. Sí el valor es **TRUE**, es necesario excluir al individuo.
 
@@ -132,7 +127,7 @@ hacer_flujo <- function(poblacion,
                         exc = lista_exclusion
                    ) 
   {
-  print(glue("n de partida: {nrow(pob)}"))
+  print(glue("n de partida: {nrow(poblacion)}"))
 
   for(i in seq_along(exc$criterios)) {
   poblacion <- excluir(pob = poblacion,
@@ -144,8 +139,8 @@ hacer_flujo <- function(poblacion,
 
 ```
 
-
 ```{r}
+# aplicar exclusiones independientes del tiempo_0------------------------------
 pobana_1 <- hacer_flujo(poblacion = pobana_0, 
             exc = lista_exclusion)
 
