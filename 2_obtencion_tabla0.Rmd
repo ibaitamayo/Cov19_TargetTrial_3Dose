@@ -59,7 +59,12 @@ source_rmd("0_b_funciones.rmd")
 
 ```{r cargar-datos, echo=FALSE, eval=TRUE, message=FALSE, warning=FALSE}
 # cargar datos-----------------------------------------------------------------
-load(file.path("Datos", "Brutos", "ttcvc3d_220628.Rdata"))
+# load(file.path("Datos", "Brutos", "ttcvc3d_220628.Rdata"))
+
+pobana_0 <- readRDS(file = file.path("Datos", "Procesados", "pobana_0.RDS"))
+
+test220613_cleaned <- readRDS(file = file.path("Datos", "Procesados", 
+                                             "test220613_cleaned.RDS"))
 
 ```
 
@@ -102,29 +107,7 @@ Definir exclusiones flow chart
 
 ```
 
-## Time series of exposure and outcome (T0 = Jan 3, 2022)
 
-```{r series temporales, echo=FALSE, eval=TRUE, message=FALSE, include = TRUE, warning=FALSE}
-## como son las distribuciones de vacunacion e infeccion####
-###serie temporal de vacunaciones ####
-
-min <- as.Date("2021-01-01")
-max <- NA
-
-ggplotly(ggplot(data = pobana  %>% group_by(fvc2) %>% summarise(n=n()) %>% na.omit(), aes(x = fvc2, y = n))+ geom_line(color = "#E7B800", size = 1) + scale_x_date(limits = c(min, max), date_labels = "%b/%y") + stat_peaks(colour = "purple") + ggtitle("Segunda dosis"))
-
-
-ggplotly(ggplot(data = pobana  %>% group_by(fcv1) %>% summarise(n=n()) %>% na.omit(), aes(x = fcv1, y = n))+ geom_line(color = "#E7B800", size = 1) + scale_x_date(limits = c(min, max), date_labels = "%b/%y") + stat_peaks(colour = "purple") + ggtitle("Infecciones"))
-
-
-min <- as.Date("2021-09-01")
-max <- NA
-
-ggplotly(ggplot(data = pobana  %>% group_by(fvc3) %>% summarise(n=n()) %>% na.omit(), aes(x = fvc3, y = n))+ geom_line(color = "#E7B800", size = 1) + scale_x_date(limits = c(min, max), date_labels = "%b/%y") +stat_peaks(colour = "purple") + ggtitle("Tercera dosis"))
-         
-        
-
-```
 
 # Programación
 
@@ -144,72 +127,167 @@ ggplotly(ggplot(data = pobana  %>% group_by(fvc3) %>% summarise(n=n()) %>% na.om
                                                       # zbs desconocida
              * selecciona variables para el analisis, pasando a numericas las candidatas para el matching 
              
+      
+```{r}
+# se crean listas que dependen del proyecto------------------------------------
+lista_criterios_exclusion <- lst(
+  c1 = "Excluyendo: socio y/o sanitarios...",
+  c2 = "Excluyendo: trabj educacion...", # no tengo claro que se hayan de excluir
+  c3 = "Excluyendo: viven en residencia...",
+  c4 = "Excluyendo: dependientes...",
+  c5 = "Excluyendo: zona basica desconocida...",
+  c6 = "Excluyendo: tuvo infección previa...", # esta es dependiente del tiempo
+  c7 = "Excluyendo: no finalizo vacunacion completa 90 dias antes..."
+)
+
+lista_variables_exclusion <- lst(
+  v1 = "prfss",
+  v2 = "educa",
+  v3 = "resn",
+  v4 = "depe",
+  v5 = "czbs"
+)
+
+pobana_0 %>% count(get(lista_variables_exclusion$v1))
+pobana_0 %>% count(get(lista_variables_exclusion$v2))
+pobana_0 %>% count(get(lista_variables_exclusion$v3))
+pobana_0 %>% count(get(lista_variables_exclusion$v4))
+pobana_0 %>% count(get(lista_variables_exclusion$v5))
+
+```
+
+
+```{r}
+
+f_flow <- function(fecha_0 = "2022-01-14", 
+                   pob = pobana_0,
+                   criterios_exclusion = lista_criterios_exclusion,
+                   variables_exclusion = lista_variables_exclusion
+                   ) {
+  fecha0 <- ymd(fecha_0)
+  print(paste("n de partida :", nrow(pob)))
+  
+  print(criterios_exclusion$c1) 
+  pob %>% filter(is.na(get(lista_variables_exclusion$v1)) |
+                     get(lista_variables_exclusion$v1) != TRUE) -> pob
+    print(paste("n :", nrow(pob)))}
+
+f_flow(fecha_0 = "2022-01-14")
+
+```
+
+
+```{r}
+print("Excluyendo: trabj educacion...") 
+  pobana %>% filter(is.na(educa) | educa != TRUE) -> pobana 
+    print(paste("n :", nrow(pobana)))  
+  
+  print("Excluyendo: viven en residencia...") 
+  pobana %>% filter(is.na(resn) | resn != TRUE) -> pobana
+    print(paste("n :", nrow(pobana)))
+  
+  print("Excluyendo:dependientes...")   
+  pobana %>% filter(is.na(depe) | depe != TRUE)->pobana
+    print(paste("n :", nrow(pobana)))
+  
+  print("Excluyendo: zona basica desconocida...")   
+  pobana %>% filter(!is.na(czbs)) -> pobana 
+    print(paste("n :", nrow(pobana)))
+  
+ 
+  
+```
+      
              
 ```{r f_tabla0, message=FALSE, include = TRUE, warning=FALSE}
-
-f_tabla0 <- function(fecha0 = "2022-01-14", file_Rdata_poblacion="Rdata/pobana.Rdata", file_Rdata_test="Rdata/test220613.Rdata") {
-  fecha0=ymd(fecha0)
-  print("Asegurate de que Knit Directory es Current working directory")
-  if (!"pobana" %in% ls(envir = .GlobalEnv)){
-    load(file_Rdata_poblacion,envir = .GlobalEnv)
-  }
-  if (!"test220613"%in% ls(envir = .GlobalEnv)){
-  load(file_Rdata_test,envir = .GlobalEnv )
-  }
-  get("pobana", envir = .GlobalEnv)->pobana
-  get("test220613", envir = .GlobalEnv)->test220613
-  print(paste("n de partida :",nrow(pobana)))
+# función exclusiones estáticas y flujo
+f_tabla_0 <- function(fecha_0 = "2022-01-14", 
+                      poblacion = pobana_0,
+                      test = test220613_cleaned) {
+  fecha0 <- ymd(fecha_0)
+  pobana <- poblacion
+  test220613 <- test
+  
+  print(paste("n de partida :", nrow(pobana)))
+  
   print("Excluyendo: socio y/o sanitarios...") 
-  pobana %>% filter(is.na(prfss) | prfss!=TRUE)->pobana
-    print(paste("n :",nrow(pobana)))
+  pobana %>% filter(is.na(prfss) | prfss != TRUE) -> pobana
+    print(paste("n :", nrow(pobana)))
+  
   print("Excluyendo: trabj educacion...") 
-    pobana %>% filter(is.na(educa) | educa!=TRUE)->pobana 
-    print(paste("n :",nrow(pobana)))  
+  pobana %>% filter(is.na(educa) | educa != TRUE) -> pobana 
+    print(paste("n :", nrow(pobana)))  
+  
   print("Excluyendo: viven en residencia...") 
-  pobana %>% filter(is.na(resn) | resn!=TRUE)->pobana
-    print(paste("n :",nrow(pobana)))
+  pobana %>% filter(is.na(resn) | resn != TRUE) -> pobana
+    print(paste("n :", nrow(pobana)))
+  
   print("Excluyendo:dependientes...")   
-  pobana %>% filter(is.na(depe) | depe!=TRUE)->pobana
-    print(paste("n :",nrow(pobana)))
+  pobana %>% filter(is.na(depe) | depe != TRUE)->pobana
+    print(paste("n :", nrow(pobana)))
+  
   print("Excluyendo: zona basica desconocida...")   
-  pobana %>% filter(!is.na(czbs))->pobana 
-    print(paste("n :",nrow(pobana)))
+  pobana %>% filter(!is.na(czbs)) -> pobana 
+    print(paste("n :", nrow(pobana)))
+  
   print("Excluyendo: tuvo infección previa...")
-  pobana %>% filter(cvsn==0|fcv1>=ymd(fecha0))->pobana
-    print(paste("n :",nrow(pobana)))
+  pobana %>% filter(cvsn == 0 | fcv1 >= ymd(fecha0)) -> pobana
+    print(paste("n :", nrow(pobana)))
+  
   print("Excluyendo: no finalizo vacunacion completa 90 dias antes...")
-  pobana %>% filter(fecha0-fvc2>90)->tabla_0_pobana
-     print(paste("n :",nrow(tabla_0_pobana))) 
+  pobana %>% filter(fecha0-fvc2 > 90) -> tabla_0_pobana
+     print(paste("n :", nrow(tabla_0_pobana))) 
+  
   print("calculando tests negativos previos...[aplicar la t0!!]")
-  test220613%>% filter(id %in% tabla_0_pobana$id &tpos==FALSE & ftes<ymd(fecha0)) %>% group_by(id)%>% summarise(n_0=max(n)) %>% right_join(tabla_0_pobana, by="id") %>% mutate(n_0=ifelse(is.na(n_0),0,ifelse(n_0>3,3,n_0)), tv2=as.numeric(ymd(fecha0)-fvc2))->pobana_n_tabla0
+  test220613 %>% filter(id %in% tabla_0_pobana$id & tpos == FALSE &
+                        ftes < ymd(fecha0)) %>%
+    group_by(id) %>%
+    summarise(n_0=max(n)) %>%
+    right_join(tabla_0_pobana, by = "id") %>%
+    mutate(n_0 = ifelse(is.na(n_0), 0, ifelse(n_0>3, 3, n_0)),
+           tv2 = as.numeric(ymd(fecha0) - fvc2)) -> pobana_n_tabla0
   
  pobana_n_tabla0 <- pobana_n_tabla0 %>% mutate(
-    genn=as.numeric(gen)-1,
-    gedadn=as.numeric(gedad),
-    czbs=as.numeric(czbs),
-    migran=as.numeric(migran),
-    vgp20=as.numeric(vgp20),
-    vgp21=as.numeric(vgp21),
-    tvc2n=as.numeric(as.factor(tvc2))) %>% dplyr::select(id,fvc2,fvc3,fdef,fcv1,fih1,genn,gedad,gedadn,czbs,n_0,tvc2n,tvc3,tv2,migran,vgp20,vgp21,ucn8) 
+    genn = as.numeric(gen)-1,
+    gedadn = as.numeric(gedad),
+    czbs = as.numeric(czbs),
+    migran = as.numeric(migran),
+    vgp20 = as.numeric(vgp20),
+    vgp21 = as.numeric(vgp21),
+    tvc2n = as.numeric(as.factor(tvc2))) %>%
+   dplyr::select(id, 
+                 fvc2, 
+                 fvc3,
+                 fdef,
+                 fcv1,
+                 fih1,
+                 genn,
+                 gedad,
+                 gedadn,
+                 czbs,
+                 n_0,
+                 tvc2n,
+                 tvc3,
+                 tv2,
+                 migran,
+                 vgp20,
+                 vgp21,
+                 ucn8) 
  
   return(pobana_n_tabla0)
 }
 
-
-# lo aplico empleando como inicio 2022-01-03": genera el flow_chart
- 
-
- f_tabla0(fecha0="2022-01-03")->tab0220103  # 437897
- table(tab0220103$n_0)
-#      0      1      2      3 
-# 117739  68311  49929  68391 
-
-#     0      1      2      3 
-# 130922  69452  48407  55589 
-
-
 ```
 
+
+```{r aplico-tabla_0, message=FALSE, include = TRUE, warning=FALSE}
+# lo aplico empleando como inicio 2022-01-03": genera el flow_chart
+f_tabla_0( fecha_0 = "2022-01-03") -> tab0220103  # 304373
+
+# contar números de test
+tab0220103 %>% count(n_0)
+
+```
 
 ## f_exclusion: criterios de exclusión tiempo-dependientes
 
