@@ -321,7 +321,7 @@ param=tribble(
 
 
 #multparam <- function(param=param) {
-  out=list()
+    out <- vector("list",  nrow(param))
 for (i in 1:nrow(param)) {
 out[[i]] <-map(param$fechas[[i]],
                 f_matching_purr, 
@@ -332,14 +332,31 @@ out[[i]] <-map(param$fechas[[i]],
 )
 }
 
+    
   
 # momenclatura fechas-match-out-fu
 names(out)=c("e3f6_m9_ofcv_fu60","e3f6_m9_ofih_fu120","e3f6_m1_ofcv_fu60","e3f6_m1_ofih_fu120")
-  
-  
-names(out)[2]
-  f_analisis(out[[2]])
 
+setwd("~/Dropbox/ju/Asesorias/FranciscoSanchezSaez/targettrial/covidvacunas/Rdata")
+ 
+save(out,file="out4.Rdata")
+# args2 <- list(mean = mu, sd = sigma, n = n)
+# args2 %>% 
+#   pmap(rnorm) %>% 
+#   str()
+# 
+# sim <- tribble(
+#   ~f,      ~params,
+#   "runif", list(min = -1, max = 1),
+#   "rnorm", list(sd = 5),
+#   "rpois", list(lambda = 10)
+# )
+# sim %>% 
+#   mutate(sim = invoke_map(f, params, n = 10))
+#   
+ names(out)[4]
+  f_analisis(out[[4]])
+# 
 
 
 ```
