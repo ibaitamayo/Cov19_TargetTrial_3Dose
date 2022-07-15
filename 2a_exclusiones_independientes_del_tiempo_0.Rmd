@@ -134,10 +134,10 @@ hacer_flujo <- function(poblacion,
   {
   print(glue("n de partida: {nrow(pob)}"))
 
-  for( i in seq_along(exc$criterios)) {
+  for(i in seq_along(exc$criterios)) {
   poblacion <- excluir(pob = poblacion,
-                         crit = exc$criterios[[i]],
-                         var = exc$variables[[i]])
+                       crit = exc$criterios[[i]],
+                       var = exc$variables[[i]])
 }
   poblacion
   }
