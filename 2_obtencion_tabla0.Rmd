@@ -67,7 +67,7 @@ load(file.path("Datos", "Brutos", "ttcvc3d_220628.Rdata"))
 
 ***
 
-Cuando situamos el punto 0 (en Navarra a ppios de diciembre ya comenzaba la escalada). no se porque el paper plantea enero2022, ¿quizás porque es entonces cuando empieza la tercera dosis?
+Cuando situamos el punto 0 (en Navarra a ppios de diciembre ya comenzaba la escalada). No se porqué el paper plantea enero2022, ¿quizás porque es entonces cuando empieza la tercera dosis?
 
 por lo que veo para octubre ya estaban las dos primeras dosis...esto es importante para aplicar el calculo de los test previos al punto 0/ exclusiones de casos positivos...// voy a hacerlo ahora con los datos del articulo... pero entiendo que lo suyo es llevarlo a un mes (211201) o mes y medio (211115) antes!
 
@@ -102,29 +102,25 @@ Definir exclusiones flow chart
 
 ```
 
-
 ## Time series of exposure and outcome (T0 = Jan 3, 2022)
 
 ```{r series temporales, echo=FALSE, eval=TRUE, message=FALSE, include = TRUE, warning=FALSE}
-
-
-
 ## como son las distribuciones de vacunacion e infeccion####
-### serie temporal de vacunaciones ####
+###serie temporal de vacunaciones ####
 
 min <- as.Date("2021-01-01")
 max <- NA
 
-ggplotly(ggplot(data = pobana  %>% group_by(fvc2) %>% summarise(n=n()) %>% na.omit(), aes(x = fvc2, y = n))+ geom_line(color = "#E7B800", size = 1) + scale_x_date(limits = c(min, max), date_labels = "%b/%y") +stat_peaks(colour = "purple") +ggtitle("Segunda dosis"))
+ggplotly(ggplot(data = pobana  %>% group_by(fvc2) %>% summarise(n=n()) %>% na.omit(), aes(x = fvc2, y = n))+ geom_line(color = "#E7B800", size = 1) + scale_x_date(limits = c(min, max), date_labels = "%b/%y") + stat_peaks(colour = "purple") + ggtitle("Segunda dosis"))
 
 
-ggplotly(ggplot(data = pobana  %>% group_by(fcv1) %>% summarise(n=n()) %>% na.omit(), aes(x = fcv1, y = n))+ geom_line(color = "#E7B800", size = 1) + scale_x_date(limits = c(min, max), date_labels = "%b/%y") +stat_peaks(colour = "purple") +ggtitle("Infecciones"))
+ggplotly(ggplot(data = pobana  %>% group_by(fcv1) %>% summarise(n=n()) %>% na.omit(), aes(x = fcv1, y = n))+ geom_line(color = "#E7B800", size = 1) + scale_x_date(limits = c(min, max), date_labels = "%b/%y") + stat_peaks(colour = "purple") + ggtitle("Infecciones"))
 
 
 min <- as.Date("2021-09-01")
 max <- NA
 
-ggplotly(ggplot(data = pobana  %>% group_by(fvc3) %>% summarise(n=n()) %>% na.omit(), aes(x = fvc3, y = n))+ geom_line(color = "#E7B800", size = 1) + scale_x_date(limits = c(min, max), date_labels = "%b/%y") +stat_peaks(colour = "purple") +ggtitle("Tercera dosis"))
+ggplotly(ggplot(data = pobana  %>% group_by(fvc3) %>% summarise(n=n()) %>% na.omit(), aes(x = fvc3, y = n))+ geom_line(color = "#E7B800", size = 1) + scale_x_date(limits = c(min, max), date_labels = "%b/%y") +stat_peaks(colour = "purple") + ggtitle("Tercera dosis"))
          
         
 
@@ -134,7 +130,7 @@ ggplotly(ggplot(data = pobana  %>% group_by(fvc3) %>% summarise(n=n()) %>% na.om
 
 ## f_tabla0: genera la tabla de análisis inicial
 
- * *parametro*: fecha 0 de arranque -primera cohorte-(por defecto 2022-01-14)
+ * *parametro*: fecha 0 de arranque -primera cohorte- (por defecto 2022-01-14)
  * *entrada*: 
     + a. tabla de poblacion-vacunas-infecciones: pobana
     + b. tabla de test previos
@@ -151,10 +147,10 @@ ggplotly(ggplot(data = pobana  %>% group_by(fvc3) %>% summarise(n=n()) %>% na.om
              
 ```{r f_tabla0, message=FALSE, include = TRUE, warning=FALSE}
 
-f_tabla0<-function(fecha0="2022-01-14", file_Rdata_poblacion="Rdata/pobana.Rdata",file_Rdata_test="Rdata/test220613.Rdata") {
+f_tabla0 <- function(fecha0 = "2022-01-14", file_Rdata_poblacion="Rdata/pobana.Rdata", file_Rdata_test="Rdata/test220613.Rdata") {
   fecha0=ymd(fecha0)
   print("Asegurate de que Knit Directory es Current working directory")
-  if (!"pobana"%in% ls(envir = .GlobalEnv)){
+  if (!"pobana" %in% ls(envir = .GlobalEnv)){
     load(file_Rdata_poblacion,envir = .GlobalEnv)
   }
   if (!"test220613"%in% ls(envir = .GlobalEnv)){
