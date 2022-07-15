@@ -63,16 +63,6 @@ library(survival)
 ```
 
 
-```{r datos dat220613/pobna50en25/pobnadic20/pobid/pobana/test220613, echo=FALSE, eval=FALSE, warning=FALSE}
-## poblacion_Vacunas_Infecc_06_2022.csv ####
-
-fymd <- function(x) {x=as.Date(ymd(str_sub(x,1,10)))}
-fnull0 <- function(x) {x=as.numeric(ifelse(x=="NULL",0,x))}
-fnullna <- function(x) {x=ifelse(x=="NULL",NA,x)}
-
-```
-
-
 
 ## f_exclusion: criterios de exclusión tiempo-dependientes
 
@@ -111,7 +101,7 @@ return(data)
                                       
   
 
-```{r, message=FALSE, include = TRUE, warning=FALSE}
+```{r exposicionseguimiento, message=FALSE, include = TRUE, warning=FALSE}
 
 f_exposicionseguimiento= function(data, fecha0, n=60) {
   data= data %>% mutate(
@@ -208,16 +198,18 @@ try({
 
 > solo por domicilio, extraigo aquellos domicilios con menos de 3 personas
 
-tab0220103d <- tab0220103 %>% group_by(domi) %>% filter(n_distinct(id)>3) %>% ungroup()  -42987 personas-
+tab0220103d <- tab0220103 %>% filter(!is.na(domi)) %>% group_by(domi) %>% filter(n_distinct(id)>3) %>% ungroup()  #-42983 personas-
 
+summary(tab0220103$domi)
 
 ## construcción de las diversas cohortes
 
 ```{r, message=FALSE, include = TRUE, warning=FALSE}
 
 # se define el vector de emparejamiento
-vector_match=c("czbs","genn" ,"gedadn", "n_0", "tvc2n", "tv2", "migran","vgp20","vgp21","ucn8")
-vector_match=c("domi")
+vector_match=c("czbs","genn" ,"gedadn", "n_0", "tvc2n", "tv2", "migran","vgp20","vgp21","ucn8") # 1
+vector_match=c("czbs","genn" ,"gedadn", "n_0", "tvc2n", "tv2", "migran","vgp20","vgp21") # 2
+vector_match=c("domi") # 3
 
 # fecha de inicio y fin: secuencia de fechas
 fecha_inicio=dmy("03/01/2022")
@@ -228,11 +220,12 @@ fechas <- seq.Date(from = fecha_inicio, to = fecha_fin, by = "days")
 lista <- lapply(fechas,
                 f_matching, 
                 data=tab0220103,  # si es domi: tab0220103d
-                vector_match=vector_match,
+                vector_match=vector_match, #2
                 out="fcv1",
                 f_exclusion=f_exclusion,
                 f_exposicionseg=f_exposicionseguimiento)
 
+f_analisis(lista)
 
 ```
 
@@ -246,7 +239,170 @@ lista <- lapply(fechas,
         + Cox- RR- efectividad: 1-RR
  
 
-```{r, message=FALSE, include = TRUE, warning=FALSE}
+```{r nueva programacion con purrr}
+# se trata de aplicar https://adv-r.hadley.nz/
+# Functional programming languages, Functionals, Function factories, Function operator
+
+
+
+## incorporo en la funcion el manejo de exclusiones/ seguimiento -generacion de outcome... habria que resolver si se quiere aplicar como funciones-argumentos de matching.. armonizar los enviroment.., creo que no merece la pena, mejor hacerlo mas compapto para poder usar map sobre las fechas
+
+## quizas deberia meter un map_ para que genere un data.frame, habria que estudiarlo mas
+
+## en pp (parametros): lo que ahora defino es  las fechas (fecha) -sobre la que aplicar la funcion-, y los parametros duracion del seguimiento(n), la variable resultado (out), los datos (data)...
+
+
+## funcionaba, pero no del todo, porque no acababa de registrar una lista de listas, con el resultado de cada combinacion de parametros.. entendia que el problema estaba en ese for y la lista receptaculo.. pero ahora ha dejado de funcionar, auqnue mal.. quizas tenga que entrar a esa parte del try(...
+
+
+
+out="fcv1"
+n=60
+vector_match
+data=tab0220103
+
+f_matching_purr <- function(fecha0, data, vector_match, out="fcv1",n=60 ) {
+
+  fecha0=ymd(fecha0)
+  print(fecha0)
+  print(c("out= ",out))
+ 
+  ## exclusiones
+  data= data %>% filter(is.na(fvc3) | fecha0 <= fvc3,
+           is.na(fcv1) | fecha0 < fcv1,
+           is.na(fdef) |  fecha0 < fdef)
+  ## exposicionseguimiento
+   data= data %>% mutate(
+    exposicion = if_else(fecha0 == fvc3 & !is.na(fvc3), 1, 0),
+    date_start = fecha0,
+    date_end = fecha0 + n,
+    date_end = ifelse(!is.na(fdef) & fdef < date_end, fdef, date_end),
+    date_end = ifelse(exposicion == 0 & !is.na(fvc3) & fvc3 < date_end,  fvc3, date_end),
+    date_end = as.Date.numeric(date_end, origin ="1970-01-01" ))
+
+
+
+try({
+    greedymatch <- Matching::Match(Tr = data$exposicion, M = 1, X = data[vector_match], exact = TRUE, ties = FALSE)
+    a <- data[unlist(greedymatch[c("index.treated", "index.control")]),]
+    par <- rep(1:(nrow(a)/2), 2)
+  
+    df=bind_cols(par = par, a) %>%
+      group_by(par) %>%
+      mutate(date_end = min(date_end),
+             # creo la variable de resultado y finalizo el seguimiento cuando aparece)
+             caso = ifelse(!!as.name(out) <= date_end & !is.na(!!as.name(out)), 1, 0),
+             date_end = ifelse(caso==1, !!as.name(out), date_end),
+             date_end = as.Date.numeric(date_end, origin ="1970-01-01")) %>%
+      data.frame() 
+    return(df)
+    # print(c("n= ",nrow(df)))
+    # print(c("casos= ",df %>% filter(caso==1) %>% nrow()))
+  }
+  )
+}
+
+rm(data,pp,greedymatch,df,base_analisis)
+
+# fecha de inicio y fin: secuencia de fechas
+fecha_inicio=dmy("03/01/2022")
+fecha_fin=dmy("06/01/2022") 
+fechas <- seq.Date(from = fecha_inicio, to = fecha_fin, by = "days")
+
+fechas
+
+lista <- lapply(fechas,
+                f_matching_purr, 
+                data=tab0220103,  # si es domi: tab0220103d
+                vector_match=vector_match, #2
+                out="fcv1")
+
+f_analisis(lista)
+
+param=tribble(
+  ~fechas, ~vmatch, ~data, ~out, ~n,
+  fechas,   c("czbs","genn" ,"gedadn", "n_0", "tvc2n", "tv2", "migran","vgp20","vgp21"), tab0220103, "fcv1",60,
+  fechas,   c("czbs","genn" ,"gedadn", "n_0", "tvc2n", "tv2", "migran","vgp20","vgp21"), tab0220103, "fih1",120,
+  fechas, "domi",tab0220103d,"fcv1",120
+)
+
+i=1
+
+out <-map(param$fechas[[i]],
+                f_matching_purr, 
+               vector_match= param$vmatch[[i]],
+                out=param$out[[i]],
+                n=param$n[[i]],
+                data=param$data[[i]])  # si es domi: tab0220103d
+
+
+
+
+multparam <- function(param=param) {
+  out=list()
+for (i in 1:nrow(param)) {
+out[[i]] <-map(param$fechas[[i]],
+                f_matching_purr, 
+               vector_match= param$vmatch[[i]],
+                out=param$out[[i]],
+                n=param$n[[i]],
+                data=param$data[[i]]  # si es domi: tab0220103d
+)
+}
+}
+
+mod3=multparam(param)
+
+str(out)
+str(mod3)
+
+# momenclatura fechas-match-out-fu
+names(mod3)=c("e3f6_m9_ofcv_fu60","e3f6_m9_ofih_fu120","e3f6_m1_ofcv_fu120")
+
+
+
+#function(fecha0, data, vector_match, out="fcv1",n=60 ) {
+
+f_analisis(mod3[1])
+
+f_analisis(lista)
+str(lista)
+
+# 
+# f_analisis(lista)
+# 
+# tab0220103d <- tab0220103 %>% group_by(domi) %>% filter(n_distinct(id)>3) %>% ungroup()
+# 
+# chatty <- function(f) {
+#   force(f)
+#   
+#   function(x, ...) {
+#     res <- f(x, ...)
+#     cat("Processing ", x, "\n", sep = "")
+#     res
+#   }
+# }
+# f <- function(x) x ^ 2
+# s <- c(3, 2, 1)
+# 
+# purrr::map_dbl(s, chatty(f))
+# #> Processing 3
+# #> Processing 2
+# #> Processing 1
+# #> [1] 9 4 1
+# 
+# str(fechas)
+# str(as.vector(pp$fechas[[1]]))
+# 
+# pp$fechas
+# 
+# ## pensemos en la estructua de ese data frame.. sobre el que se aplicará f_matching
+
+
+```
+
+
+```{r analisis, message=FALSE, include = TRUE, warning=FALSE}
 
 
 
@@ -267,7 +423,7 @@ f_analisis <- function(lista) {
  # analisis a partir del septimo dia
   
   
-fit <- survfit(Surv(survtime, caso) ~ exposicion, data=base_analisis, subset=survtime>7)
+fit <- survfit(Surv(survtime, caso) ~ exposicion, data=base_analisis) # , subset=survtime>7
 
 
 print(ggsurvplot(fit, data = base_analisis, xlab="days of follow-up",
@@ -286,6 +442,8 @@ f_analisis(lista)
 
 
 ```
+
+
 
 ```{r difference in diagnostic intensity between groups, tabla 1, 2 y 3 }
 
