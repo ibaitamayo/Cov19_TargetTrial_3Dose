@@ -130,29 +130,80 @@ Definir exclusiones flow chart
       
 ```{r}
 # se crean listas que dependen del proyecto------------------------------------
-lista_criterios_exclusion <- lst(
+lista_exclusion <- list(
+  criterios = list(
   c1 = "Excluyendo: socio y/o sanitarios...",
   c2 = "Excluyendo: trabj educacion...", # no tengo claro que se hayan de excluir
   c3 = "Excluyendo: viven en residencia...",
   c4 = "Excluyendo: dependientes...",
-  c5 = "Excluyendo: zona basica desconocida...",
-  c6 = "Excluyendo: tuvo infección previa...", # esta es dependiente del tiempo
-  c7 = "Excluyendo: no finalizo vacunacion completa 90 dias antes..."
-)
-
-lista_variables_exclusion <- lst(
+  c5 = "Excluyendo: zona basica desconocida..."
+  # c6 = "Excluyendo: tuvo infección previa...", # esta es dependiente del tiempo
+  # c7 = "Excluyendo: no finalizo vacunacion completa 90 dias antes..." # dependiente del tiempo
+),
+variables = list(
   v1 = "prfss",
   v2 = "educa",
   v3 = "resn",
   v4 = "depe",
   v5 = "czbs"
-)
+))
 
-pobana_0 %>% count(get(lista_variables_exclusion$v1))
-pobana_0 %>% count(get(lista_variables_exclusion$v2))
-pobana_0 %>% count(get(lista_variables_exclusion$v3))
-pobana_0 %>% count(get(lista_variables_exclusion$v4))
-pobana_0 %>% count(get(lista_variables_exclusion$v5))
+```
+
+```{r}
+# función para excluir siguiendo un criterio-----------------------------------
+exclusion <- function(crit, 
+                      var,
+                      pob = pob)
+{
+  print(crit) 
+  pob %>% filter(is.na(var) |
+                     var != TRUE) -> pob
+    print(paste("n :", nrow(pob)))
+}
+
+```
+
+```{r}
+# flujo
+f_flow <- function(fecha_0 = "2022-01-14", 
+                   pob = pobana_0,
+                   crit_exclusion = lista_exclusion
+                   ) 
+  {
+  
+  fecha0 <- ymd(fecha_0)
+  exclusion(crit = crit_exclusion$criterios$c1 ,
+            var = crit_exclusion$variables$v1)
+  
+  }
+  
+f_flow()
+
+  print(paste("n de partida :", nrow(pob)))
+  
+  print(criterios_exclusion$c1) 
+  pob %>% filter(is.na(get(lista_variables_exclusion$v1)) |
+                     get(lista_variables_exclusion$v1) != TRUE) -> pob
+    print(paste("n :", nrow(pob)))
+    
+    }
+
+
+f_flow(fecha_0 = "2022-01-14")
+
+```
+
+
+```{r}
+power1 <- function(exp) {
+  function(x) {
+    x ^ exp
+  }
+}
+
+square <- power1(2)
+cube <- power1(3)
 
 ```
 
@@ -164,13 +215,22 @@ f_flow <- function(fecha_0 = "2022-01-14",
                    criterios_exclusion = lista_criterios_exclusion,
                    variables_exclusion = lista_variables_exclusion
                    ) {
+  
   fecha0 <- ymd(fecha_0)
+  
+  map_chr(criterios_exclusion, ~print(.x))}
+  
+f_flow()
+
   print(paste("n de partida :", nrow(pob)))
   
   print(criterios_exclusion$c1) 
   pob %>% filter(is.na(get(lista_variables_exclusion$v1)) |
                      get(lista_variables_exclusion$v1) != TRUE) -> pob
-    print(paste("n :", nrow(pob)))}
+    print(paste("n :", nrow(pob)))
+    
+    }
+
 
 f_flow(fecha_0 = "2022-01-14")
 
