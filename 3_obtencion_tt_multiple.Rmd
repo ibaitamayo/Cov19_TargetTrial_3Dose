@@ -244,7 +244,6 @@ f_analisis(lista)
 # Functional programming languages, Functionals, Function factories, Function operator
 
 
-
 ## incorporo en la funcion el manejo de exclusiones/ seguimiento -generacion de outcome... habria que resolver si se quiere aplicar como funciones-argumentos de matching.. armonizar los enviroment.., creo que no merece la pena, mejor hacerlo mas compapto para poder usar map sobre las fechas
 
 ## quizas deberia meter un map_ para que genere un data.frame, habria que estudiarlo mas
@@ -252,14 +251,11 @@ f_analisis(lista)
 ## en pp (parametros): lo que ahora defino es  las fechas (fecha) -sobre la que aplicar la funcion-, y los parametros duracion del seguimiento(n), la variable resultado (out), los datos (data)...
 
 
-## funcionaba, pero no del todo, porque no acababa de registrar una lista de listas, con el resultado de cada combinacion de parametros.. entendia que el problema estaba en ese for y la lista receptaculo.. pero ahora ha dejado de funcionar, auqnue mal.. quizas tenga que entrar a esa parte del try(...
-
-
-
-out="fcv1"
-n=60
-vector_match
-data=tab0220103
+# 
+# out="fcv1"
+# n=60
+# vector_match
+# data=tab0220103
 
 f_matching_purr <- function(fecha0, data, vector_match, out="fcv1",n=60 ) {
 
@@ -302,43 +298,29 @@ try({
   )
 }
 
-rm(data,pp,greedymatch,df,base_analisis)
-
 # fecha de inicio y fin: secuencia de fechas
 fecha_inicio=dmy("03/01/2022")
-fecha_fin=dmy("06/01/2022") 
+fecha_fin=dmy("06/02/2022") 
 fechas <- seq.Date(from = fecha_inicio, to = fecha_fin, by = "days")
 
 fechas
 
-lista <- lapply(fechas,
-                f_matching_purr, 
-                data=tab0220103,  # si es domi: tab0220103d
-                vector_match=vector_match, #2
-                out="fcv1")
 
-f_analisis(lista)
+
 
 param=tribble(
   ~fechas, ~vmatch, ~data, ~out, ~n,
   fechas,   c("czbs","genn" ,"gedadn", "n_0", "tvc2n", "tv2", "migran","vgp20","vgp21"), tab0220103, "fcv1",60,
   fechas,   c("czbs","genn" ,"gedadn", "n_0", "tvc2n", "tv2", "migran","vgp20","vgp21"), tab0220103, "fih1",120,
-  fechas, "domi",tab0220103d,"fcv1",120
+  fechas, "domi",tab0220103d,"fcv1",60,
+  fechas, "domi",tab0220103d,"fcv1",120,
 )
 
-i=1
-
-out <-map(param$fechas[[i]],
-                f_matching_purr, 
-               vector_match= param$vmatch[[i]],
-                out=param$out[[i]],
-                n=param$n[[i]],
-                data=param$data[[i]])  # si es domi: tab0220103d
 
 
 
 
-multparam <- function(param=param) {
+#multparam <- function(param=param) {
   out=list()
 for (i in 1:nrow(param)) {
 out[[i]] <-map(param$fechas[[i]],
@@ -349,54 +331,15 @@ out[[i]] <-map(param$fechas[[i]],
                 data=param$data[[i]]  # si es domi: tab0220103d
 )
 }
-}
 
-mod3=multparam(param)
-
-str(out)
-str(mod3)
-
+  
 # momenclatura fechas-match-out-fu
-names(mod3)=c("e3f6_m9_ofcv_fu60","e3f6_m9_ofih_fu120","e3f6_m1_ofcv_fu120")
+names(out)=c("e3f6_m9_ofcv_fu60","e3f6_m9_ofih_fu120","e3f6_m1_ofcv_fu60","e3f6_m1_ofih_fu120")
+  
+  
+names(out)[2]
+  f_analisis(out[[2]])
 
-
-
-#function(fecha0, data, vector_match, out="fcv1",n=60 ) {
-
-f_analisis(mod3[1])
-
-f_analisis(lista)
-str(lista)
-
-# 
-# f_analisis(lista)
-# 
-# tab0220103d <- tab0220103 %>% group_by(domi) %>% filter(n_distinct(id)>3) %>% ungroup()
-# 
-# chatty <- function(f) {
-#   force(f)
-#   
-#   function(x, ...) {
-#     res <- f(x, ...)
-#     cat("Processing ", x, "\n", sep = "")
-#     res
-#   }
-# }
-# f <- function(x) x ^ 2
-# s <- c(3, 2, 1)
-# 
-# purrr::map_dbl(s, chatty(f))
-# #> Processing 3
-# #> Processing 2
-# #> Processing 1
-# #> [1] 9 4 1
-# 
-# str(fechas)
-# str(as.vector(pp$fechas[[1]]))
-# 
-# pp$fechas
-# 
-# ## pensemos en la estructua de ese data frame.. sobre el que se aplicará f_matching
 
 
 ```
