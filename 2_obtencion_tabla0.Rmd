@@ -152,112 +152,48 @@ variables = list(
 
 ```{r}
 # función para excluir siguiendo un criterio-----------------------------------
-exclusion <- function(crit, 
-                      var,
-                      pob = pob)
+exclusion <- function(pob, 
+                      crit,
+                      var)
 {
-  print(crit) 
-  pob %>% filter(is.na(var) |
-                     var != TRUE) -> pob
-    print(paste("n :", nrow(pob)))
+  
+  if (is.logical(pob %>% pull(var)) == TRUE) {
+  print(glue("Variable lógica. {crit}"))
+  pob <- pob %>% filter(is.na(get(var)) |
+                     get(var) != TRUE)
+    print(glue("n : {nrow(pob)}"))
+  pob
+  }
+  else {
+  print(glue("Variable no lógica. {crit}"))
+  pob <- pob %>% filter(!is.na(get(var)))
+    print(glue("n : {nrow(pob)}"))
+  pob
+  }
 }
 
 ```
 
 ```{r}
-# flujo
-f_flow <- function(fecha_0 = "2022-01-14", 
-                   pob = pobana_0,
-                   crit_exclusion = lista_exclusion
+# flujo------------------------------------------------------------------------
+f_flow <- function(poblacion = pobana_0,
+                   exc = lista_exclusion
                    ) 
   {
-  
-  fecha0 <- ymd(fecha_0)
-  exclusion(crit = crit_exclusion$criterios$c1 ,
-            var = crit_exclusion$variables$v1)
-  
-  }
-  
-f_flow()
+  print(glue("n de partida: {nrow(pob)}"))
 
-  print(paste("n de partida :", nrow(pob)))
-  
-  print(criterios_exclusion$c1) 
-  pob %>% filter(is.na(get(lista_variables_exclusion$v1)) |
-                     get(lista_variables_exclusion$v1) != TRUE) -> pob
-    print(paste("n :", nrow(pob)))
-    
-    }
-
-
-f_flow(fecha_0 = "2022-01-14")
-
-```
-
-
-```{r}
-power1 <- function(exp) {
-  function(x) {
-    x ^ exp
-  }
+  for( i in seq_along(exc$criterios)) {
+  poblacion <- exclusion(pob = poblacion,
+                         crit = exc$criterios[[i]],
+                         var = exc$variables[[i]])
 }
-
-square <- power1(2)
-cube <- power1(3)
-
-```
-
-
-```{r}
-
-f_flow <- function(fecha_0 = "2022-01-14", 
-                   pob = pobana_0,
-                   criterios_exclusion = lista_criterios_exclusion,
-                   variables_exclusion = lista_variables_exclusion
-                   ) {
-  
-  fecha0 <- ymd(fecha_0)
-  
-  map_chr(criterios_exclusion, ~print(.x))}
+  poblacion
+  }
   
 f_flow()
 
-  print(paste("n de partida :", nrow(pob)))
-  
-  print(criterios_exclusion$c1) 
-  pob %>% filter(is.na(get(lista_variables_exclusion$v1)) |
-                     get(lista_variables_exclusion$v1) != TRUE) -> pob
-    print(paste("n :", nrow(pob)))
-    
-    }
-
-
-f_flow(fecha_0 = "2022-01-14")
-
 ```
 
-
-```{r}
-print("Excluyendo: trabj educacion...") 
-  pobana %>% filter(is.na(educa) | educa != TRUE) -> pobana 
-    print(paste("n :", nrow(pobana)))  
-  
-  print("Excluyendo: viven en residencia...") 
-  pobana %>% filter(is.na(resn) | resn != TRUE) -> pobana
-    print(paste("n :", nrow(pobana)))
-  
-  print("Excluyendo:dependientes...")   
-  pobana %>% filter(is.na(depe) | depe != TRUE)->pobana
-    print(paste("n :", nrow(pobana)))
-  
-  print("Excluyendo: zona basica desconocida...")   
-  pobana %>% filter(!is.na(czbs)) -> pobana 
-    print(paste("n :", nrow(pobana)))
-  
- 
-  
-```
-      
              
 ```{r f_tabla0, message=FALSE, include = TRUE, warning=FALSE}
 # función exclusiones estáticas y flujo

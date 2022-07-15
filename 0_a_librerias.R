@@ -19,6 +19,7 @@ library(ggpmisc) # para series temporales
 library(survminer)
 library(survival)
 library(conflicted)
+library(glue)
 
 # usar fuciones de tidyverse antes que las de otros paquetes-------------------
 conflict_prefer_all("tidyverse")
