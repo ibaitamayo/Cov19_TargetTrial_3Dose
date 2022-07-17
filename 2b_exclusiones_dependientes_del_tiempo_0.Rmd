@@ -60,7 +60,6 @@ source_rmd("0_b_funciones.rmd")
 ```{r cargar-datos, echo=FALSE, eval=TRUE, message=FALSE, warning=FALSE}
 # cargar datos-----------------------------------------------------------------
 # load(file.path("Datos", "Brutos", "ttcvc3d_220628.Rdata"))
-
 pobana_1 <- readRDS(file = file.path("Resultados", "pobana_1.RDS"))
 
 ```
@@ -171,4 +170,4 @@ saveRDS(pobana_2, file.path("Resultados", "pobana_2.RDS"))
 
 ```
     
-
+    

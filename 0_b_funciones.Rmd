@@ -44,7 +44,9 @@ Función que transforma los 10 primeros carácteres de una cadena en una fecha m
 
 ```{r fymd}
 # fecha en texto a ymd
-fymd <- function(x) {x=as.Date(ymd(str_sub(x, 1, 10)))}
+fymd <- function(x) {
+  x = as.Date(ymd(str_sub(x, 1, 10)))
+  }
 
 ```
 
@@ -54,7 +56,9 @@ Función que transforma una cadena con texto "NULL" a NA.
 
 ```{r fnullna}
 
-fnullna <- function(x) {x = if_else(x == "NULL", NA_character_<, x)}
+fnullna <- function(x) {
+  x = if_else(x == "NULL", NA_character_, x)
+  }
 
 ```
 
