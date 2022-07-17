@@ -50,7 +50,7 @@ Realiza los criterios de exclusión *dependientes del tiempo 0* escogido. Las fu
 
 ## 2_c_multiples_tiempos.Rmd
 
-Aplica el criterio de exclusión realizado en 2_b a múltiples ventanas temporales.
+Aplica el criterio de exclusión realizado en 2_b a múltiples ventanas temporales. VOY POR AQUÍ.
 
 <br>
 
