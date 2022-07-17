@@ -158,7 +158,7 @@ hacer_flujo_dep <- function(poblacion,
 
 ```{r}
 # aplicar exclusiones dependientes del tiempo_0------------------------------
-pobana_2 <- hacer_flujo_dep(poblacion = pobana_1_adaptada, 
+pobana_2_2022_01_03 <- hacer_flujo_dep(poblacion = pobana_1_adaptada, 
             exc = lista_exclusion_dep,
             tiempo_0 = "2022-01-03")
 
@@ -166,7 +166,7 @@ pobana_2 <- hacer_flujo_dep(poblacion = pobana_1_adaptada,
 
 ```{r}
 # guardar base con exclusiones estáticas---------------------------------------
-saveRDS(pobana_2, file.path("Resultados", "pobana_2.RDS"))
+# saveRDS(pobana_2, file.path("Resultados", "pobana_2.RDS"))
 
 ```
     

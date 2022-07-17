@@ -279,7 +279,7 @@ pob8 <- pob7 %>%  left_join(select(dat220613_sin_dup, id, tper)) %>%
 pob8 %>% count(is.na(fvc2))
 #  FALSE   TRUE 
 # 465536 179673 
-table(is.na(pob8$fvc2))   # no tiene segunda dosis (pero hay que sacar la jansen que solo era una)
+table(is.na(pob8$fvc2))   #no tiene segunda dosis (pero hay que sacar la jansen que solo era una)
 #  FALSE   TRUE 
 # 465530 179679 
 
@@ -421,7 +421,7 @@ e_pres[44] <- "Fecha ingreso UCI"
  
 
  
-descripcion<- tibble(Etiqueta = e_pres,
+descripcion <- tibble(Etiqueta = e_pres,
                      Variable = names(pobana_0))
 
 kable(descripcion, format = "html")%>%  
