@@ -100,7 +100,8 @@ pobana_2 <- pobana_1_adaptada %>%
     migran = as.numeric(migran),
     vgp20 = as.numeric(vgp20),
     vgp21 = as.numeric(vgp21),
-    tvc2n = as.numeric(as.factor(tvc2))) 
+    tvc2n = as.numeric(as.factor(tvc2)),
+    domi = as.numeric(domi)) 
 
 ```
 

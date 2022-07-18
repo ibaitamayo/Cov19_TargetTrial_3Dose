@@ -112,3 +112,64 @@ f_analisis(lista)
 
 ```
 
+# Programar la replicación completa del articulo
+
+***
+
+## Table 1: Baseline characteristics of the matched study population
+
+grupos de edad, genero, Number of previous SARS-CoV-2 tests, Primary vaccine schedule, Booster dose, Time since completion of primary vaccine schedule [80-150, 151-180, >180]
+
+## Table 2: Estimated effectiveness of an mRNA COVID-19 vaccine booster in individuals* who had completed primary vaccination schedule against COVID-19
+
+Analyses based on 2 083 857 matched pairs who remained under follow-up by day 7 after the booster dose. Overall, Age group (years): [40–59, 60–79, ≥80], Sex, Type of previous vaccination, Time since vaccination completed, Type of booster [mRNA-1273,BNT162b2]
+ # Booster group [Events| Risk per 10 000 individuals] No booster group [Events| Risk per 10 000 individuals]  1–risk ratio (95% CI) | Risk difference per 10 000 individuals (95% CI)
+
+## Table 3: Sensitivity analyses of vaccine effectiveness 7–34 days after an mRNA COVID-19 vaccine booster dose // 1–risk ratio (95% CI) | Risk difference per 10 000 individuals (95% CI)
+
+Main analysis | Restricting to people with ≥1 negative lab test at enrolment | with notests in the 7  days before enrolment |Censoring matched pairs 7 days after the control receives a booster rather than 0 days | Using date of PCR test result rather than subtracting 2 days | Selecting matched controls without replacement | Exact matching by age (year by year vs 5-year groups) | Restricting events to PCR test
+
+```{r difference in diagnostic intensity between groups, tabla 1, 2 y 3 }
+### difference in diagnostic intensity between groups ####
+
+## se trata de sacar la distribucion de test diaria en los grupos expuesto y no expuesto y representarlo como en la pag7 del apendice [lo haremos para aquellos test en no casos?]
+
+# No casos
+dint <- left_join(test220613_cleaned, dplyr::select(base_analisis, id, exposicion, caso)) %>%
+  filter(ftes >= ymd(tiempo_0) & caso == 0) %>%
+  mutate(day = as.numeric(ftes - ymd(tiempo_0)), 
+         sem = cut(day, seq(from = 0, to = 70, by = 7)),
+         exposition = factor(exposicion, labels = c("no booster","booster"))) %>%
+  filter(day < 71) %>% 
+  group_by(sem, exposition) %>%
+  summarise(n = n()) %>%
+  na.omit() 
+
+pp <- ggplot(dint, 
+             aes(x = sem, y = n, fill = exposition)) + geom_col(position = "dodge")   
+
+pp + ggtitle("Excluyendo test diagnostico de casos")    
+
+
+dint <- left_join(test220613_cleaned, dplyr::select(base_analisis,id,exposicion,caso)) %>%
+  filter(ftes >= ymd(tiempo_0)) %>%  
+  mutate(day = as.numeric(ftes - ymd(tiempo_0)), 
+         sem = cut(day, seq(from = 0, to = 70, by = 7)),
+         exposition = factor(exposicion, labels = c("no booster", "booster"))) %>%
+  filter(day < 71) %>%
+  group_by(sem, exposition) %>%
+  summarise(n = n()) %>% na.omit() 
+
+pp = ggplot(dint, aes(x = sem, y=n, fill = exposition)) + geom_col(position = "dodge")   
+
+pp + ggtitle("test diagnosticos segun exposición a booster")    
+
+##Esta aplicando aqui la fecha 0???
+pobana_n_tabla0 <-  test220613_cleaned %>% 
+    filter(id %in% base_analisis$id & tpos == FALSE) %>%
+    group_by(id) %>% summarise(n_0 = max(n)) %>%
+    right_join(base_analisis, by = "id") %>%
+    mutate(n_0 = ifelse(is.na(n_0), 0, ifelse(n_0 > 3, 3, n_0)),
+           tv2 = as.numeric(ymd(tiempo_0) - fvc2))
+  
+```
