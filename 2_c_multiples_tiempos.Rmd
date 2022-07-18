@@ -97,7 +97,7 @@ f_exposicion_seguimiento = function(data,
 table_out_2022_01_03 <- f_exposicion_seguimiento(
                          data = pobana_2_2022_01_03,
                          tiempo_0 = "2022-01-03",
-                         follow_up = 120) 
+                         follow_up = 240) 
 
 table_out_2022_01_03 %>% count(exposicion)
 table_out_2022_01_03 %>% count(fvc3)
@@ -169,10 +169,11 @@ names(pobana_2) %>% sort()
 
 
 ```{r}
-f_matching(data = pobana_2,
+# check f_matching-------------------------------------------------------------
+prueba_matching <- f_matching(data = pobana_2,
            tiempo_0 = "2022-01-03",
-           vector_match = vector_match_3, 
-           out = "fcv1",
+           vector_match = vector_match_2, 
+           out = "fih1",
            f_exclusion = hacer_flujo_dep, 
            f_exposicion_seguimiento = f_exposicion_seguimiento)
 
@@ -181,23 +182,43 @@ f_matching(data = pobana_2,
 
 ```{r, message=FALSE, include = TRUE, warning=FALSE}
 # fecha de inicio y fin: secuencia de fechas
-fecha_inicio = ymd("2022-01-03")
-fecha_fin = ymd("2022-02-06") 
+fecha_inicio = ymd("2021-10-01")
+fecha_fin = ymd("2022-06-01") 
 fechas <- seq.Date(from = fecha_inicio, to = fecha_fin, by = "days")
 
+```
+
+
+```{r, message=FALSE, include = TRUE, warning=FALSE}
 # se genera una lista con las diversas cohortes diarias 
-lista <- lapply(fechas,
+lista_vm2_fih1 <- lapply(fechas,
                 f_matching, 
                 data = pobana_2,
                 vector_match = vector_match_2, #2
-                out = "fcv1",
+                out = "fih1",
                 f_exclusion = hacer_flujo_dep,
                 f_exposicion_seguimiento = f_exposicion_seguimiento)
 
 ```
 
+```{r, message=FALSE, include = TRUE, warning=FALSE}
+# se genera una lista con las diversas cohortes diarias 
+lista_vm3_fih1 <- lapply(fechas,
+                f_matching, 
+                data = pobana_2,
+                vector_match = vector_match_3, #2
+                out = "fih1",
+                f_exclusion = hacer_flujo_dep,
+                f_exposicion_seguimiento = f_exposicion_seguimiento)
+
+```
+
+
 ```{r}
 # guardar lista----------------------------------------------------------------
-saveRDS(lista, file.path("Resultados", "lista.RDS"))
+# vector_match_2; outcome: ingreso hospitalario
+saveRDS(lista_vm2_fih1, file.path("Resultados", "lista_vm2_fih1.RDS"))
+# vector_match_3; outcome: ingreso hospitalario
+saveRDS(lista_vm3_fih1, file.path("Resultados", "lista_vm3_fih1.RDS"))
 
 ```
