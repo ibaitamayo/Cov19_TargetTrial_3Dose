@@ -352,7 +352,8 @@ pob11 %>% count(lubridate::year(fnac) <= 1982)
 # Domicilio--------------------------------------------------------------------
 pob12 <- pob11 %>% left_join(select(pobna50en25, id, domi)) %>% 
   mutate(domi = as.numeric(as.factor(domi))) %>% 
-  relocate(domi, .after = ucn8)
+  relocate(domi, .after = ucn8) %>% 
+  tidylog::filter(!is.na(domi))
 
 # ver distribución de número de personas por domicilio
 pob12 %>% count(domi) %>% count(n) # hay domicilios con muchas personas
