@@ -179,7 +179,7 @@ f_matching(data = pobana_2,
 ```{r, message=FALSE, include = TRUE, warning=FALSE}
 # fecha de inicio y fin: secuencia de fechas
 fecha_inicio = ymd("2022-01-03")
-fecha_fin = ymd("2022-01-07") 
+fecha_fin = ymd("2022-02-06") 
 fechas <- seq.Date(from = fecha_inicio, to = fecha_fin, by = "days")
 
 # se genera una lista con las diversas cohortes diarias 
@@ -191,15 +191,10 @@ lista <- lapply(fechas,
                 f_exclusion = hacer_flujo_dep,
                 f_exposicion_seguimiento = f_exposicion_seguimiento)
 
-lista[[1]] %>% count(exposicion)
-lista[[2]] %>% count(exposicion)
-lista[[3]] %>% count(exposicion)
-lista[[4]] %>% count(exposicion)
-lista[[5]] %>% count(exposicion)
-
 ```
 
 ```{r}
+# guardar lista----------------------------------------------------------------
+saveRDS(lista, file.path("Resultados", "lista.RDS"))
 
 ```
-

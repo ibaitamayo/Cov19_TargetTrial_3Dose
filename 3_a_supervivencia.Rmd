@@ -1,0 +1,114 @@
+---
+title: "Criterios de exclusión estáticos"
+output: 
+  html_document:
+    code_folding: show
+    highlight: espresso
+    css: style.css
+    keep_md: yes
+    number_sections: yes
+    theme: readable
+    toc: yes  
+    toc_float:
+      collapsed: yes
+      smooth_scroll: yes
+      toc_depth: 3     
+editor_options: 
+  chunk_output_type: inline
+---
+
+
+```{r set-global-options, echo = FALSE}
+knitr::opts_chunk$set(eval = TRUE, 
+                      echo = TRUE, 
+                      cache = FALSE,
+                      include = TRUE,
+                      collapse = FALSE,
+                       dependson = NULL,
+                      engine = "R", # Chunks will always have R code, unless noted
+                      error = TRUE,
+                      fig.path="Figures/",  # Set the figure options
+                      fig.align = "center", 
+                      fig.width = 12,
+                      fig.height = 12)
+```
+
+```{r librerias, echo=FALSE, message=FALSE, include=FALSE, warning=FALSE}
+# source("0_a_librerias.R")
+# ya se cargan cuando se carguen las funciones
+
+```
+
+```{r}
+# función para cargar un .Rmd como si se hiciese source de un .r---------------
+source_rmd = function(file, ...) {
+  tmp_file = tempfile(fileext=".R")
+  on.exit(unlink(tmp_file), add = TRUE)
+  knitr::purl(file, output=tmp_file)
+  source(file = tmp_file, ...)
+}
+
+```
+
+```{r}
+# cargar funciones de 0_funciones----------------------------------------------
+source_rmd("0_b_funciones.rmd")
+
+```
+
+# Análisis de supervivencia
+
+***
+
+```{r}
+# cargar lista----------------------------------------------------------------
+lista <- readRDS(file.path("Resultados", "lista.RDS"))
+
+```
+
+```{r}
+# función que realiza el análisis de supervivencia-----------------------------
+f_analisis <- function(lista) {
+  # pasar de lista a un tibble (name indica el número de tiempo_0)
+  base_analisis <- enframe(lista) %>%
+    rename(target_trial_number = name) %>% 
+    unnest(value)
+
+  print("tabla contingencia exposiciones/casos:")    
+  print(base_analisis %>% 
+    janitor::tabyl(exposicion, caso) %>%
+    janitor::adorn_totals(where = c("row", "col")) %>% 
+    janitor::adorn_title())
+
+  base_analisis <- base_analisis %>% mutate(survtime = date_end - date_start)
+  base_analisis %>% count(survtime, exposicion)
+    
+  fit <- survfit(Surv(survtime, caso) ~ exposicion, data = base_analisis) # , subset=survtime>7
+
+
+print(ggsurvplot(fit, data = base_analisis, xlab = "days of follow-up",
+           ylab = "Survival probability",
+           main = "Product-Limit Survival Estimates", ylim = c(0.85, 1), 
+           risk.table = TRUE, conf.int = TRUE))
+
+## hay que resolver mejor esto de hacer el cox sobre un intervalo.. (a partir del dia 7).. aqui solo indico que se le agrege 7 dias al start (pero no he excludio los casos que aparecen en esos primeros 7 dias!!)
+### cox
+  cpp = coxph(formula = Surv(survtime, caso) ~ exposicion, 
+            data = base_analisis, subset = survtime > 7)
+  print("# Estimated effectiveness in Spain from day 7 to 34 after a booster was: 
+        51·3% (95% CI 50·2–52·4)")
+  print(paste0("# Estimated effectiveness in Navarra was :",
+                round((1 - exp(coef(cpp))) * 100, 1), "% (", 
+                round((1 - exp(confint((cpp)))[2]) * 100, 1), "-",
+                round((1 - exp(confint((cpp)))[1]) * 100, 1), ")"))
+}
+
+```
+
+
+```{r}
+# ejecutamos el análisis
+f_analisis(lista)
+
+```
+
