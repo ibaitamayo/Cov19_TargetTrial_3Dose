@@ -60,36 +60,13 @@ source_rmd("0_b_funciones.rmd")
 ```{r cargar-datos, echo=FALSE, eval=TRUE, message=FALSE, warning=FALSE}
 # cargar datos-----------------------------------------------------------------
 # load(file.path("Datos", "Brutos", "ttcvc3d_220628.Rdata"))
-pobana_1 <- readRDS(file = file.path("Resultados", "pobana_1.RDS"))
-
-```
-
-```{r}
-# arreglar variables exclusión/inclusión dinámicas-----------------------------
-pobana_1_adaptada <- pobana_1 %>% 
-  # crear fecha 40 cumpleaños
-  mutate(fnac_40 = fnac %m+% years(40)) %>% 
-  # crear fecha 90 días tras pauta completa
-  mutate(fpauta_90 = case_when(
-    !is.na(fvc2) ~ fvc2 %m+% days(90),
-    tvc1 == "J&J / Janssen" ~ fvc1 %m+% days(90),
-    T ~ NA_Date_
-    ))
+pobana_2 <- readRDS(file = file.path("Resultados", "pobana_2.RDS"))
 
 ```
 
 # Añadir múltiples tiempos
 
 ***
-
-```{r}
-# aplicar exclusiones dependientes del tiempo_0------------------------------
-pobana_2_2022_01_03 <- hacer_flujo_dep(poblacion = pobana_1_adaptada, 
-            exc = lista_exclusion_dep,
-            tiempo_0 = "2022-01-03")
-
-```
-
 
 ```{r exposicionseguimiento, message=FALSE, include = TRUE, warning=FALSE}
 # función que crear el target trial--------------------------------------------
@@ -113,10 +90,11 @@ f_exposicion_seguimiento = function(data,
 ```
 
 ```{r}
-f_exposicion_seguimiento(data = pobana_2_2022_01_03,
+# check f_exposicion_seguimiento-----------------------------------------------
+table_out_2022_01_03 <- f_exposicion_seguimiento(
+                         data = pobana_2_2022_01_03,
                          tiempo_0 = "2022-01-03",
-                         follow_up = 120
-                           ) -> table_out_2022_01_03
+                         follow_up = 120) 
 
 table_out_2022_01_03 %>% count(exposicion)
 table_out_2022_01_03 %>% count(fvc3)
@@ -124,7 +102,7 @@ table_out_2022_01_03 %>% count(fvc3)
 ```
 
 ```{r, message=FALSE, include = TRUE, warning=FALSE}
-# funciones
+# función de matching: primero exclusión dinámica y luego matching-------------
 f_matching <- function(data, 
                        tiempo_0, 
                        vector_match, 
@@ -132,13 +110,6 @@ f_matching <- function(data,
                        f_exclusion, 
                        f_exposicion_seguimiento) {
 
-
-# tiempo_0 <- "2022-01-03"
-# data = pobana_2
-# f_exclusion = hacer_flujo_dep
-# out = "fcv1"
-# vector_match <- vector_match_2
-  
 tiempo_0 = ymd(tiempo_0)
 print(tiempo_0)
 print(paste0("out = ", out))
@@ -165,9 +136,7 @@ try({
              caso = ifelse(!!as.name(out) <= date_end & !is.na(!!as.name(out)), 1, 0),
              date_end = ifelse(caso==1, !!as.name(out), date_end),
              date_end = as.Date.numeric(date_end, origin ="1970-01-01")) %>%
-      data.frame() 
-    # print(c("n= ",nrow(df)))
-    # print(c("casos= ",df %>% filter(caso==1) %>% nrow()))
+      tibble() 
   }
   )
 }
@@ -210,7 +179,7 @@ f_matching(data = pobana_2,
 ```{r, message=FALSE, include = TRUE, warning=FALSE}
 # fecha de inicio y fin: secuencia de fechas
 fecha_inicio = ymd("2022-01-03")
-fecha_fin = ymd("2022-02-06") 
+fecha_fin = ymd("2022-01-07") 
 fechas <- seq.Date(from = fecha_inicio, to = fecha_fin, by = "days")
 
 # se genera una lista con las diversas cohortes diarias 
@@ -225,7 +194,8 @@ lista <- lapply(fechas,
 lista[[1]] %>% count(exposicion)
 lista[[2]] %>% count(exposicion)
 lista[[3]] %>% count(exposicion)
-lista[[1]] %>% count(exposicion)
+lista[[4]] %>% count(exposicion)
+lista[[5]] %>% count(exposicion)
 
 ```
 
