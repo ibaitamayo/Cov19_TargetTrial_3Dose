@@ -359,10 +359,25 @@ pob12 %>% count(domi) %>% count(n) # hay domicilios con muchas personas
 
 ```
 
+```{r vacunas}
+# arreglar base para que las variables se puedan introducir en el matching-----
+vacunas_top <- c("Oxford/AstraZeneca",
+                 "BioNTech/Pfizer",
+                 "J&J / Janssen",
+                 "Moderna/Lonza")
+
+pob13 <- pob12 %>% 
+  # arreglar vacunas: sólo las 4 principales y sólo NA en tvc2 si tvc1 es J & J
+  filter(tvc1 %in% vacunas_top) %>%
+  filter(!is.na(tvc2) | tvc1 == "J&J / Janssen") %>% 
+  mutate(tvc2 = if_else(is.na(tvc2), "NA", tvc2))
+
+```
+
 
 ```{r pobana_0}
 # guardar base de pobana antes de hacer las exclusiones------------------------
-pobana_0 <- pob12
+pobana_0 <- pob13
 saveRDS(pobana_0, file = file.path("Datos", "Procesados", "pobana_0.RDS"))
 
 ```
