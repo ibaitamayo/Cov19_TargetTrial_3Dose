@@ -225,7 +225,7 @@ lista <- lapply(fechas,
                 f_exclusion=f_exclusion,
                 f_exposicionseg=f_exposicionseguimiento)
 
-f_analisis(lista)
+str(lista)
 
 ```
 

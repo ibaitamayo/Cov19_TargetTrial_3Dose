@@ -78,83 +78,9 @@ pobana_1_adaptada <- pobana_1 %>%
 
 ```
 
-
-# Exclusiones dinámicas
+# Añadir múltiples tiempos
 
 ***
-
-En este .Rmd se realizan las **exclusiones que sí dependen del tiempo 0** y por tanto se realizan en conjunción con la determinación del tiempo 0. De momento, el tipo de variables que definen las exclusiones son de dos tipos:
-
-- **Variables de exclusión (NA se mantiene)**. Sí la fecha de la variable es menor a la del tiempo 0 se excluye al individuo. Si no hay fecha, se mantiene al individuo (p.e. *fcv1*).
-
-- **Variables inclusión (NA se excluye)**. Sí la fecha de la variable es mayor a la del tiempo 0 se excluye al individuo. Si no hay fecha, se excluye al individuo (p.e. *fnac_40* o *f_pauta_90*).
-
-Cuando se genere nueva casuística, se puede añadir entre el if() y el else() de la función *excluir_dep()*.
-      
-```{r}
-# se crean listas que dependen del proyecto------------------------------------
-lista_exclusion_dep <- list(
-  criterios = list(
-  c1 = "Excluyendo: edad < 40 años en tiempo_0...",
-  c2 = "Excluyendo: infección previa antes del tiempo_0...", 
-  c3 = "Excluyendo: pauta incompleta 90 días antes del tiempo_0..."),
-  variables = list(
-  v1 = "fcv1",
-  v2 = "fnac_40",
-  v3 = "fpauta_90"),
-  tipo_var = list(
-    "exc",
-    "inc",
-    "inc")
-  )
-
-```
-
-```{r}
-# función para excluir siguiendo un criterio-----------------------------------
-excluir_dep <- function(pob, 
-                        crit,
-                        var,
-                        t_var,
-                        t0)
-{
-  if (t_var == "exc"){
-  print(glue("Variable exclusión. {crit}"))
-  pob <- pob %>% filter(is.na(get(var)) |
-                     get(var) > t0)
-    print(glue("n : {nrow(pob)}"))
-  pob
-  }
-  else {
-  print(glue("Variable inclusión. {crit}"))
-  pob <- pob %>% filter(get(var) < t0)
-    print(glue("n : {nrow(pob)}"))
-  pob
-  }
-}
-
-```
-
-```{r}
-# flujo------------------------------------------------------------------------
-hacer_flujo_dep <- function(poblacion,
-                            exc = lista_exclusion_dep,
-                            tiempo_0
-                   ) 
-  {
-  print(glue("n de partida: {nrow(poblacion)}"))
-  for(i in seq_along(exc$criterios)) {
-  poblacion <- excluir_dep(
-                       pob = poblacion,
-                       crit = exc$criterios[[i]],
-                       var = exc$variables[[i]],
-                       t_var = exc$tipo_var[[i]],
-                       t0 = tiempo_0)
-}
-  poblacion
-  }
-
-```
 
 ```{r}
 # aplicar exclusiones dependientes del tiempo_0------------------------------
@@ -164,20 +90,146 @@ pobana_2_2022_01_03 <- hacer_flujo_dep(poblacion = pobana_1_adaptada,
 
 ```
 
-```{r}
-# guardar base con exclusiones estáticas---------------------------------------
-# saveRDS(pobana_2, file.path("Resultados", "pobana_2.RDS"))
+
+```{r exposicionseguimiento, message=FALSE, include = TRUE, warning=FALSE}
+# función que crear el target trial--------------------------------------------
+f_exposicion_seguimiento = function(data, 
+                                    tiempo_0 = tiempo_0, 
+                                    follow_up = 60) {
+  tiempo_0 <- ymd(tiempo_0)
+  data = data %>% 
+    mutate(
+    exposicion = if_else(tiempo_0 == fvc3 & !is.na(fvc3), 1, 0),
+    date_start = tiempo_0,
+    date_end = tiempo_0 %m+% days(follow_up),
+    # censurar fallecimiento
+    date_end = if_else(!is.na(fdef) & fdef < date_end, fdef, date_end),
+    # censurar control si se vacuna
+    date_end = if_else(exposicion == 0 & !is.na(fvc3) & fvc3 < date_end, 
+                       fvc3, date_end))
+ return(data) 
+}
 
 ```
-    
-# Añadir múltiples tiempos
-
-***
-
-VOY POR AQUÍ
 
 ```{r}
+f_exposicion_seguimiento(data = pobana_2_2022_01_03,
+                         tiempo_0 = "2022-01-03",
+                         follow_up = 120
+                           ) -> table_out_2022_01_03
 
+table_out_2022_01_03 %>% count(exposicion)
+table_out_2022_01_03 %>% count(fvc3)
+
+```
+
+```{r, message=FALSE, include = TRUE, warning=FALSE}
+# funciones
+f_matching <- function(data, 
+                       tiempo_0, 
+                       vector_match, 
+                       out, 
+                       f_exclusion, 
+                       f_exposicion_seguimiento) {
+
+
+# tiempo_0 <- "2022-01-03"
+# data = pobana_2
+# f_exclusion = hacer_flujo_dep
+# out = "fcv1"
+# vector_match <- vector_match_2
+  
+tiempo_0 = ymd(tiempo_0)
+print(tiempo_0)
+print(paste0("out = ", out))
+  
+x = data %>% 
+  f_exclusion(tiempo_0 = tiempo_0) %>% 
+  f_exposicion_seguimiento(tiempo_0 = tiempo_0) 
+
+try({
+    greedymatch <- Matching::Match(
+      Tr = x$exposicion, 
+      M = 1, 
+      X = x[vector_match], 
+      exact = TRUE, 
+      ties = FALSE)
+    
+    a <- x[unlist(greedymatch[c("index.treated", "index.control")]), ]
+    par <- rep(1:(nrow(a)/2), 2)
+  
+    df = bind_cols(par = par, a) %>%
+      group_by(par) %>%
+      mutate(date_end = min(date_end),
+             # creo la variable de resultado y finalizo el seguimiento cuando aparece)
+             caso = ifelse(!!as.name(out) <= date_end & !is.na(!!as.name(out)), 1, 0),
+             date_end = ifelse(caso==1, !!as.name(out), date_end),
+             date_end = as.Date.numeric(date_end, origin ="1970-01-01")) %>%
+      data.frame() 
+    # print(c("n= ",nrow(df)))
+    # print(c("casos= ",df %>% filter(caso==1) %>% nrow()))
+  }
+  )
+}
+
+```
+
+```{r, message=FALSE, include = TRUE, warning=FALSE}
+# se define el vector de emparejamiento----------------------------------------
+vector_match_1 = c("czbs","genn" ,"gedadn", "n_0", "tvc2n", "tv2", "migran", 
+               "vgp20", "vgp21", "ucn8") # 1
+
+vector_match_2 = c("czbs",
+                   "genn",
+                   "gedadn", 
+                   # "n_0", 
+                   "tvc2n", 
+                   # "tv2", 
+                   "migran",
+                   "vgp20",
+                   "vgp21") # 2
+
+vector_match_3 = c("domi") # 3
+
+names(pobana_2) %>% sort()
+
+```
+
+
+```{r}
+f_matching(data = pobana_2,
+           tiempo_0 = "2022-01-03",
+           vector_match = vector_match_2, 
+           out = "fcv1",
+           f_exclusion = hacer_flujo_dep, 
+           f_exposicion_seguimiento = f_exposicion_seguimiento)
+
+```
+
+
+```{r, message=FALSE, include = TRUE, warning=FALSE}
+# fecha de inicio y fin: secuencia de fechas
+fecha_inicio = ymd("2022-01-03")
+fecha_fin = ymd("2022-02-06") 
+fechas <- seq.Date(from = fecha_inicio, to = fecha_fin, by = "days")
+
+# se genera una lista con las diversas cohortes diarias 
+lista <- lapply(fechas,
+                f_matching, 
+                data = pobana_2,
+                vector_match = vector_match_2, #2
+                out = "fcv1",
+                f_exclusion = hacer_flujo_dep,
+                f_exposicion_seguimiento = f_exposicion_seguimiento)
+
+lista[[1]] %>% count(exposicion)
+lista[[2]] %>% count(exposicion)
+lista[[3]] %>% count(exposicion)
+lista[[1]] %>% count(exposicion)
+
+```
+
+```{r}
 
 ```
 
