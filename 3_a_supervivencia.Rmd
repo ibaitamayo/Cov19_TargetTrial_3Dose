@@ -62,8 +62,11 @@ source_rmd("0_b_funciones.rmd")
 
 ```{r}
 # cargar lista----------------------------------------------------------------
-lista_vm2_fih1 <- readRDS(file.path("Resultados", "lista_vm2_fih1.RDS"))
-lista_vm3_fih1 <- readRDS(file.path("Resultados", "lista_vm3_fih1.RDS"))
+lista_vm2_fih1 <- readRDS(file.path("Resultados", "lista_vm2_fih1.RDS")) %>% 
+  keep(~is.tbl(.))
+
+lista_vm3_fih1 <- readRDS(file.path("Resultados", "lista_vm3_fih1.RDS")) %>% 
+  keep(~is.tbl(.))
 
 ```
 
@@ -110,7 +113,14 @@ print(ggsurvplot(fit, data = base_analisis, xlab = "days of follow-up",
 ```{r}
 # ejecutamos el análisis-------------------------------------------------------
 f_analisis(lista = lista_vm2_fih1)
+f_analisis(lista = lista_vm3_fih1)
 
+```
+
+
+```{r}
+# comprobaciones outcomes
+pobana_2 %>% count(is.na(fih1))
 pobana_2 %>% ggplot(aes(x = fih1)) +
   geom_histogram()
 pobana_2 %>% count(is.na(fcv1))
