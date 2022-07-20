@@ -177,21 +177,23 @@ dups <- dat220613_step2 %>%
 
 Muchos duplicados son porque presentan diferente hora y minuto de vacunación, aunque el mismo día. Así que después de aplicar la función *fymd* a las variables que contenían fechas se reducen con un *distinct* por todas las variables. Para el resto de observaciones duplicadas, se recupera el primer elemento no-NA (o el primero) para cada una de las variables.
 
-```{r duplicados2}
-# eliminar observaciones iguales por todas las variables-----------------------
-dat220613_sin_dup <- dat220613_step2 %>%
-  # la librería tidylog imprime en pantalla cuantas filas se eliminan
-  tidylog::distinct() %>%
-  # cambiar "NULL" por <NA>
-  # mutate(across(where(is.character), 
-  #                      .fns = ~ if_else(.x == "NULL", NA_character_, .x))) %>% 
-  # # agrupar duplicados y seleccionar variables completadas frente a <NA>
-  group_by(id) %>% 
-  summarise(across(.fns = ~dplyr::first(na.omit(.))))
+Este paso lo comento, puesto que tarda mucho en ejecutarse.
 
-# guardar datos----------------------------------------------------------------
-saveRDS(dat220613_sin_dup, file.path("Datos", "Procesados",
-                                     "dat220613_sin_dup.RDS"))
+```{r duplicados2}
+# # eliminar observaciones iguales por todas las variables-----------------------
+# dat220613_sin_dup <- dat220613_step2 %>%
+#   # la librería tidylog imprime en pantalla cuantas filas se eliminan
+#   tidylog::distinct() %>%
+#   # cambiar "NULL" por <NA>
+#   # mutate(across(where(is.character), 
+#   #                      .fns = ~ if_else(.x == "NULL", NA_character_, .x))) %>% 
+#   # # agrupar duplicados y seleccionar variables completadas frente a <NA>
+#   group_by(id) %>% 
+#   summarise(across(.fns = ~dplyr::first(na.omit(.))))
+# 
+# # guardar datos----------------------------------------------------------------
+# saveRDS(dat220613_sin_dup, file.path("Datos", "Procesados",
+#                                      "dat220613_sin_dup.RDS"))
 
 ```
 
