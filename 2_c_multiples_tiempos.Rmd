@@ -42,9 +42,9 @@ knitr::opts_chunk$set(eval = TRUE,
 ```{r}
 # función para cargar un .Rmd como si se hiciese source de un .r---------------
 source_rmd = function(file, ...) {
-  tmp_file = tempfile(fileext=".R")
+  tmp_file = tempfile(fileext = ".R")
   on.exit(unlink(tmp_file), add = TRUE)
-  knitr::purl(file, output=tmp_file)
+  knitr::purl(file, output = tmp_file)
   source(file = tmp_file, ...)
 }
 
@@ -52,7 +52,9 @@ source_rmd = function(file, ...) {
 
 ```{r}
 # cargar funciones de 0_funciones----------------------------------------------
+if (!exists("se_ha_cargado_f")) {
 source_rmd("0_b_funciones.rmd")
+}
 
 ```
 
@@ -179,6 +181,11 @@ prueba_matching <- f_matching(data = pobana_2,
 
 ```
 
+# Hacer listas para el análisis
+
+***
+
+Se prueba la función para el outcome de hospitalizaciones, ampliando el periodo del estudio desde el 2021-10-01 hasta el 2022-06-01. El código se comenta, puesto que tarda mucho en ejecutarse. Las listas resultantes se cargan al principio del .Rmd 3_a.
 
 ```{r, message=FALSE, include = TRUE, warning=FALSE}
 # fecha de inicio y fin: secuencia de fechas
@@ -190,35 +197,35 @@ fechas <- seq.Date(from = fecha_inicio, to = fecha_fin, by = "days")
 
 
 ```{r, message=FALSE, include = TRUE, warning=FALSE}
-# se genera una lista con las diversas cohortes diarias 
-lista_vm2_fih1 <- lapply(fechas,
-                f_matching, 
-                data = pobana_2,
-                vector_match = vector_match_2, #2
-                out = "fih1",
-                f_exclusion = hacer_flujo_dep,
-                f_exposicion_seguimiento = f_exposicion_seguimiento)
+# # se genera una lista con las diversas cohortes diarias 
+# lista_vm2_fih1 <- lapply(fechas,
+#                 f_matching, 
+#                 data = pobana_2,
+#                 vector_match = vector_match_2, #2
+#                 out = "fih1",
+#                 f_exclusion = hacer_flujo_dep,
+#                 f_exposicion_seguimiento = f_exposicion_seguimiento)
 
 ```
 
 ```{r, message=FALSE, include = TRUE, warning=FALSE}
-# se genera una lista con las diversas cohortes diarias 
-lista_vm3_fih1 <- lapply(fechas,
-                f_matching, 
-                data = pobana_2,
-                vector_match = vector_match_3, #2
-                out = "fih1",
-                f_exclusion = hacer_flujo_dep,
-                f_exposicion_seguimiento = f_exposicion_seguimiento)
+# # se genera una lista con las diversas cohortes diarias 
+# lista_vm3_fih1 <- lapply(fechas,
+#                 f_matching, 
+#                 data = pobana_2,
+#                 vector_match = vector_match_3, #2
+#                 out = "fih1",
+#                 f_exclusion = hacer_flujo_dep,
+#                 f_exposicion_seguimiento = f_exposicion_seguimiento)
 
 ```
 
 
 ```{r}
-# guardar lista----------------------------------------------------------------
-# vector_match_2; outcome: ingreso hospitalario
-saveRDS(lista_vm2_fih1, file.path("Resultados", "lista_vm2_fih1.RDS"))
-# vector_match_3; outcome: ingreso hospitalario
-saveRDS(lista_vm3_fih1, file.path("Resultados", "lista_vm3_fih1.RDS"))
+# # guardar lista----------------------------------------------------------------
+# # vector_match_2; outcome: ingreso hospitalario
+# saveRDS(lista_vm2_fih1, file.path("Resultados", "lista_vm2_fih1.RDS"))
+# # vector_match_3; outcome: ingreso hospitalario
+# saveRDS(lista_vm3_fih1, file.path("Resultados", "lista_vm3_fih1.RDS"))
 
 ```

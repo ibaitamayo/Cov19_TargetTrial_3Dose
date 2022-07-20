@@ -24,6 +24,9 @@ knitr::opts_chunk$set(eval = TRUE,
 ```{r librerias, echo=FALSE, message=FALSE, include=FALSE, warning=FALSE}
 source("0_a_librerias.R")
 
+# creo una función ficticia para ver si se han cargado las funciones
+se_ha_cargado_f <- "Sí"
+
 ```
 
 # Descripción
@@ -36,7 +39,7 @@ En este .Rmd van a estar todas las funciones que se utilizarán para la creació
 
 ***
 
-En esta sección se encuentran las funciones auxiliares
+En esta sección se encuentran las funciones auxiliares.
 
 ## fymd
 
@@ -61,6 +64,19 @@ fnullna <- function(x) {
   }
 
 ```
+
+## fnull0
+
+Función que transforma una cadena con texto "NULL" a "0".
+
+```{r fnull0}
+
+fnull0 <- function(x) {
+  x = if_else(x == "NULL", 0, as.numeric(x))
+  }
+
+```
+
 
 # Funciones del Target Trial
 

@@ -22,6 +22,4 @@ library(conflicted)
 library(glue)
 
 # usar fuciones de tidyverse antes que las de otros paquetes-------------------
-conflict_prefer("filter", "dplyr")
-conflict_prefer("select", "dplyr")
-conflict_prefer("count", "dplyr")
+conflict_prefer_all("dplyr")
