@@ -272,7 +272,8 @@ f_tabla_0 <- function(fecha_0 = "2022-01-14",
                  migran,
                  vgp20,
                  vgp21,
-                 ucn8) 
+                 ucn8,
+                 domi) 
  
   return(pobana_n_tabla0)
 }
