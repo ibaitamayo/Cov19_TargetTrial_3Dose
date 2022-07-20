@@ -42,7 +42,7 @@ knitr::opts_chunk$set(eval = TRUE,
 ```{r}
 # función para cargar un .Rmd como si se hiciese source de un .r---------------
 source_rmd = function(file, ...) {
-  tmp_file = tempfile(fileext=".R")
+  tmp_file = tempfile(fileext = ".R")
   on.exit(unlink(tmp_file), add = TRUE)
   knitr::purl(file, output=tmp_file)
   source(file = tmp_file, ...)
@@ -52,7 +52,9 @@ source_rmd = function(file, ...) {
 
 ```{r}
 # cargar funciones de 0_funciones----------------------------------------------
+if (!exists("fnullna")) {
 source_rmd("0_b_funciones.rmd")
+}
 
 ```
 

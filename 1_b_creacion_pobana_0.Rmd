@@ -43,9 +43,9 @@ knitr::opts_chunk$set(eval = TRUE,
 ```{r}
 # función para cargar un .Rmd como si se hiciese source de un .r---------------
 source_rmd = function(file, ...) {
-  tmp_file = tempfile(fileext=".R")
+  tmp_file = tempfile(fileext = ".R")
   on.exit(unlink(tmp_file), add = TRUE)
-  knitr::purl(file, output=tmp_file)
+  knitr::purl(file, output = tmp_file)
   source(file = tmp_file, ...)
 }
 
@@ -53,7 +53,9 @@ source_rmd = function(file, ...) {
 
 ```{r}
 # cargar funciones de 0_funciones----------------------------------------------
+if (!exists("se_ha_cargado_f")) {
 source_rmd("0_b_funciones.rmd")
+}
 
 ```
 
@@ -390,7 +392,7 @@ saveRDS(pobana_0, file = file.path("Datos", "Procesados", "pobana_0.RDS"))
 ```{r}
 e_pres <- c()
 e_pres[1] <-  "Código paciente (pac_unif_cod)"
-e_pres[2] <-  "Genero"
+e_pres[2] <-  "Género"
 e_pres[3] <-  "Fecha nacimiento (exclusion)"
 e_pres[4] <-  "Grupo de edad, quinquenal salvo  (0,40],(90,110]"
 e_pres[5] <-  "Fecha defuncion"
