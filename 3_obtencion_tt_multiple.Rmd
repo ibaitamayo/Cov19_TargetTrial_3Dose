@@ -313,7 +313,7 @@ param=tribble(
   fechas,   c("czbs","genn" ,"gedadn", "n_0", "tvc2n", "tv2", "migran","vgp20","vgp21"), tab0220103, "fcv1",60,
   fechas,   c("czbs","genn" ,"gedadn", "n_0", "tvc2n", "tv2", "migran","vgp20","vgp21"), tab0220103, "fih1",120,
   fechas, "domi",tab0220103d,"fcv1",60,
-  fechas, "domi",tab0220103d,"fcv1",120,
+  fechas, "domi",tab0220103d,"fih1",120,
 )
 
 
@@ -332,7 +332,6 @@ out[[i]] <-map(param$fechas[[i]],
 )
 }
 
-    
   
 # momenclatura fechas-match-out-fu
 names(out)=c("e3f6_m9_ofcv_fu60","e3f6_m9_ofih_fu120","e3f6_m1_ofcv_fu60","e3f6_m1_ofih_fu120")
@@ -355,9 +354,9 @@ save(out,file="out4.Rdata")
 #   mutate(sim = invoke_map(f, params, n = 10))
 #   
  names(out)[4]
-  f_analisis(out[[4]])
+  f_analisis(out[[2]])
 # 
-
+https://r4ds.had.co.nz/model-building.html
 
 ```
 
@@ -397,9 +396,10 @@ print("# Estimated effectiveness from day 7 to 34 after a booster was 51·3% (95
    print(paste0("# Estimated effectiveness in Navarra was :",round((1-exp(coef(cpp)))*100,1), "% (", round((1-exp(confint((cpp)))[2])*100,1),"-", round((1-exp(confint((cpp)))[1])*100,1),")"))
 }
 
-f_analisis(lista)
+f_analisis(out[[4]])
 
 
+names(out)
 
 ```
 
@@ -448,11 +448,33 @@ dint= left_join(test220613, dplyr::select(base_analisis,id,exposicion,caso)) %>%
 
 pp=ggplot(dint, aes(x = sem, y=n, fill = exposition))+ geom_col(position = "dodge")   
 
-pp + ggtitle("test diagnosticos segun exposcion a booster")    
+pp + ggtitle("test diagnosticos segun exposicion a booster")    
 
 
 ## esta aplicando aqui la fecha 0???
   test220613%>% filter(id %in% tabla_0_pobana$id &tpos==FALSE) %>% group_by(id)%>% summarise(n_0=max(n)) %>% right_join(tabla_0_pobana, by="id") %>% mutate(n_0=ifelse(is.na(n_0),0,ifelse(n_0>3,3,n_0)), tv2=as.numeric(ymd(fecha0)-fvc2))->pobana_n_tabla0
+
+```
+
+```{r test-negative case control design}
+
+#We used a test-negative, case–control design, in which effectiveness estimates were derived by comparing the odds of previous infection or vaccination or both among case participants (persons with a positive PCR test) with that among controls (PCR-negative persons).2,15-18 We also assessed effectiveness against any severe, critical, or fatal case of Covid-19.
+
+#To estimate the effectiveness against symptomatic infection, we exactly matched cases and controls that were identified from December 23, 2021, through February 21, 2022. Case participants and controls were matched in a 1:1 ratio
+according to
+sex, 
+10-year age group, 
+nationality,
+calendar week of PCR test.
+
+#To assess effectiveness against any severe, critical, or fatal case of Covid-19, we used a 1:5 matching ratio to improve the statistical precision of the estimates.
+
+#Only the first PCR-positive test that was identified for an individual participant during the study period was included, but all PCR-negative tests were included. Controls included persons with no record of a PCR-positive test during the study period. Only PCR tests conducted because of clinical symptoms were used in the analyses.
+
+# Retos: en este caso hay que partir de la tabla long de test, como hay varios por persona, ellos escogen para cada perssona su primer test positivos y el conjunto de los negativos (tal como lo tenemos montado -fecha de 1 dosis.. fecha infeccion... es cierto que hay algunas medidas repetidas -o casi- a lo ancho), en el trabajo previo que era propectivo, parte de la fecha de 3dosis; (en este caso será la fecha de test).. para mirar hacia delante (detras), si ha habido un resultado -como infeccion, hospitalizacion..-(una exposicion: infeccion previa, vacunacion).. luego en el analisis, alli se hace un cox (aqui una logistica -con el out: caso/)
+
+
+
 
 ```
 
