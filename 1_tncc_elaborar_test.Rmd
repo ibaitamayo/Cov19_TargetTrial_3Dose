@@ -1,0 +1,149 @@
+---
+title: "Preprocesado test-negative case-control"
+output: 
+  html_document:
+    code_folding: show
+    highlight: espresso
+    css: style.css
+    keep_md: yes
+    number_sections: yes
+    theme: readable
+    toc: yes  
+    toc_float:
+      collapsed: yes
+      smooth_scroll: yes
+      toc_depth: 3     
+editor_options: 
+  chunk_output_type: console
+---
+
+
+```{r set-global-options, echo = FALSE}
+knitr::opts_chunk$set(eval = TRUE, 
+                      echo = TRUE, 
+                      cache = FALSE,
+                      include = TRUE,
+                      collapse = FALSE,
+                       dependson = NULL,
+                      engine = "R", # Chunks will always have R code, unless noted
+                      error = TRUE,
+                      fig.path="Figures/",  # Set the figure options
+                      fig.align = "center", 
+                      fig.width = 12,
+                      fig.height = 12)
+
+```
+
+```{r librerias, echo=FALSE, message=FALSE, include = FALSE, warning=FALSE}
+# source("0_a_librerias.R")
+# ya se cargan cuando se carguen las funciones
+
+```
+
+```{r}
+# función para cargar un .Rmd como si se hiciese source de un .r---------------
+source_rmd = function(file, ...) {
+  tmp_file = tempfile(fileext=".R")
+  on.exit(unlink(tmp_file), add = TRUE)
+  knitr::purl(file, output=tmp_file)
+  source(file = tmp_file, ...)
+}
+
+```
+
+```{r}
+# cargar funciones de 0_funciones----------------------------------------------
+source_rmd("0_b_funciones.rmd")
+
+```
+
+```{r datos}
+# cargar datos----------------------------------------------------------------
+pobana_0 <- readRDS(file = file.path("Datos", "Procesados", "pobana_0.RDS"))
+# 645209 
+
+
+test220613 <- fread(file.path("Datos", "Brutos",
+                                   "poblacion_Pruebas_dtcas_06_2022.csv"),
+                        col.names = c(
+                         "tori",
+                         "id",
+                         "tfreg",
+                         "tfval",
+                         "ct",
+                         "tmot",
+                         "tres",
+                         "tcen",
+                         "tamb",
+                         "tprof",
+                         "tmot2")) # 1633910
+
+## esto deberia funcionar.. pero aun no está montado en el dropbox.. por eso voy a partir del Rdata
+
+load("~/Dropbox/ju/Asesorias/FranciscoSanchezSaez/targettrial/covidvacunas/Rdata/test220613.Rdata")  # 1581855
+
+
+
+```
+
+# Desplegar test como base del T0
+
+***
+
+En este caso hay que partir de la tabla long de test, como hay varios por persona, se escogen para cada perssona su primer test positivos y el conjunto de los negativos
+
+
+Nos interesa, para replicar el trabajo (https://www.nejm.org/doi/pdf/10.1056/NEJMoa2203965) centrarnos en  (a "matched, test-negative, case–control study in Qatar from December 23, 2021, through February 21, 2022".
+
+Otros trabajos de Qatar (https://www.nejm.org/doi/full/10.1056/NEJMc2117933),  -con un como ejemplo de carta a NEJM- diseño prospectivo
+
+```{r datos}
+# Escoger pruebas con pcr-antigeno---------------------------------------------
+test220613 %>% count(tori)
+# test220613 <- test220613 
+
+test0 <- test220613 %>%
+  # quitar algunas variables
+#  select(-c(tamb,tmot,tcen,tfval)) %>% 
+  # seleccionar PCR y antígenos
+  filter(tori %in% c("PCR","Antigenos"))  # 1581855
+
+
+
+```
+
+
+```{r repetidos}
+# Quitar repetidos-------------------------------------------------------------
+test1 <- test0 %>% 
+  mutate(id = as.character(id), 
+         tpos = tres == "Positivo", 
+         profr = tprof == "Profesional") %>%
+  select( -c(tres)) %>% 
+  mutate(ftes = as.Date(tfreg)) %>% 
+  select(-tfreg) %>% 
+  # seleccionar como mucho un test por persona y día
+  tidylog::distinct(id, ftes, .keep_all = TRUE)   # 1581855
+
+```
+
+```{r}
+# Contar número de test realizado----------------------------------------------
+test220613_cleaned <- test1 %>% 
+  group_by(id) %>%
+  arrange(ftes) %>%
+  mutate(n = 1:n()) %>% 
+  ungroup()
+
+```
+
+
+```{r}
+# guardar base test------------------------------------------------------------
+saveRDS(test220613_cleaned, file = file.path("Datos", "Procesados", 
+                                             "test220613_cleaned.RDS"))
+
+```
+
+
+
