@@ -44,25 +44,21 @@ Función que transforma los 10 primeros carácteres de una cadena en una fecha m
 
 ```{r fymd}
 # fecha en texto a ymd
-fymd <- function(x) {x=as.Date(ymd(str_sub(x, 1, 10)))}
+fymd <- function(x) {
+  x = as.Date(ymd(str_sub(x, 1, 10)))
+  }
 
 ```
 
-## fnull0
-
-Función que transforma una cadena con texto "NULL" a un real 0. Esta función es un poco chunga, ya que pide cambiar de carácteres a numérico.
-
-```{r fnull0}
-# de texto "NULL" a 0
-fnull0 <- function(x) {x = as.numeric(ifelse(x == "NULL", 0, x))}
-
-```
+## fnullna
 
 Función que transforma una cadena con texto "NULL" a NA.
 
 ```{r fnullna}
 
-fnullna <- function(x) {x = ifelse(x == "NULL", NA, x)}
+fnullna <- function(x) {
+  x = if_else(x == "NULL", NA_character_, x)
+  }
 
 ```
 
@@ -70,7 +66,54 @@ fnullna <- function(x) {x = ifelse(x == "NULL", NA, x)}
 
 ***
 
+## excluir
+
+Función que realiza un criterio de exclusión a partir de una variable de un tibble.
+
 ```{r}
+# función para excluir siguiendo un criterio-----------------------------------
+excluir <- function(pob, 
+                    crit,
+                    var)
+{
+  
+  if (is.logical(pob %>% pull(var)) == TRUE) {
+  print(glue("Variable lógica. {crit}"))
+  pob <- pob %>% filter(is.na(get(var)) |
+                     get(var) != TRUE)
+    print(glue("n : {nrow(pob)}"))
+  pob
+  }
+  else {
+  print(glue("Variable no lógica. {crit}"))
+  pob <- pob %>% filter(!is.na(get(var)))
+    print(glue("n : {nrow(pob)}"))
+  pob
+  }
+}
 
 ```
+
+## hacer_flujo
+
+Está función aplica los criterios de exclusión uno detras de otro, informando del flow.
+
+```{r}
+# flujo------------------------------------------------------------------------
+hacer_flujo <- function(poblacion,
+                        exc = lista_exclusion
+                   ) 
+  {
+  print(glue("n de partida: {nrow(poblacion)}"))
+
+  for( i in seq_along(exc$criterios)) {
+  poblacion <- excluir(pob = poblacion,
+                         crit = exc$criterios[[i]],
+                         var = exc$variables[[i]])
+}
+  poblacion
+  }
+  
+```
+
 

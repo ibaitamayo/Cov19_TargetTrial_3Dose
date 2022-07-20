@@ -1,0 +1,197 @@
+---
+title: "Criterios de exclusión estáticos"
+output: 
+  html_document:
+    code_folding: show
+    highlight: espresso
+    css: style.css
+    keep_md: yes
+    number_sections: yes
+    theme: readable
+    toc: yes  
+    toc_float:
+      collapsed: yes
+      smooth_scroll: yes
+      toc_depth: 3     
+editor_options: 
+  chunk_output_type: inline
+---
+
+
+```{r set-global-options, echo = FALSE}
+knitr::opts_chunk$set(eval = TRUE, 
+                      echo = TRUE, 
+                      cache = FALSE,
+                      include = TRUE,
+                      collapse = FALSE,
+                       dependson = NULL,
+                      engine = "R", # Chunks will always have R code, unless noted
+                      error = TRUE,
+                      fig.path="Figures/",  # Set the figure options
+                      fig.align = "center", 
+                      fig.width = 12,
+                      fig.height = 12)
+```
+
+```{r librerias, echo=FALSE, message=FALSE, include=FALSE, warning=FALSE}
+# source("0_a_librerias.R")
+# ya se cargan cuando se carguen las funciones
+
+```
+
+```{r}
+# función para cargar un .Rmd como si se hiciese source de un .r---------------
+source_rmd = function(file, ...) {
+  tmp_file = tempfile(fileext=".R")
+  on.exit(unlink(tmp_file), add = TRUE)
+  knitr::purl(file, output=tmp_file)
+  source(file = tmp_file, ...)
+}
+
+```
+
+```{r}
+# cargar funciones de 0_funciones----------------------------------------------
+source_rmd("0_b_funciones.rmd")
+
+```
+
+```{r cargar-datos, echo=FALSE, eval=TRUE, message=FALSE, warning=FALSE}
+# cargar datos-----------------------------------------------------------------
+# load(file.path("Datos", "Brutos", "ttcvc3d_220628.Rdata"))
+pobana_1 <- readRDS(file = file.path("Resultados", "pobana_1.RDS"))
+
+```
+
+# Exclusiones dinámicas
+
+***
+
+En este .Rmd se realizan las **exclusiones que sí dependen del tiempo 0** y por tanto se realizan en conjunción con la determinación del tiempo 0. De momento, el tipo de variables que definen las exclusiones son de dos tipos:
+
+- **Variables de exclusión (NA se mantiene)**. Sí la fecha de la variable es menor a la del tiempo 0 se excluye al individuo. Si no hay fecha, se mantiene al individuo (p.e. *fcv1* o *fdef*).
+
+- **Variables inclusión (NA se excluye)**. Sí la fecha de la variable es mayor a la del tiempo 0 se excluye al individuo. Si no hay fecha, se excluye al individuo (p.e. *fnac_40* o *f_pauta_90*).
+
+Cuando se genere nueva casuística, se puede añadir entre el if() y el else() de la función *excluir_dep()*.
+
+```{r}
+# arreglar variables exclusión/inclusión dinámicas-----------------------------
+pobana_1_adaptada <- pobana_1 %>% 
+  # crear fecha 40 cumpleaños
+  mutate(fnac_40 = fnac %m+% years(40)) %>% 
+  # crear fecha 90 días tras pauta completa
+  mutate(fpauta_90 = case_when(
+    !is.na(fvc2) ~ fvc2 %m+% days(90),
+    tvc1 == "J&J / Janssen" ~ fvc1 %m+% days(90),
+    T ~ NA_Date_
+    ))
+
+```
+   
+```{r}
+# arreglar base para que las variables se puedan introducir en el matching-----
+pobana_2 <- pobana_1_adaptada %>% 
+  # arreglar variables matching
+  mutate(
+    genn = as.numeric(gen) - 1,
+    gedadn = as.numeric(gedad),
+    czbs = as.numeric(czbs),
+    migran = as.numeric(migran),
+    vgp20 = as.numeric(vgp20),
+    vgp21 = as.numeric(vgp21),
+    tvc2n = as.numeric(as.factor(tvc2)),
+    domi = as.numeric(domi)) 
+
+```
+
+```{r}
+# guardar base con exclusiones estáticas---------------------------------------
+saveRDS(pobana_2, file.path("Resultados", "pobana_2.RDS"))
+
+```
+   
+      
+```{r}
+# se crean listas que dependen del proyecto------------------------------------
+lista_exclusion_dep <- list(
+  criterios = list(
+  c1 = "Excluyendo: infección previa antes del tiempo_0...",
+  c2 = "Excluyendo: edad < 40 años en tiempo_0...", 
+  c3 = "Excluyendo: pauta incompleta 90 días antes del tiempo_0...",
+  c4 = "Excluyendo: fallecidos antes del tiempo_0...",
+  c5 = "Excluyendo: boosting antes del tiempo_0..."),
+  variables = list(
+  v1 = "fcv1",
+  v2 = "fnac_40",
+  v3 = "fpauta_90",
+  v4 = "fdef",
+  v5 = "fvc3"),
+  tipo_var = list(
+    "exc",
+    "inc",
+    "inc",
+    "exc",
+    "exc")
+  )
+
+```
+
+```{r}
+# función para excluir siguiendo un criterio-----------------------------------
+excluir_dep <- function(pob, 
+                        crit,
+                        var,
+                        t_var,
+                        t0)
+{
+  if (t_var == "exc"){
+  print(glue("Variable exclusión. {crit}"))
+  pob <- pob %>% filter(is.na(get(var)) |
+                     get(var) >= t0)
+    print(glue("n : {nrow(pob)}"))
+  pob
+  }
+  else {
+  print(glue("Variable inclusión. {crit}"))
+  pob <- pob %>% filter(get(var) <= t0)
+    print(glue("n : {nrow(pob)}"))
+  pob
+  }
+}
+
+```
+
+```{r}
+# flujo------------------------------------------------------------------------
+hacer_flujo_dep <- function(poblacion,
+                            exc = lista_exclusion_dep,
+                            tiempo_0 = tiempo_0
+                   ) 
+  {
+  tiempo_0 <- ymd(tiempo_0)
+  print(glue("n de partida: {nrow(poblacion)}"))
+  for(i in seq_along(exc$criterios)) {
+  poblacion <- excluir_dep(
+                       pob = poblacion,
+                       crit = exc$criterios[[i]],
+                       var = exc$variables[[i]],
+                       t_var = exc$tipo_var[[i]],
+                       t0 = tiempo_0)
+}
+  poblacion
+  }
+
+```
+
+```{r}
+# aplicar exclusiones dependientes del tiempo_0------------------------------
+pobana_2_2022_01_03 <- hacer_flujo_dep(poblacion = pobana_2, 
+            exc = lista_exclusion_dep,
+            tiempo_0 = "2022-01-03")
+
+```
+
+
+    
+    

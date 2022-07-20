@@ -1,0 +1,224 @@
+---
+title: "Criterios de exclusión estáticos"
+output: 
+  html_document:
+    code_folding: show
+    highlight: espresso
+    css: style.css
+    keep_md: yes
+    number_sections: yes
+    theme: readable
+    toc: yes  
+    toc_float:
+      collapsed: yes
+      smooth_scroll: yes
+      toc_depth: 3     
+editor_options: 
+  chunk_output_type: inline
+---
+
+
+```{r set-global-options, echo = FALSE}
+knitr::opts_chunk$set(eval = TRUE, 
+                      echo = TRUE, 
+                      cache = FALSE,
+                      include = TRUE,
+                      collapse = FALSE,
+                       dependson = NULL,
+                      engine = "R", # Chunks will always have R code, unless noted
+                      error = TRUE,
+                      fig.path="Figures/",  # Set the figure options
+                      fig.align = "center", 
+                      fig.width = 12,
+                      fig.height = 12)
+```
+
+```{r librerias, echo=FALSE, message=FALSE, include=FALSE, warning=FALSE}
+# source("0_a_librerias.R")
+# ya se cargan cuando se carguen las funciones
+
+```
+
+```{r}
+# función para cargar un .Rmd como si se hiciese source de un .r---------------
+source_rmd = function(file, ...) {
+  tmp_file = tempfile(fileext=".R")
+  on.exit(unlink(tmp_file), add = TRUE)
+  knitr::purl(file, output=tmp_file)
+  source(file = tmp_file, ...)
+}
+
+```
+
+```{r}
+# cargar funciones de 0_funciones----------------------------------------------
+source_rmd("0_b_funciones.rmd")
+
+```
+
+
+```{r cargar-datos, echo=FALSE, eval=TRUE, message=FALSE, warning=FALSE}
+# cargar datos-----------------------------------------------------------------
+# load(file.path("Datos", "Brutos", "ttcvc3d_220628.Rdata"))
+pobana_2 <- readRDS(file = file.path("Resultados", "pobana_2.RDS"))
+test220613_cleaned <- readRDS(file = file.path("Datos", "Procesados", 
+                                             "test220613_cleaned.RDS"))
+
+
+```
+
+# Añadir múltiples tiempos
+
+***
+
+```{r exposicionseguimiento, message=FALSE, include = TRUE, warning=FALSE}
+# función que crear el target trial--------------------------------------------
+f_exposicion_seguimiento = function(data, 
+                                    tiempo_0 = tiempo_0, 
+                                    follow_up = 60) {
+  tiempo_0 <- ymd(tiempo_0)
+  data = data %>% 
+    mutate(
+    exposicion = if_else(tiempo_0 == fvc3 & !is.na(fvc3), 1, 0),
+    date_start = tiempo_0,
+    date_end = tiempo_0 %m+% days(follow_up),
+    # censurar fallecimiento
+    date_end = if_else(!is.na(fdef) & fdef < date_end, fdef, date_end),
+    # censurar control si se vacuna
+    date_end = if_else(exposicion == 0 & !is.na(fvc3) & fvc3 < date_end, 
+                       fvc3, date_end))
+ return(data) 
+}
+
+```
+
+```{r}
+# check f_exposicion_seguimiento-----------------------------------------------
+table_out_2022_01_03 <- f_exposicion_seguimiento(
+                         data = pobana_2_2022_01_03,
+                         tiempo_0 = "2022-01-03",
+                         follow_up = 240) 
+
+table_out_2022_01_03 %>% count(exposicion)
+table_out_2022_01_03 %>% count(fvc3)
+
+```
+
+```{r, message=FALSE, include = TRUE, warning=FALSE}
+# función de matching: primero exclusión dinámica y luego matching-------------
+f_matching <- function(data, 
+                       tiempo_0, 
+                       vector_match, 
+                       out, 
+                       f_exclusion, 
+                       f_exposicion_seguimiento) {
+
+tiempo_0 = ymd(tiempo_0)
+print(tiempo_0)
+print(paste0("out = ", out))
+  
+x = data %>% 
+  f_exclusion(tiempo_0 = tiempo_0) %>% 
+  f_exposicion_seguimiento(tiempo_0 = tiempo_0) 
+
+try({
+    greedymatch <- Matching::Match(
+      Tr = x$exposicion, 
+      M = 1, 
+      X = x[vector_match], 
+      exact = TRUE, 
+      ties = FALSE)
+    
+    a <- x[unlist(greedymatch[c("index.treated", "index.control")]), ]
+    par <- rep(1:(nrow(a)/2), 2)
+  
+    df = bind_cols(par = par, a) %>%
+      group_by(par) %>%
+      mutate(date_end = min(date_end),
+             # creo la variable de resultado y finalizo el seguimiento cuando aparece)
+             caso = ifelse(!!as.name(out) <= date_end & !is.na(!!as.name(out)), 1, 0),
+             date_end = ifelse(caso==1, !!as.name(out), date_end),
+             date_end = as.Date.numeric(date_end, origin ="1970-01-01")) %>%
+      tibble() 
+  }
+  )
+}
+
+```
+
+```{r, message=FALSE, include = TRUE, warning=FALSE}
+# se define el vector de emparejamiento----------------------------------------
+vector_match_1 <- c("czbs","genn" ,"gedadn", "n_0", "tvc2n", "tv2", "migran", 
+               "vgp20", "vgp21", "ucn8") # 1
+
+vector_match_2 <- c("czbs",
+                   "genn",
+                   "gedadn", 
+                   # "n_0", 
+                   "tvc2n", 
+                   # "tv2", 
+                   "migran",
+                   "vgp20",
+                   "vgp21") # 2
+
+vector_match_3 <- c("domi") # 3
+
+names(pobana_2) %>% sort()
+
+```
+
+
+```{r}
+# check f_matching-------------------------------------------------------------
+prueba_matching <- f_matching(data = pobana_2,
+           tiempo_0 = "2022-01-03",
+           vector_match = vector_match_2, 
+           out = "fih1",
+           f_exclusion = hacer_flujo_dep, 
+           f_exposicion_seguimiento = f_exposicion_seguimiento)
+
+```
+
+
+```{r, message=FALSE, include = TRUE, warning=FALSE}
+# fecha de inicio y fin: secuencia de fechas
+fecha_inicio = ymd("2021-10-01")
+fecha_fin = ymd("2022-06-01") 
+fechas <- seq.Date(from = fecha_inicio, to = fecha_fin, by = "days")
+
+```
+
+
+```{r, message=FALSE, include = TRUE, warning=FALSE}
+# se genera una lista con las diversas cohortes diarias 
+lista_vm2_fih1 <- lapply(fechas,
+                f_matching, 
+                data = pobana_2,
+                vector_match = vector_match_2, #2
+                out = "fih1",
+                f_exclusion = hacer_flujo_dep,
+                f_exposicion_seguimiento = f_exposicion_seguimiento)
+
+```
+
+```{r, message=FALSE, include = TRUE, warning=FALSE}
+# se genera una lista con las diversas cohortes diarias 
+lista_vm3_fih1 <- lapply(fechas,
+                f_matching, 
+                data = pobana_2,
+                vector_match = vector_match_3, #2
+                out = "fih1",
+                f_exclusion = hacer_flujo_dep,
+                f_exposicion_seguimiento = f_exposicion_seguimiento)
+
+```
+
+
+```{r}
+# guardar lista----------------------------------------------------------------
+# vector_match_2; outcome: ingreso hospitalario
+saveRDS(lista_vm2_fih1, file.path("Resultados", "lista_vm2_fih1.RDS"))
+# vector_match_3; outcome: ingreso hospitalario
+saveRDS(lista_vm3_fih1, file.path("Resultados", "lista_vm3_fih1.RDS"))
+
+```

@@ -33,7 +33,7 @@ knitr::opts_chunk$set(eval = TRUE,
                       fig.height = 12)
 ```
 
-```{r librerias, echo=FALSE, message=FALSE, include = FALSE, warning=FALSE}
+```{r librerias, echo=FALSE, message=FALSE, include=FALSE, warning=FALSE}
 # source("0_a_librerias.R")
 # ya se cargan cuando se carguen las funciones
 
@@ -130,74 +130,70 @@ Definir exclusiones flow chart
       
 ```{r}
 # se crean listas que dependen del proyecto------------------------------------
-lista_criterios_exclusion <- lst(
+lista_exclusion <- list(
+  criterios = list(
   c1 = "Excluyendo: socio y/o sanitarios...",
   c2 = "Excluyendo: trabj educacion...", # no tengo claro que se hayan de excluir
   c3 = "Excluyendo: viven en residencia...",
   c4 = "Excluyendo: dependientes...",
-  c5 = "Excluyendo: zona basica desconocida...",
-  c6 = "Excluyendo: tuvo infección previa...", # esta es dependiente del tiempo
-  c7 = "Excluyendo: no finalizo vacunacion completa 90 dias antes..."
-)
-
-lista_variables_exclusion <- lst(
+  c5 = "Excluyendo: zona basica desconocida..."
+  # c6 = "Excluyendo: tuvo infección previa...", # esta es dependiente del tiempo
+  # c7 = "Excluyendo: no finalizo vacunacion completa 90 dias antes..." # dependiente del tiempo
+),
+variables = list(
   v1 = "prfss",
   v2 = "educa",
   v3 = "resn",
   v4 = "depe",
   v5 = "czbs"
-)
-
-pobana_0 %>% count(get(lista_variables_exclusion$v1))
-pobana_0 %>% count(get(lista_variables_exclusion$v2))
-pobana_0 %>% count(get(lista_variables_exclusion$v3))
-pobana_0 %>% count(get(lista_variables_exclusion$v4))
-pobana_0 %>% count(get(lista_variables_exclusion$v5))
+))
 
 ```
-
 
 ```{r}
-
-f_flow <- function(fecha_0 = "2022-01-14", 
-                   pob = pobana_0,
-                   criterios_exclusion = lista_criterios_exclusion,
-                   variables_exclusion = lista_variables_exclusion
-                   ) {
-  fecha0 <- ymd(fecha_0)
-  print(paste("n de partida :", nrow(pob)))
+# función para excluir siguiendo un criterio-----------------------------------
+exclusion <- function(pob, 
+                      crit,
+                      var)
+{
   
-  print(criterios_exclusion$c1) 
-  pob %>% filter(is.na(get(lista_variables_exclusion$v1)) |
-                     get(lista_variables_exclusion$v1) != TRUE) -> pob
-    print(paste("n :", nrow(pob)))}
-
-f_flow(fecha_0 = "2022-01-14")
+  if (is.logical(pob %>% pull(var)) == TRUE) {
+  print(glue("Variable lógica. {crit}"))
+  pob <- pob %>% filter(is.na(get(var)) |
+                     get(var) != TRUE)
+    print(glue("n : {nrow(pob)}"))
+  pob
+  }
+  else {
+  print(glue("Variable no lógica. {crit}"))
+  pob <- pob %>% filter(!is.na(get(var)))
+    print(glue("n : {nrow(pob)}"))
+  pob
+  }
+}
 
 ```
-
 
 ```{r}
-print("Excluyendo: trabj educacion...") 
-  pobana %>% filter(is.na(educa) | educa != TRUE) -> pobana 
-    print(paste("n :", nrow(pobana)))  
+# flujo------------------------------------------------------------------------
+f_flow <- function(poblacion = pobana_0,
+                   exc = lista_exclusion
+                   ) 
+  {
+  print(glue("n de partida: {nrow(pob)}"))
+
+  for( i in seq_along(exc$criterios)) {
+  poblacion <- exclusion(pob = poblacion,
+                         crit = exc$criterios[[i]],
+                         var = exc$variables[[i]])
+}
+  poblacion
+  }
   
-  print("Excluyendo: viven en residencia...") 
-  pobana %>% filter(is.na(resn) | resn != TRUE) -> pobana
-    print(paste("n :", nrow(pobana)))
-  
-  print("Excluyendo:dependientes...")   
-  pobana %>% filter(is.na(depe) | depe != TRUE)->pobana
-    print(paste("n :", nrow(pobana)))
-  
-  print("Excluyendo: zona basica desconocida...")   
-  pobana %>% filter(!is.na(czbs)) -> pobana 
-    print(paste("n :", nrow(pobana)))
-  
- 
-  
+f_flow()
+
 ```
-      
+
              
 ```{r f_tabla0, message=FALSE, include = TRUE, warning=FALSE}
 # función exclusiones estáticas y flujo

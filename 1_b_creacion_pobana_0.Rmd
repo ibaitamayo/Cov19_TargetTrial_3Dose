@@ -279,7 +279,7 @@ pob8 <- pob7 %>%  left_join(select(dat220613_sin_dup, id, tper)) %>%
 pob8 %>% count(is.na(fvc2))
 #  FALSE   TRUE 
 # 465536 179673 
-table(is.na(pob8$fvc2))   # no tiene segunda dosis (pero hay que sacar la jansen que solo era una)
+table(is.na(pob8$fvc2))   #no tiene segunda dosis (pero hay que sacar la jansen que solo era una)
 #  FALSE   TRUE 
 # 465530 179679 
 
@@ -352,17 +352,33 @@ pob11 %>% count(lubridate::year(fnac) <= 1982)
 # Domicilio--------------------------------------------------------------------
 pob12 <- pob11 %>% left_join(select(pobna50en25, id, domi)) %>% 
   mutate(domi = as.numeric(as.factor(domi))) %>% 
-  relocate(domi, .after = ucn8)
+  relocate(domi, .after = ucn8) %>% 
+  tidylog::filter(!is.na(domi))
 
 # ver distribución de número de personas por domicilio
 pob12 %>% count(domi) %>% count(n) # hay domicilios con muchas personas
 
 ```
 
+```{r vacunas}
+# arreglar base para que las variables se puedan introducir en el matching-----
+vacunas_top <- c("Oxford/AstraZeneca",
+                 "BioNTech/Pfizer",
+                 "J&J / Janssen",
+                 "Moderna/Lonza")
+
+pob13 <- pob12 %>% 
+  # arreglar vacunas: sólo las 4 principales y sólo NA en tvc2 si tvc1 es J & J
+  filter(tvc1 %in% vacunas_top) %>%
+  filter(!is.na(tvc2) | tvc1 == "J&J / Janssen") %>% 
+  mutate(tvc2 = if_else(is.na(tvc2), "NA", tvc2))
+
+```
+
 
 ```{r pobana_0}
 # guardar base de pobana antes de hacer las exclusiones------------------------
-pobana_0 <- pob12
+pobana_0 <- pob13
 saveRDS(pobana_0, file = file.path("Datos", "Procesados", "pobana_0.RDS"))
 
 ```
@@ -380,7 +396,7 @@ e_pres[4] <-  "Grupo de edad, quinquenal salvo  (0,40],(90,110]"
 e_pres[5] <-  "Fecha defuncion"
 e_pres[6] <-  "Migrante (pais de nacimiento no España)"
 e_pres[7] <-  "Área (grupo de paises) de nacimiento"
-e_pres[8] <-  "Codigo aportacion farmaceutica (tsi)"
+e_pres[8] <-  "Código aportacion farmaceutica (tsi)"
 e_pres[9] <-  "Vive en residencia true"
 e_pres[10] <- "Unidad de convivencia, truncado (8 ó mas)"
 e_pres[11] <- "Indicador numerico de domicilio"
@@ -421,7 +437,7 @@ e_pres[44] <- "Fecha ingreso UCI"
  
 
  
-descripcion<- tibble(Etiqueta = e_pres,
+descripcion <- tibble(Etiqueta = e_pres,
                      Variable = names(pobana_0))
 
 kable(descripcion, format = "html")%>%  
