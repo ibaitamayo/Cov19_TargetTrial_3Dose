@@ -59,30 +59,9 @@ source_rmd("0_b_funciones.rmd")
 
 ```{r datos}
 # cargar datos----------------------------------------------------------------
-pobana_0 <- readRDS(file = file.path("Datos", "Procesados", "pobana_0.RDS"))
-# 645209 
+# obentido en 1_c_integrar_test.Rmd
 
-
-test220613 <- fread(file.path("Datos", "Brutos",
-                                   "poblacion_Pruebas_dtcas_06_2022.csv"),
-                        col.names = c(
-                         "tori",
-                         "id",
-                         "tfreg",
-                         "tfval",
-                         "ct",
-                         "tmot",
-                         "tres",
-                         "tcen",
-                         "tamb",
-                         "tprof",
-                         "tmot2")) # 1633910
-
-## esto deberia funcionar.. pero aun no está montado en el dropbox.. por eso voy a partir del Rdata
-
-load("~/Dropbox/ju/Asesorias/FranciscoSanchezSaez/targettrial/covidvacunas/Rdata/test220613.Rdata")  # 1581855
-
-
+test220613_cleaned <- readRDS("~/Dropbox/ju/Asesorias/FranciscoSanchezSaez/targettrial/covidvacunas/Cov19_TargetTrial_3Dose/Datos/Procesados/test220613_cleaned.RDS")
 
 ```
 
@@ -90,60 +69,101 @@ load("~/Dropbox/ju/Asesorias/FranciscoSanchezSaez/targettrial/covidvacunas/Rdata
 
 ***
 
-En este caso hay que partir de la tabla long de test, como hay varios por persona, se escogen para cada perssona su primer test positivos y el conjunto de los negativos
+En este caso hay que partir de la tabla long de test, como hay varios por persona, se escogen para cada persona su primer test positivos y el conjunto de los negativos
 
 
 Nos interesa, para replicar el trabajo (https://www.nejm.org/doi/pdf/10.1056/NEJMoa2203965) centrarnos en  (a "matched, test-negative, case–control study in Qatar from December 23, 2021, through February 21, 2022".
 
 Otros trabajos de Qatar (https://www.nejm.org/doi/full/10.1056/NEJMc2117933),  -con un como ejemplo de carta a NEJM- diseño prospectivo
 
-```{r datos}
-# Escoger pruebas con pcr-antigeno---------------------------------------------
-test220613 %>% count(tori)
-# test220613 <- test220613 
 
-test0 <- test220613 %>%
-  # quitar algunas variables
-#  select(-c(tamb,tmot,tcen,tfval)) %>% 
-  # seleccionar PCR y antígenos
-  filter(tori %in% c("PCR","Antigenos"))  # 1581855
+```{r f_test}
+
+# se trata de crear una funcion que, a partir de una ventana, escoja los test positivos (los primeros aparecidos en esa ventana) y todos los negativos (a lo ancho para tener como unidad la persona?, o a lo largo persona-test? )
+
+# si aplicamos los criterios de inclusion del trabajo lancet-spain deberia de usar pobana_0
+
+
+# función que crear el negative test--------------------------------------------
+## muy mejorable
+
+# parametro: ventana temporal/ datos/ tiempo para excluir secuebcia negativo-postivo
+# acciones: escoger entre los test positivos de un sujeto el primero 
+#           eliminar los test negativos posteriores 
+#           eliminar los test negativos anteriores si es menor de cierto tiempo
+# resultado: un data frame con fecha del test(ftes), resultado(0-,1+),n(nº de ese test en la experiencia de la persona), id
+
+
+test0 <- test220613_cleaned
+
+
+test0 <- test0 %>% group_by(id) %>% arrange(ftes) %>% mutate(n=1:n())  %>% ungroup()
+data=test0
+tiempo_i="2021-12-23"
+tiempo_f="2022-2-21"
+
+f_test0 = function(data,  tiempo_i,  tiempo_f,  tbnp=7) {
+  require(tidyr)
+  tiempo_i <- ymd(tiempo_i)
+  tiempo_f <- ymd(tiempo_f)  
+  data = data %>% filter(tiempo_i<=ftes & ftes<=tiempo_f) %>% select(id,n,ftes,tpos)
+ 
+## como mantemos n, la unidad seguira siendo la persona test, pero ahora tenemos una columna para test+/- y toma como valor la fecha
+
+  # escoger el primer positivo
+wide_test <- data  %>% spread(key=tpos, value=ftes) # 248015
+names(wide_test)[3:4]=c("test_0", "test_1") 
+wide_test <- wide_test %>% as_tibble() %>% group_by(id)
+wide_test <- wide_test %>% filter(!is.na(test_0) | min_rank(desc(test_1)) <= 1) 
+
+ # eliminar los negativos posteriores
+long_test <- wide_test %>% gather(res,ftes,test_0:test_1) %>% na.omit() %>% group_by(id) %>% arrange(n)  %>% mutate(no=lag(res)=="test_1") %>% filter(is.na(no) | !no)  %>% select(-no) 
+
+## tbt tiempo entre test, eliminar negativos seguidos de positivo en un lapso corto ( parametro: tbnp)
+long_test <- long_test %>% mutate(res=str_sub(res,-1),tbt=ifelse(lead(res)=="1",lead(ftes)-ftes,NA)) %>% filter(is.na(tbt) | tbt<(tbnp +1)) %>% select(-tbt) %>% data.frame()
+}
+
+
+lt=f_test0(data=test0, tiempo_i="2021-12-23",tiempo_f="2022-2-21", tbnp=7)
+
+
+#table(long_test$tbt)
+#    1    2    3    4    5    6    7    8    9   10   11   12   13   14   15   16 
+# 1837 1850 1241  940  767  666  664  464  376  388  362  347  359  300  278  276 ...
+# decido eliminar los test negativos que se siguen en menos de 8 dias de uno positivo (sin tener en cuenta el tipo -se podria matizar si es autodiagnostico de antigeno vs pcr)
+
+#%>% filter(no!=TRUE) %>% select(-no)
+# escoger el primer positivo (ej 1001264 o 100128 tiene 2!) y eliminar todos tus test posteriores (ej de 1000736
+# 218331  al hacerlo asi, elimina casos positivos si se acompaña de negativos (ej 1000736)
+
 
 
 
 ```
 
 
-```{r repetidos}
-# Quitar repetidos-------------------------------------------------------------
-test1 <- test0 %>% 
-  mutate(id = as.character(id), 
-         tpos = tres == "Positivo", 
-         profr = tprof == "Profesional") %>%
-  select( -c(tres)) %>% 
-  mutate(ftes = as.Date(tfreg)) %>% 
-  select(-tfreg) %>% 
-  # seleccionar como mucho un test por persona y día
-  tidylog::distinct(id, ftes, .keep_all = TRUE)   # 1581855
+```{r aplicar criterios de exclusion}
 
-```
+## las funciones ya creadas 1_b_creacion_pobana_0, 2_a y 2_b exclusiones
+## con todo esto se consigue determinar la población incluida (id), y se eliminan de test0 la poblacion 
 
-```{r}
-# Contar número de test realizado----------------------------------------------
-test220613_cleaned <- test1 %>% 
-  group_by(id) %>%
-  arrange(ftes) %>%
-  mutate(n = 1:n()) %>% 
-  ungroup()
 
+
+a = data %>%   
+    mutate(
+    exposicion = if_else(tiempo_0 == fvc3 & !is.na(fvc3), 1, 0),
+    date_start = tiempo_0,
+    date_end = tiempo_0 %m+% days(follow_up),
+    # censurar fallecimiento
+    date_end = if_else(!is.na(fdef) & fdef < date_end, fdef, date_end),
+    # censurar control si se vacuna
+    date_end = if_else(exposicion == 0 & !is.na(fvc3) & fvc3 < date_end, 
+                       fvc3, date_end))
+ return(data) 
+}
 ```
 
 
-```{r}
-# guardar base test------------------------------------------------------------
-saveRDS(test220613_cleaned, file = file.path("Datos", "Procesados", 
-                                             "test220613_cleaned.RDS"))
-
-```
 
 
 
