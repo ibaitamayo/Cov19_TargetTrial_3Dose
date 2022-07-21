@@ -145,19 +145,19 @@ excluir_dep <- function(pob,
                         crit,
                         var,
                         t_var,
-                        t0)
+                        t0,
+                        vb)
 {
   if (t_var == "exc"){
-  print(glue("Variable exclusión. {crit}"))
-  pob <- pob %>% filter(is.na(get(var)) |
-                     get(var) >= t0)
-    print(glue("n : {nrow(pob)}"))
+    if (vb == TRUE) print(glue("Variable exclusión. {crit}"))
+  pob <- pob %>% filter(is.na(get(var)) | get(var) >= t0)
+    if (vb == TRUE) print(glue("n : {nrow(pob)}"))
   pob
   }
   else {
-  print(glue("Variable inclusión. {crit}"))
+    if (vb == TRUE) print(glue("Variable inclusión. {crit}"))
   pob <- pob %>% filter(get(var) <= t0)
-    print(glue("n : {nrow(pob)}"))
+    if (vb == TRUE) print(glue("n : {nrow(pob)}"))
   pob
   }
 }
@@ -166,22 +166,22 @@ excluir_dep <- function(pob,
 
 ```{r}
 # flujo------------------------------------------------------------------------
-hacer_flujo_dep <- function(poblacion,
-                            exc = lista_exclusion_dep,
+hacer_flujo_dep <- function(data,
+                            crit_exc = lista_exclusion_dep,
                             tiempo_0 = tiempo_0
                    ) 
   {
   tiempo_0 <- ymd(tiempo_0)
-  print(glue("n de partida: {nrow(poblacion)}"))
-  for(i in seq_along(exc$criterios)) {
-  poblacion <- excluir_dep(
-                       pob = poblacion,
-                       crit = exc$criterios[[i]],
-                       var = exc$variables[[i]],
-                       t_var = exc$tipo_var[[i]],
+  print(glue("n de partida: {nrow(data)}"))
+  for(i in seq_along(crit_exc$criterios)) {
+  data <- excluir_dep(
+                       pob = data,
+                       crit = crit_exc$criterios[[i]],
+                       var = crit_exc$variables[[i]],
+                       t_var = crit_exc$tipo_var[[i]],
                        t0 = tiempo_0)
 }
-  poblacion
+  data
   }
 
 ```

@@ -311,7 +311,7 @@ param=tribble(
   fechas,   c("czbs","genn" ,"gedadn", "n_0", "tvc2n", "tv2", "migran","vgp20","vgp21"), tab0220103, "fcv1",60,
   fechas,   c("czbs","genn" ,"gedadn", "n_0", "tvc2n", "tv2", "migran","vgp20","vgp21"), tab0220103, "fih1",120,
   fechas, "domi",tab0220103d,"fcv1",60,
-  fechas, "domi",tab0220103d,"fcv1",120,
+  fechas, "domi",tab0220103d,"fih1",120,
 )
 
 
