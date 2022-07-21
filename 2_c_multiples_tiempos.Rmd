@@ -66,166 +66,158 @@ pobana_2 <- readRDS(file = file.path("Resultados", "pobana_2.RDS"))
 test220613_cleaned <- readRDS(file = file.path("Datos", "Procesados", 
                                              "test220613_cleaned.RDS"))
 
-
 ```
 
 # Añadir múltiples tiempos
 
 ***
 
-```{r exposicionseguimiento, message=FALSE, include = TRUE, warning=FALSE}
-# función que crear el target trial--------------------------------------------
-f_exposicion_seguimiento = function(data, 
-                                    tiempo_0 = tiempo_0, 
-                                    follow_up = 60) {
+```{r nueva programacion con purrr}
+# función de matching----------------------------------------------------------
+f_matching_purrr <- function(data, 
+                             tiempo_0, 
+                             crit_exc,
+                             exposure,
+                             out,
+                             censoring = "fdef",
+                             vector_match,
+                             follow_up = 60,
+                             verbose = TRUE) {
+
   tiempo_0 <- ymd(tiempo_0)
-  data = data %>% 
-    mutate(
-    exposicion = if_else(tiempo_0 == fvc3 & !is.na(fvc3), 1, 0),
-    date_start = tiempo_0,
-    date_end = tiempo_0 %m+% days(follow_up),
-    # censurar fallecimiento
-    date_end = if_else(!is.na(fdef) & fdef < date_end, fdef, date_end),
-    # censurar control si se vacuna
-    date_end = if_else(exposicion == 0 & !is.na(fvc3) & fvc3 < date_end, 
-                       fvc3, date_end))
- return(data) 
-}
-
-```
-
-```{r}
-# check f_exposicion_seguimiento-----------------------------------------------
-table_out_2022_01_03 <- f_exposicion_seguimiento(
-                         data = pobana_2_2022_01_03,
-                         tiempo_0 = "2022-01-03",
-                         follow_up = 240) 
-
-table_out_2022_01_03 %>% count(exposicion)
-table_out_2022_01_03 %>% count(fvc3)
-
-```
-
-```{r, message=FALSE, include = TRUE, warning=FALSE}
-# función de matching: primero exclusión dinámica y luego matching-------------
-f_matching <- function(data, 
-                       tiempo_0, 
-                       vector_match, 
-                       out, 
-                       f_exclusion, 
-                       f_exposicion_seguimiento) {
-
-tiempo_0 = ymd(tiempo_0)
-print(tiempo_0)
-print(paste0("out = ", out))
+  print(glue("tiempo_0 = {tiempo_0}"))
+  if (verbose == TRUE) print(glue("Outcome = {out}"))
+  if (verbose == TRUE) print(glue("n de partida: {nrow(data)}"))
   
-x = data %>% 
-  f_exclusion(tiempo_0 = tiempo_0) %>% 
-  f_exposicion_seguimiento(tiempo_0 = tiempo_0) 
+  # exclusiones dependientes del tiempo
+  for(i in seq_along(crit_exc$criterios)) {
+  data <- excluir_dep(
+                       pob = data,
+                       crit = crit_exc$criterios[[i]],
+                       var = crit_exc$variables[[i]],
+                       t_var = crit_exc$tipo_var[[i]],
+                       t0 = tiempo_0,
+                       vb = verbose)
+  }
+  
+  # exclusión por el outcome
+    if (verbose == TRUE) print(glue("Variable exclusión. {out}"))
+    if (out %in% crit_exc$variables) {
+    if (verbose == TRUE) print("Criterio de exclusión ya aplicado")
+    } else {
+     data <- data %>% filter(is.na(get(out)) | get(out) >= tiempo_0)
+    if (verbose == TRUE) print(glue("n : {nrow(pob)}"))
+    }
+  
+  # exposicion-seguimiento
+    data <- data %>% 
+      mutate( exposicion = if_else(tiempo_0 == get(exposure) & 
+                                     !is.na(get(exposure)), 1, 0),
+              date_start = tiempo_0,
+              date_end = tiempo_0 %m+% days(follow_up),
+              date_end = if_else(!is.na(get(censoring)) & 
+                          get(censoring) < date_end, get(censoring), date_end),
+              date_end = if_else(exposicion == 0 & !is.na(get(exposure)) & 
+                         get(exposure) < date_end,  get(exposure), date_end))
 
 try({
-    greedymatch <- Matching::Match(
-      Tr = x$exposicion, 
-      M = 1, 
-      X = x[vector_match], 
-      exact = TRUE, 
-      ties = FALSE)
-    
-    a <- x[unlist(greedymatch[c("index.treated", "index.control")]), ]
+    greedymatch <- Matching::Match(Tr = data$exposicion, M = 1, 
+                   X = data[vector_match], exact = TRUE, ties = FALSE)
+    a <- data[unlist(greedymatch[c("index.treated", "index.control")]),]
     par <- rep(1:(nrow(a)/2), 2)
-  
-    df = bind_cols(par = par, a) %>%
+    bind_cols(par = par, a) %>%
       group_by(par) %>%
       mutate(date_end = min(date_end),
-             # creo la variable de resultado y finalizo el seguimiento cuando aparece)
-             caso = ifelse(!!as.name(out) <= date_end & !is.na(!!as.name(out)), 1, 0),
-             date_end = ifelse(caso==1, !!as.name(out), date_end),
-             date_end = as.Date.numeric(date_end, origin ="1970-01-01")) %>%
-      tibble() 
+        # creo la variable de resultado y finalizo el seguimiento cuando aparece)
+         caso = if_else(get(out) <= date_end & !is.na(get(out)), 1, 0),
+         date_end = if_else(caso == 1, get(out), date_end)) %>% 
+      as_tibble() 
   }
   )
 }
 
 ```
 
-```{r, message=FALSE, include = TRUE, warning=FALSE}
-# se define el vector de emparejamiento----------------------------------------
-vector_match_1 <- c("czbs","genn" ,"gedadn", "n_0", "tvc2n", "tv2", "migran", 
-               "vgp20", "vgp21", "ucn8") # 1
-
-vector_match_2 <- c("czbs",
-                   "genn",
-                   "gedadn", 
-                   # "n_0", 
-                   "tvc2n", 
-                   # "tv2", 
-                   "migran",
-                   "vgp20",
-                   "vgp21") # 2
-
-vector_match_3 <- c("domi") # 3
-
-names(pobana_2) %>% sort()
+```{r}
+prueba_matching_purrr <- f_matching_purrr(
+                data = pobana_2,
+                tiempo_0 = "2022-01-03",
+                crit_exc = lista_exclusion_dep,
+                vector_match = c("domi"), 
+                exposure = "fvc3",
+                out = "fih1", 
+                follow_up = 120,
+                verbose = FALSE)
 
 ```
 
+# Prueba
 
 ```{r}
-# check f_matching-------------------------------------------------------------
-prueba_matching <- f_matching(data = pobana_2,
-           tiempo_0 = "2022-01-03",
-           vector_match = vector_match_2, 
-           out = "fih1",
-           f_exclusion = hacer_flujo_dep, 
-           f_exposicion_seguimiento = f_exposicion_seguimiento)
+prueba_matching_purrr %>% 
+  mutate(survtime = date_end - date_start) %>% 
+  arrange(survtime)
+# OK
+
+prueba_matching_purrr %>% count(caso)
+
+prueba_matching_purrr %>% count(exposicion)
 
 ```
 
-# Hacer listas para el análisis
+```{r}
+# pasar un listado de fechas---------------------------------------------------
+prueba_matching_purrr_2 <- map(fechas, 
+                f_matching_purrr,
+                data = pobana_2,
+                crit_exc = lista_exclusion_dep,
+                vector_match = c("domi"), 
+                exposure = "fvc3",
+                out = "fih1", 
+                follow_up = 120,
+                verbose = FALSE)
 
-***
+```
 
-Se prueba la función para el outcome de hospitalizaciones, ampliando el periodo del estudio desde el 2021-10-01 hasta el 2022-06-01. El código se comenta, puesto que tarda mucho en ejecutarse. Las listas resultantes se cargan al principio del .Rmd 3_a.
 
-```{r, message=FALSE, include = TRUE, warning=FALSE}
+# Ejecutar varias listas a la vez
+
+```{r}
 # fecha de inicio y fin: secuencia de fechas
-fecha_inicio = ymd("2021-10-01")
-fecha_fin = ymd("2022-06-01") 
+fecha_inicio=dmy("03/01/2022")
+fecha_fin=dmy("06/02/2022") 
 fechas <- seq.Date(from = fecha_inicio, to = fecha_fin, by = "days")
 
-```
-
-
-```{r, message=FALSE, include = TRUE, warning=FALSE}
-# # se genera una lista con las diversas cohortes diarias 
-# lista_vm2_fih1 <- lapply(fechas,
-#                 f_matching, 
-#                 data = pobana_2,
-#                 vector_match = vector_match_2, #2
-#                 out = "fih1",
-#                 f_exclusion = hacer_flujo_dep,
-#                 f_exposicion_seguimiento = f_exposicion_seguimiento)
-
-```
-
-```{r, message=FALSE, include = TRUE, warning=FALSE}
-# # se genera una lista con las diversas cohortes diarias 
-# lista_vm3_fih1 <- lapply(fechas,
-#                 f_matching, 
-#                 data = pobana_2,
-#                 vector_match = vector_match_3, #2
-#                 out = "fih1",
-#                 f_exclusion = hacer_flujo_dep,
-#                 f_exposicion_seguimiento = f_exposicion_seguimiento)
+param = tribble(
+  ~fechas, ~vmatch, ~data, ~out, ~n,
+  fechas,   c("czbs","genn" ,"gedadn", 
+              # "n_0", "tv2",
+              "tvc2n", "migran", "vgp20", "vgp21"), pobana_2, "fcv1", 60,
+  fechas,   c("czbs", "genn", "gedadn", 
+              # "n_0", "tv2",
+              "tvc2n", "migran", "vgp20", "vgp21"), pobana_2, "fih1", 120,
+  fechas, "domi", pobana_2, "fcv1", 60,
+  fechas, "domi", pobana_2, "fih1", 120)
 
 ```
 
 
 ```{r}
-# # guardar lista----------------------------------------------------------------
-# # vector_match_2; outcome: ingreso hospitalario
-# saveRDS(lista_vm2_fih1, file.path("Resultados", "lista_vm2_fih1.RDS"))
-# # vector_match_3; outcome: ingreso hospitalario
-# saveRDS(lista_vm3_fih1, file.path("Resultados", "lista_vm3_fih1.RDS"))
+#multparam <- function(param=param) {
+out <- vector("list",  nrow(param))
+
+for (i in 1:nrow(param)) {
+out[[i]] <-map(param$fechas[[i]],
+               f_matching_purrr, 
+               data = param$data[[i]],
+               crit_exc = lista_exclusion_dep,
+               vector_match = param$vmatch[[i]],
+               out = param$out[[i]],
+               censoring = "fdef",
+               exposure = "fvc3",
+               follow_up = param$n[[i]])
+               
+}
 
 ```
+

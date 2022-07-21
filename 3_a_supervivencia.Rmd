@@ -94,7 +94,7 @@ f_analisis <- function(lista) {
 
 print(ggsurvplot(fit, data = base_analisis, xlab = "days of follow-up",
            ylab = "Survival probability",
-           main = "Product-Limit Survival Estimates", ylim = c(0.85, 1), 
+           main = "Product-Limit Survival Estimates", ylim = c(0.985, 1), 
            risk.table = TRUE, conf.int = TRUE))
 
 ## hay que resolver mejor esto de hacer el cox sobre un intervalo.. (a partir del dia 7).. aqui solo indico que se le agrege 7 dias al start (pero no he excludio los casos que aparecen en esos primeros 7 dias!!)
@@ -107,6 +107,7 @@ print(ggsurvplot(fit, data = base_analisis, xlab = "days of follow-up",
                 round((1 - exp(coef(cpp))) * 100, 1), "% (", 
                 round((1 - exp(confint((cpp)))[2]) * 100, 1), "-",
                 round((1 - exp(confint((cpp)))[1]) * 100, 1), ")"))
+  base_analisis
 }
 
 ```
@@ -114,11 +115,12 @@ print(ggsurvplot(fit, data = base_analisis, xlab = "days of follow-up",
 
 ```{r}
 # ejecutamos el análisis-------------------------------------------------------
-f_analisis(lista = lista_vm2_fih1)
+resultado_prueba_2 <- f_analisis(lista = prueba_matching_purrr_2)
+resultado_prueba_2 %>% arrange(survtime)
 
 ```
 
-Este resultado índica que la vacuna es muy efectiva contra las hospitalizaciones, aunque la curva de supervivencia me sale un poco chunga...
+Este resultado índica que la vacuna es efectiva contra las hospitalizaciones.
 
 ```{r}
 f_analisis(lista = lista_vm3_fih1)
