@@ -98,10 +98,19 @@ f_matching_purrr <- function(data,
                        t_var = crit_exc$tipo_var[[i]],
                        t0 = tiempo_0,
                        vb = verbose)
-}
+  }
+  
+  # exclusión por el outcome
+    if (verbose == TRUE) print(glue("Variable exclusión. {out}"))
+    if (out %in% crit_exc$variables) {
+    if (verbose == TRUE) print("Criterio de exclusión ya aplicado")
+    } else {
+     data <- data %>% filter(is.na(get(out)) | get(out) >= tiempo_0)
+    if (verbose == TRUE) print(glue("n : {nrow(pob)}"))
+    }
   
   # exposicion-seguimiento
-    data = data %>% 
+    data <- data %>% 
       mutate( exposicion = if_else(tiempo_0 == get(exposure) & 
                                      !is.na(get(exposure)), 1, 0),
               date_start = tiempo_0,
@@ -142,7 +151,6 @@ prueba_matching_purrr <- f_matching_purrr(
 
 ```
 
-
 # Prueba
 
 ```{r}
@@ -169,13 +177,7 @@ prueba_matching_purrr_2 <- map(fechas,
                 follow_up = 120,
                 verbose = FALSE)
 
-
-
 ```
-
-
-
-
 
 
 # Ejecutar varias listas a la vez

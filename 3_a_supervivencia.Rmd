@@ -107,6 +107,7 @@ print(ggsurvplot(fit, data = base_analisis, xlab = "days of follow-up",
                 round((1 - exp(coef(cpp))) * 100, 1), "% (", 
                 round((1 - exp(confint((cpp)))[2]) * 100, 1), "-",
                 round((1 - exp(confint((cpp)))[1]) * 100, 1), ")"))
+  base_analisis
 }
 
 ```
@@ -114,11 +115,12 @@ print(ggsurvplot(fit, data = base_analisis, xlab = "days of follow-up",
 
 ```{r}
 # ejecutamos el análisis-------------------------------------------------------
-f_analisis(lista = prueba_matching_purrr_2)
+resultado_prueba_2 <- f_analisis(lista = prueba_matching_purrr_2)
+resultado_prueba_2 %>% arrange(survtime)
 
 ```
 
-Este resultado índica que la vacuna es muy efectiva contra las hospitalizaciones.
+Este resultado índica que la vacuna es efectiva contra las hospitalizaciones.
 
 ```{r}
 f_analisis(lista = lista_vm3_fih1)
