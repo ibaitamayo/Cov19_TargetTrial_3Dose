@@ -166,6 +166,7 @@ lt=f_test0(data=test0, tiempo_i="2021-12-23",tiempo_f="2022-2-21", tbnp=7)
  
 
 f_exposicionantecente= function(data, fecha0) {
+  fecha0=ymd(fecha0)
   data= data %>% select(id,gen,gedad,fdef,migran,domi,czbs,tvc1,fcv1,fvc1,fvc2,fvc3) 
   data=data %>% mutate_at(vars(fcv1,fvc1,fvc2,fvc3), ~ifelse(.>=fecha0,NA,.))
   data=data %>% mutate_at(vars(fcv1,fvc1,fvc2,fvc3), ~as.Date.numeric(., origin ="1970-01-01"))
@@ -184,7 +185,11 @@ f_exposicionantecente= function(data, fecha0) {
        is.na(fcv1) & !is.na(fvc3) ~ fecha0-fvc3,
        is.na(fcv1) &  tvc1 == "J&J / Janssen" ~ fecha0-fvc1,
        is.na(fcv1) & is.na(fvc3) & !is.na(fvc2) ~ fecha0-fvc2,
-       is.na(fcv1) & is.na(fvc2) & !is.na(fvc1) ~ fecha0-fvc1)))
+       is.na(fcv1) & is.na(fvc2) & !is.na(fvc1) ~ fecha0-fvc1,
+       !is.na(fcv1) & !is.na(fvc3) ~ fecha0-max(fcv1,fvc3),
+       !is.na(fcv1) &  tvc1 == "J&J / Janssen" ~ fecha0-max(fcv1,fvc1),
+       !is.na(fcv1) & is.na(fvc3) & !is.na(fvc2) ~ fecha0-max(fcv1,fvc2),
+       !is.na(fcv1) & is.na(fvc2) & !is.na(fvc1) ~ fecha0-max(fcv1,fvc1))))
   }
 
 
