@@ -1,0 +1,233 @@
+---
+title: "Obtención testnegative case-control, multiple"
+output: 
+  html_document:
+    code_folding: show
+    highlight: espresso
+    css: style.css
+    keep_md: yes
+    number_sections: yes
+    theme: readable
+    toc: yes  
+    toc_float:
+      collapsed: yes
+      smooth_scroll: yes
+      toc_depth: 3     
+editor_options: 
+  chunk_output_type: console
+---
+
+
+```{r set-global-options, echo = FALSE}
+knitr::opts_chunk$set(eval = TRUE, 
+                      echo = TRUE, 
+                      cache = FALSE,
+                      include = TRUE,
+                      collapse = FALSE,
+                       dependson = NULL,
+                      engine = "R", # Chunks will always have R code, unless noted
+                      error = TRUE,
+                      fig.path="Figures/",  # Set the figure options
+                      fig.align = "center", 
+                      fig.width = 12,
+                      fig.height = 12)
+```
+
+
+```{r libraries, echo=FALSE, message=FALSE, include = FALSE, warning=FALSE}
+library(readxl)
+library(readr)
+library(data.table)
+library(lubridate)
+
+library(tidyverse)
+library(knitr)
+library(kableExtra)
+library(plyr)
+library(dplyr)
+library(ggpubr)
+library(scales)
+library(stringr)
+
+library(plotly)
+library(Matching)
+#library(MatchIt)
+
+library(plotrix)  # para sacar piramides descriptivas de las tablas_analisis
+
+library(ggpmisc) # para series temporales
+
+library(survminer)
+library(survival)
+
+```
+
+
+
+
+## f_exposicionsantecedente: criterios 
+
+*  *objetivo*: clasificar la exposicion previa
+* *parametro*: dia 0 -test0- [puede que haya que aplicar un lag]/ datos
+* *entrada*: tabla de analisis
+* *salida*:
+
+            * elimina las fechas de exposicion posteriores a t0
+            * elabora la tipologia de exposiciones (`mexp`: vacunas e infeccion)
+            * obtiene el tiempo desde la ultima exposicion `texp`
+                                      
+  
+
+```{r exposicionseguimiento, message=FALSE, include = TRUE, warning=FALSE}
+
+## las funciones ya creadas 1_b_creacion_pobana_0, 2_a y 2_b exclusiones
+## con todo esto se consigue determinar la población incluida (id), y se eliminan de test0 la poblacion 
+
+#
+# objetivo: clasificar la exposicion previa
+# parametro: dia 0 -test0- [puede que haya que aplicar un lag]/ datos
+# acciones: seleciona de pobana las variables con las que trabajar matching y antecedentes/wexposiciones 
+#           elimina las fechas de exposicion posteriores a t0
+#           elabora la tipologia de exposiciones (mexp: vacunas e infeccion)
+#           obtiene el tiempo desde la ultima exposicion
+
+#levels(data$mexp) 
+# "0_ncvvc":  no antecedente de infeccion, no vacunado
+# "1dvc_cv":  antecedente de infeccion, vacuna incompleta
+# "1dvc_ncv": no antecedente de infeccion, vacuna incompleta
+# "2dvc_cv":  antecedente de infeccion, vacuna completa 
+# "2dvc_ncv": no antecedente de infeccion, vacuna completa 
+# "3dvc_cv":  antecedente de infeccion, vacuna completa + 3dosis
+# "3dvc_ncv": no antecedente de infeccion, vacuna completa + 3dosis
+ 
+
+f_exposicionantecente= function(data, fecha0) {
+  fecha0=ymd(fecha0)
+  data= data %>% dplyr::select(id,gen,gedad,fdef,migran,domi,czbs,tvc1,fcv1,fvc1,fvc2,fvc3) 
+  data=data %>% mutate_at(vars(fcv1,fvc1,fvc2,fvc3), ~ifelse(.>=fecha0,NA,.))
+  data=data %>% mutate_at(vars(fcv1,fvc1,fvc2,fvc3), ~as.Date.numeric(., origin ="1970-01-01"))
+ data= data %>% mutate(
+    mexp = factor(case_when(
+       is.na(fcv1) & is.na(fvc1) ~ "0_ncvvc",
+       is.na(fcv1) & !is.na(fvc3) ~ "3dvc_ncv",
+       is.na(fcv1) &  tvc1 == "J&J / Janssen" ~ "2dvc_ncv",
+       is.na(fcv1) & is.na(fvc3) & !is.na(fvc2) ~ "2dvc_ncv",
+       is.na(fcv1) & is.na(fvc2) & !is.na(fvc1) ~ "1dvc_ncv",
+       !is.na(fcv1) & !is.na(fvc3) ~ "3dvc_cv",
+       !is.na(fcv1) &  tvc1 == "J&J / Janssen" ~ "2dvc_cv",
+       !is.na(fcv1) & is.na(fvc3) & !is.na(fvc2) ~ "2dvc_cv",
+       !is.na(fcv1) & is.na(fvc2) & !is.na(fvc1) ~ "1dvc_cv")))
+      data= data %>% mutate(texp = factor(case_when(
+       is.na(fcv1) & !is.na(fvc3) ~ fecha0-fvc3,
+       is.na(fcv1) &  tvc1 == "J&J / Janssen" ~ fecha0-fvc1,
+       is.na(fcv1) & is.na(fvc3) & !is.na(fvc2) ~ fecha0-fvc2,
+       is.na(fcv1) & is.na(fvc2) & !is.na(fvc1) ~ fecha0-fvc1,
+       !is.na(fcv1) & !is.na(fvc3) ~ fecha0-max(fcv1,fvc3),
+       !is.na(fcv1) &  tvc1 == "J&J / Janssen" ~ fecha0-max(fcv1,fvc1),
+       !is.na(fcv1) & is.na(fvc3) & !is.na(fvc2) ~ fecha0-max(fcv1,fvc2),
+       !is.na(fcv1) & is.na(fvc2) & !is.na(fvc1) ~ fecha0-max(fcv1,fvc1))))
+  }
+
+
+pob = f_exposicionantecente(pobana_0, fecha0="2021-12-23")
+
+
+
+```
+
+## f_matching: creacion de parejas
+
+Esta es la función que pretende ser más genérica
+
+* *parametros*: 
+    + datos 
+    + fecha 0 de arranque -primera cohorte- 
+    + vector de variables para el emparejamiento
+    + variable de resultados (por defecto en este caso `fecha primera infección`)
+    + f_exclusion
+    + f_exposicionseguimiento
+ * *entrada*: tabla filtrada por f_tabla0 y f_exclusion
+ * *salida*: tabla de analisis:
+ 
+            + genera variable `exposicion`/
+            + recoge fecha inicio de la cohorte/
+            + genera fecha fin seguimiento/censura del sujeto/
+                                      
+   
+      los motivos de censura **de una pareja** son:
+                + fallece
+                + el miembro no expuesto se vacuna 
+ 
+
+
+
+```{r, message=FALSE, include = TRUE, warning=FALSE}
+
+
+# aqui tenemos dos tablas: la de test filtrada (1. por una ventana, 2 por contener a la poblacion!?)
+
+## en algunos de los trabajos sobre eficacia vacunal, ya plantea que el analisis de efectividad se aplicara a partir de cierto umbral sobre el momento 0, ej a partir del dia 7. Esto me lleva a plantearme si aplico esto aqui a la propia definicion de caso.. aqui solo se pregunta si la fecha de la variable resultado es anterior al fin de seguimiento.. (habria que incorporar si tambien es superior a la de inicio + umbral).. pero no creo que este sea el procedimiento, sino mas en el analisis, pues sesgaria
+
+## puedo crear una tabla unica.. en la que la informacion de los sujetos para el matching se repita
+
+## primero unir los test con datos de exposicion y de matching
+
+lt <- right_join(lt,pob)  %>% filter(!is.na(ftes))
+lt <- lt %>% mutate(res=as.numeric(res))
+
+
+f_matching <- function(fecha0, data, vector_match) {
+  fecha0=ymd(fecha0)
+  print(fecha0)
+  data=data %>% mutate_at(vars(vector_match), as.numeric )
+ data=data %>% filter(ftes==fecha0)
+
+try({
+    greedymatch <- Matching::Match(Tr = data$res, M = 1, X = data[vector_match], exact = TRUE, ties = FALSE)
+    a <- data[unlist(greedymatch[c("index.treated", "index.control")]),]
+    par <- rep(1:(nrow(a)/2), 2)
+  
+    df=bind_cols(par = par, a) %>%
+      group_by(par) %>%
+      # mutate(# date_end = min(date_end),
+      #        # creo/codifico? la variable de exposicion y finalizo el seguimiento cuando aparece)
+      #        exp = mexp)%>%
+      data.frame() 
+             # date_end = ifelse(caso==1, !!as.name(out), date_end),
+             # date_end = as.Date.numeric(date_end, origin ="1970-01-01")) 
+    # print(c("n= ",nrow(df)))
+    # print(c("casos= ",df %>% filter(caso==1) %>% nrow()))
+  }
+  )
+}
+
+
+# 
+# fecha0="2021-12-23"
+# data=lt
+# vector_match=c("gen" ,"gedad", "migran") # 1
+
+pp=f_matching(fecha0="2021-12-23",data=lt,vector_match=c("gen" ,"gedad", "migran")  )
+
+###########
+
+
+
+summary(clogit(res ~  mexp, strata(par), data=pp %>% droplevels()))
+
+## codficarlo?
+
+library(Epi)
+res.clogistic <- clogistic(res ~  mexp, strata=par, data=pp %>% droplevels())
+
+res.clogit <- clogit(case ~ tocc + tocc:education + strata(id), logan2)
+summ.clogit <- summary(res.clogit)
+summ.clogit
+
+
+
+table(pp$mexp, pp$res)
+
+
+```
+
