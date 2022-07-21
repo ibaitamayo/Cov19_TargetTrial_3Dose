@@ -1,5 +1,5 @@
 ---
-title: "Criterios de exclusión estáticos"
+title: "Análisis de supervivencia"
 output: 
   html_document:
     code_folding: show
@@ -76,7 +76,8 @@ lista_vm3_fih1 <- readRDS(file.path("Resultados", "lista_vm3_fih1.RDS")) %>%
 # función que realiza el análisis de supervivencia-----------------------------
 f_analisis <- function(lista) {
   # pasar de lista a un tibble (name indica el número de tiempo_0)
-  base_analisis <- enframe(lista) %>%
+  base_analisis <- lista %>% keep(~is_tibble(.x)) %>%  
+    enframe() %>%
     rename(target_trial_number = name) %>% 
     unnest(value)
 
@@ -117,6 +118,9 @@ print(ggsurvplot(fit, data = base_analisis, xlab = "days of follow-up",
 # ejecutamos el análisis-------------------------------------------------------
 resultado_prueba_2 <- f_analisis(lista = prueba_matching_purrr_2)
 resultado_prueba_2 %>% arrange(survtime)
+
+resultado_prueba_2 %>% count(exposicion, caso)
+pobana_0 %>% count(fvc3, sort = TRUE)
 
 ```
 

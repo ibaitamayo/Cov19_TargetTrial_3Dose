@@ -74,7 +74,7 @@ test220613_cleaned <- readRDS(file = file.path("Datos", "Procesados",
 
 ```{r nueva programacion con purrr}
 # función de matching----------------------------------------------------------
-f_matching_purrr <- function(data, 
+f_matching_purrr_test <- function(data, 
                              tiempo_0, 
                              crit_exc,
                              exposure,
@@ -82,6 +82,8 @@ f_matching_purrr <- function(data,
                              censoring = "fdef",
                              vector_match,
                              follow_up = 60,
+                             temporal_var = NULL,
+                             base_test = NULL,
                              verbose = TRUE) {
 
   tiempo_0 <- ymd(tiempo_0)
@@ -109,6 +111,23 @@ f_matching_purrr <- function(data,
     if (verbose == TRUE) print(glue("n : {nrow(pob)}"))
     }
   
+  # obtención número de test negativos previos al primer positivo
+  if (!is.null(base_test)) {
+  data <- base_test %>% filter(id %in% data$id,
+                               tpos == FALSE,
+                               ftes < tiempo_0) %>% 
+    group_by(id) %>% 
+    summarise(n_0 = max(n)) %>% 
+    right_join(data, by = "id") %>% 
+    mutate(n_0 = case_when(is.na(n_0) ~ 0L, 
+                 n_0 > 3 ~ 3L,
+                 T ~ n_0)) 
+  }
+  # creación de variable temporal respecto a tiempo_0
+  if (!is.null(temporal_var)) {
+  data <- data %>% 
+  mutate(temp_var = as.numeric(tiempo_0 - get(temporal_var)))
+  }
   # exposicion-seguimiento
     data <- data %>% 
       mutate( exposicion = if_else(tiempo_0 == get(exposure) & 
@@ -138,38 +157,25 @@ try({
 
 ```
 
-# Prueba
-
 ```{r}
-# vectores de matching---------------------------------------------------------
-vector_match_1 = c("czbs", "genn", "gedadn", "n_0", "tvc2n", "tv2", "migran", 
-                   "vgp20", "vgp21", "ucn8") # 1
-vector_match_2 = c("czbs", "genn","gedadn", "n_0", "tvc2n", "tv2", "migran",
-                   "vgp20", "vgp21") # 2
-vector_match_3 = c("domi") # 3
-vector_match_4 = c("czbs", "genn", "gedadn", "tvc2n", "migran", 
-                   "vgp20", "vgp21", "ucn8") # 1
-
-
-```
-
-```{r}
-prueba_matching_purrr <- f_matching_purrr(
+prueba_matching_purrr_test <- f_matching_purrr_test(
                 data = pobana_2,
                 tiempo_0 = "2022-01-03",
                 crit_exc = lista_exclusion_dep,
-                vector_match = c("domi"), 
+                vector_match = c("n_0", "temp_var", gedad), 
                 exposure = "fvc3",
                 out = "fih1", 
                 follow_up = 120,
+                base_test = test220613_cleaned,
+                temporal_var = "fpauta_90",
                 verbose = FALSE)
 
 ```
 
+# Prueba
 
 ```{r}
-# check prueba
-prueba_matching_purrr %>% 
+prueba_matching_purrr_test %>% 
   mutate(survtime = date_end - date_start) %>% 
   arrange(survtime)
 # OK
@@ -179,47 +185,17 @@ prueba_matching_purrr %>% count(exposicion)
 
 ```
 
-# Prueba fechas
-
-
-```{r}
-# fechas-----------------------------------------------------------------------
-# fecha de inicio y fin: secuencia de fechas
-fecha_inicio = ymd("2021-10-20")
-fecha_fin = ymd("2021-10-21") 
-fechas <- seq.Date(from = fecha_inicio, to = fecha_fin, by = "days")
-
-```
-
 ```{r}
 # pasar un listado de fechas---------------------------------------------------
 prueba_matching_purrr_2 <- map(fechas, 
                 f_matching_purrr,
                 data = pobana_2,
                 crit_exc = lista_exclusion_dep,
-                vector_match = vector_match_3, 
+                vector_match = c("domi"), 
                 exposure = "fvc3",
                 out = "fih1", 
                 follow_up = 120,
-                verbose = FALSE) %>% 
-    # descartar los días en los que no se encuentra matching
-    keep(~is_tibble(.x)) %>%  
-    # unir todos los tibbles de la lista en uno único
-    enframe() %>%
-    rename(target_trial_number = name) %>% 
-    unnest(value) %>% 
-    # para evitar errores en el matcheo
-    filter(!is.na(exposicion))
+                verbose = FALSE)
 
 ```
 
-
-```{r}
-# check prueba-----------------------------------------------------------------
-prueba_matching_purrr_2 %>% 
-  janitor::tabyl(exposicion, caso) %>% 
-  janitor::adorn_title()
-
-# ok
-
-```

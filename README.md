@@ -36,7 +36,7 @@ Carga la base *poblacion_Vacunas_Infecc_06_2022.csv (dat220613)*, transforma alg
 
 A partir de las bases *dat220613_sin_dup.RDS*, *pobna50en25.RDS* y *pobna88.RDS* (estas dos últimas bases se han cargado a traves del .RData del proyecto del dropbox y guardado como objetos.RDS) se crea la base *pobana_0.RDS*, que contiene la tabla de análisis de la población objetivo, a falta de añadir el número de test previos y de realizar los criterios de exclusión. Además, en este archivo se encuentra la descripción de las variables de la tabla *pobana_0.RDS*.
 
-## 1_c_integrar_test.Rmd
+## 1_c_arreglar_test.Rmd
 
 Arregla la base de test de COVID-19: *poblacion_Pruebas_dtcas_06_2022.csv (test220613)*, creando la nueva base *test220613_cleaned.RDS*.
 
@@ -50,7 +50,19 @@ Realiza los criterios de exclusión *dependientes del tiempo 0* escogido. Las fu
 
 ## 2_c_multiples_tiempos.Rmd
 
-Aplica el criterio de exclusión realizado en 2_b a múltiples ventanas temporales. VOY POR AQUÍ.
+Aplica el criterio de exclusión realizado en 2_b a múltiples ventanas temporales.
+
+## 2_d_multiples_tiempos_test_prosp.Rmd
+
+Añade a la función de múltiples tiempos un argumento donde se puede añadir una base, en formato largo, de tests.
+
+## 2_e_multiples_tiempos_test_retro.Rmd
+
+Añade a la función de múltiples tiempos un argumento donde se puede añadir una base, en formato largo, de tests, para su uso en un análisis de caso-controles negativo.
+
+## 3_a_supervivencia.Rmd
+
+Se analizan los resultados obtenidos en 2_c (ó 2_d ó 2_e).
 
 <br>
 
