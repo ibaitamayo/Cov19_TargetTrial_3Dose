@@ -87,7 +87,7 @@ Otros trabajos de Qatar (https://www.nejm.org/doi/full/10.1056/NEJMc2117933),  -
 # función que crear el negative test--------------------------------------------
 ## muy mejorable
 
-# parametro: ventana temporal/ datos/ tiempo para excluir secuebcia negativo-postivo
+# parametro: ventana temporal/ datos/ tiempo para excluir secuencia negativo-postivo
 # acciones: escoger entre los test positivos de un sujeto el primero 
 #           eliminar los test negativos posteriores 
 #           eliminar los test negativos anteriores si es menor de cierto tiempo
@@ -142,25 +142,53 @@ lt=f_test0(data=test0, tiempo_i="2021-12-23",tiempo_f="2022-2-21", tbnp=7)
 ```
 
 
-```{r aplicar criterios de exclusion}
+```{r f_exposicionantecente}
 
 ## las funciones ya creadas 1_b_creacion_pobana_0, 2_a y 2_b exclusiones
 ## con todo esto se consigue determinar la población incluida (id), y se eliminan de test0 la poblacion 
 
+#
+# objetivo: clasificar la exposicion previa
+# parametro: dia 0 -test0- [puede que haya que aplicar un lag]/ datos
+# acciones: seleciona de pobana las variables con las que trabajar matching y antecedentes/wexposiciones 
+#           elimina las fechas de exposicion posteriores a t0
+#           elabora la tipologia de exposiciones (mexp: vacunas e infeccion)
+#           obtiene el tiempo desde la ultima exposicion
+
+#levels(data$mexp) 
+# "0_ncvvc":  no antecedente de infeccion, no vacunado
+# "1dvc_cv":  antecedente de infeccion, vacuna incompleta
+# "1dvc_ncv": no antecedente de infeccion, vacuna incompleta
+# "2dvc_cv":  antecedente de infeccion, vacuna completa 
+# "2dvc_ncv": no antecedente de infeccion, vacuna completa 
+# "3dvc_cv":  antecedente de infeccion, vacuna completa + 3dosis
+# "3dvc_ncv": no antecedente de infeccion, vacuna completa + 3dosis
+ 
+
+f_exposicionantecente= function(data, fecha0) {
+  data= data %>% select(id,gen,gedad,fdef,migran,domi,czbs,tvc1,fcv1,fvc1,fvc2,fvc3) 
+  data=data %>% mutate_at(vars(fcv1,fvc1,fvc2,fvc3), ~ifelse(.>=fecha0,NA,.))
+  data=data %>% mutate_at(vars(fcv1,fvc1,fvc2,fvc3), ~as.Date.numeric(., origin ="1970-01-01"))
+ data= data %>% mutate(
+    mexp = factor(case_when(
+       is.na(fcv1) & is.na(fvc1) ~ "0_ncvvc",
+       is.na(fcv1) & !is.na(fvc3) ~ "3dvc_ncv",
+       is.na(fcv1) &  tvc1 == "J&J / Janssen" ~ "2dvc_ncv",
+       is.na(fcv1) & is.na(fvc3) & !is.na(fvc2) ~ "2dvc_ncv",
+       is.na(fcv1) & is.na(fvc2) & !is.na(fvc1) ~ "1dvc_ncv",
+       !is.na(fcv1) & !is.na(fvc3) ~ "3dvc_cv",
+       !is.na(fcv1) &  tvc1 == "J&J / Janssen" ~ "2dvc_cv",
+       !is.na(fcv1) & is.na(fvc3) & !is.na(fvc2) ~ "2dvc_cv",
+       !is.na(fcv1) & is.na(fvc2) & !is.na(fvc1) ~ "1dvc_cv")))
+      data= data %>% mutate(texp = factor(case_when(
+       is.na(fcv1) & !is.na(fvc3) ~ fecha0-fvc3,
+       is.na(fcv1) &  tvc1 == "J&J / Janssen" ~ fecha0-fvc1,
+       is.na(fcv1) & is.na(fvc3) & !is.na(fvc2) ~ fecha0-fvc2,
+       is.na(fcv1) & is.na(fvc2) & !is.na(fvc1) ~ fecha0-fvc1)))
+  }
 
 
-a = data %>%   
-    mutate(
-    exposicion = if_else(tiempo_0 == fvc3 & !is.na(fvc3), 1, 0),
-    date_start = tiempo_0,
-    date_end = tiempo_0 %m+% days(follow_up),
-    # censurar fallecimiento
-    date_end = if_else(!is.na(fdef) & fdef < date_end, fdef, date_end),
-    # censurar control si se vacuna
-    date_end = if_else(exposicion == 0 & !is.na(fvc3) & fvc3 < date_end, 
-                       fvc3, date_end))
- return(data) 
-}
+
 ```
 
 
