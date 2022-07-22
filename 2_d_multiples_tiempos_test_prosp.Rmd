@@ -220,6 +220,7 @@ prueba_matching_purrr_test_2 <- map(fechas,
 
 
 ```{r}
+# Función de análisis a mano---------------------------------------------------
 # check prueba-----------------------------------------------------------------
 prueba_matching_purrr_test_2 %>% 
   janitor::tabyl(exposicion, caso) %>% 
@@ -227,7 +228,39 @@ prueba_matching_purrr_test_2 %>%
 
 prueba_matching_purrr_test_2  %>% 
   mutate(survtime = date_end - date_start) %>% 
-  arrange(survtime)
+  arrange(survtime) 
+  
+base_analisis <- prueba_matching_purrr_test_2
+  print("tabla contingencia exposiciones/casos:")    
+  print(base_analisis %>% 
+    janitor::tabyl(exposicion, caso) %>%
+    janitor::adorn_totals(where = c("row", "col")) %>% 
+    janitor::adorn_title())
+
+  base_analisis <- base_analisis %>% 
+    mutate(survtime = date_end - date_start)
+  
+  base_analisis %>% 
+    count(survtime, exposicion)
+    
+  fit <- survfit(Surv(survtime, caso) ~ exposicion, data = base_analisis) # , subset=survtime>7
+
+
+print(ggsurvplot(fit, data = base_analisis, xlab = "days of follow-up",
+           ylab = "Survival probability",
+           main = "Product-Limit Survival Estimates", ylim = c(0.996, 1), 
+           risk.table = TRUE, conf.int = TRUE))
+
+## hay que resolver mejor esto de hacer el cox sobre un intervalo.. (a partir del dia 7).. aqui solo indico que se le agrege 7 dias al start (pero no he excludio los casos que aparecen en esos primeros 7 dias!!)
+### cox
+  cpp = coxph(formula = Surv(survtime, caso) ~ exposicion, 
+              subset = survtime > 7,
+              data = base_analisis)
+  print(paste0("# Estimated effectiveness in Navarra was :",
+                round((1 - exp(coef(cpp))) * 100, 1), "% (", 
+                round((1 - exp(confint((cpp)))[2]) * 100, 1), "-",
+                round((1 - exp(confint((cpp)))[1]) * 100, 1), ")"))
+  base_analisis
 # ok
 
 ```
