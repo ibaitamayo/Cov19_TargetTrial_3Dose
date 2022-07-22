@@ -162,7 +162,7 @@ prueba_matching_purrr_test <- f_matching_purrr_test(
                 data = pobana_2,
                 tiempo_0 = "2022-01-03",
                 crit_exc = lista_exclusion_dep,
-                vector_match = c("n_0", "temp_var", gedad), 
+                vector_match = c("n_0", "temp_var"), 
                 exposure = "fvc3",
                 out = "fih1", 
                 follow_up = 120,
@@ -186,16 +186,49 @@ prueba_matching_purrr %>% count(exposicion)
 ```
 
 ```{r}
+# fechas-----------------------------------------------------------------------
+# fecha de inicio y fin: secuencia de fechas
+fecha_inicio = ymd("2021-12-01")
+fecha_fin = ymd("2022-06-01") 
+fechas <- seq.Date(from = fecha_inicio, to = fecha_fin, by = "days")
+
+```
+
+```{r}
 # pasar un listado de fechas---------------------------------------------------
-prueba_matching_purrr_2 <- map(fechas, 
-                f_matching_purrr,
+prueba_matching_purrr_test_2 <- map(fechas, 
+                f_matching_purrr_test,
                 data = pobana_2,
                 crit_exc = lista_exclusion_dep,
-                vector_match = c("domi"), 
+                vector_match = c(vector_match_4, "n_0", "temp_var"), 
                 exposure = "fvc3",
                 out = "fih1", 
                 follow_up = 120,
-                verbose = FALSE)
+                base_test = test220613_cleaned,
+                temporal_var = "fpauta_90",
+                verbose = FALSE) %>% 
+    # descartar los días en los que no se encuentra matching
+    keep(~is_tibble(.x)) %>%  
+    # unir todos los tibbles de la lista en uno único
+    enframe() %>%
+    rename(target_trial_number = name) %>% 
+    unnest(value) %>% 
+    # para evitar errores en el matcheo
+    filter(!is.na(exposicion))
+
+```
+
+
+```{r}
+# check prueba-----------------------------------------------------------------
+prueba_matching_purrr_test_2 %>% 
+  janitor::tabyl(exposicion, caso) %>% 
+  janitor::adorn_title()
+
+prueba_matching_purrr_test_2  %>% 
+  mutate(survtime = date_end - date_start) %>% 
+  arrange(survtime)
+# ok
 
 ```
 
