@@ -4,7 +4,7 @@ output:
   html_document:
     code_folding: show
     highlight: espresso
-    css: style.css
+    css: 
     keep_md: yes
     number_sections: yes
     theme: readable
@@ -72,7 +72,8 @@ prueba_matching_2021_12_01_three_days <- readRDS(file.path("Resultados",
 
 
 ```{r}
-f_analisis(lista = prueba_matching_2021_12_01_three_days,
+f_analisis(data = prueba_matching_2021_12_01_three_days,
+           out = "fcv1",
            tiempo_efecto = 7)
 
 ```
