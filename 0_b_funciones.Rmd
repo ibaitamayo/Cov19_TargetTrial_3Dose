@@ -292,7 +292,8 @@ Extensión de la función f_matching_tt, en la cuál se obtiene un ensayo clíni
 ```{r}
 # función de matching para múltiples fechas------------------------------------
 f_matching_tt_mult <- function(data, 
-                             tiempo_0, 
+                             f_ini,
+                             f_fin,
                              crit_exc,
                              exposure,
                              out,
@@ -312,7 +313,9 @@ f_matching_tt_mult <- function(data,
   vector_match <- c(vector_match, "n_0")
 }  
   
-tt_tibble =  map(tiempo_0, 
+  fechas <- seq.Date(from = ymd(f_ini), to = ymd(f_fin), by = "days")
+  
+tt_tibble =  map(fechas, 
       f_matching_tt,
       data = data,
       crit_exc = crit_exc,
@@ -358,7 +361,7 @@ f_analisis <- function(
   
   print(glue("Se está analizando el outcome: {lista$out} \\
              mediante la emulación de un ensayo clínico  \\
-             con múltiples inicios de tiempo. Se ha utilizado matching por:\\
+             con múltiples inicios de tiempo. Se ha utilizado matching por: \\
              {str_c(lista$vector_match, collapse = ', ')}.
              
              "))

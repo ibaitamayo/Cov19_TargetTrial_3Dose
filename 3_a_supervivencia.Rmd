@@ -64,16 +64,29 @@ source_rmd("0_b_funciones.rmd")
 
 ```{r}
 # cargar datos-----------------------------------------------------------------
-prueba_matching_2021_12_01_three_days <- readRDS(file.path("Resultados",
-        "prueba_matching_2021_12_01_three_days.RDS"))
+matching_fcv1 <- readRDS(file.path("Resultados",
+        "matching_fcv1.RDS"))
+
+matching_fcv1_domi <- readRDS(file.path("Resultados",
+        "matching_fcv1_domi.RDS"))
 
 
 ```
 
 
 ```{r}
-f_analisis(lista = prueba_matching_2021_12_01_three_days,
-           tiempo_efecto = 7)
+f_analisis(lista = matching_fcv1,
+           tiempo_efecto = 7,
+           lim_1 = 0.85,
+           lim_zoom = 0.9)
+
+```
+
+```{r}
+f_analisis(lista = matching_fcv1_domi,
+           tiempo_efecto = 7,
+           lim_1 = 0.80,
+           lim_zoom = 0.9)
 
 ```
 

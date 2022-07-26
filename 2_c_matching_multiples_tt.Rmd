@@ -133,18 +133,10 @@ prueba_matching_2022_01_03 %>% count(exposicion, caso)
 # Prueba con más de una fecha
 
 ```{r}
-# fechas-----------------------------------------------------------------------
-# fecha de inicio y fin: secuencia de fechas
-fecha_inicio = ymd("2021-12-01")
-fecha_fin = ymd("2021-12-03") 
-fechas <- seq.Date(from = fecha_inicio, to = fecha_fin, by = "days")
-
-```
-
-```{r}
 prueba_matching_2021_12_01_three_days <- f_matching_tt_mult(
                 data = pobana_2,
-                tiempo_0 = fechas, 
+                f_ini = "2021-12-01",
+                f_fin = "2021-12-03",
                 crit_exc = lista_exclusion_dep,
                 vector_match = variables_matching[1:8], 
                 exposure = "fvc3",
@@ -170,10 +162,16 @@ Se replica el análisis realizado en España en el cuál se investiga la efectiv
 
 ## fcv1
 
+Las fechas que ponen en el artículo son del *2022-01-03* al *2022-02-06*.
+
+### Variables de matching como el artículo
+
 ```{r}
+# hacer ajuste como en el artículo
 matching_fcv1 <- f_matching_tt_mult(
                 data = pobana_2,
-                tiempo_0 = fechas, 
+                f_ini = "2022-01-03",
+                f_fin = "2022-02-06",
                 crit_exc = lista_exclusion_dep,
                 vector_match = variables_matching[1:8], 
                 exposure = "fvc3",
@@ -186,4 +184,36 @@ matching_fcv1 <- f_matching_tt_mult(
 
 ```
 
+```{r}
+# guardar resultados-----------------------------------------------------------
+saveRDS(matching_fcv1, file.path("Resultados",
+        "matching_fcv1.RDS"))
 
+```
+
+### Variables de matching: Domicilio
+
+```{r}
+# hacer ajuste con el domicilio como matching
+matching_fcv1_domi <- f_matching_tt_mult(
+                data = pobana_2,
+                f_ini = "2022-01-03",
+                f_fin = "2022-02-06",
+                crit_exc = lista_exclusion_dep,
+                vector_match = "domi", 
+                exposure = "fvc3",
+                out = "fcv1", 
+                follow_up = 60,
+                base_test = test220613_cleaned,
+                temporal_var = "fpauta_90",
+                verbose = FALSE,
+                seed = 3)
+
+```
+
+```{r}
+# guardar resultados-----------------------------------------------------------
+saveRDS(matching_fcv1_domi, file.path("Resultados",
+        "matching_fcv1_domi.RDS"))
+
+```
