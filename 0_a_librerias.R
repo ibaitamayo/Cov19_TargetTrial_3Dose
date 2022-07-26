@@ -20,6 +20,8 @@ library(survminer)
 library(survival)
 library(conflicted)
 library(glue)
+library(janitor)
+library(gluedown)
 
 # usar fuciones de tidyverse antes que las de otros paquetes-------------------
 conflict_prefer_all("dplyr")

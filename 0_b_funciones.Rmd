@@ -5,22 +5,6 @@ output: html_document
 ---
 
 
-```{r set-global-options, echo = FALSE}
-knitr::opts_chunk$set(eval = TRUE, 
-                      echo = TRUE, 
-                      cache = FALSE,
-                      include = TRUE,
-                      collapse = FALSE,
-                      dependson = NULL,
-                      engine = "R", # Chunks will always have R code, unless noted
-                      error = TRUE,
-                      fig.path="Figures/",  # Set the figure options
-                      fig.align = "center", 
-                      fig.width = 12,
-                      fig.height = 12)
-```
-
-
 ```{r librerias, echo=FALSE, message=FALSE, include=FALSE, warning=FALSE}
 source("0_a_librerias.R")
 
@@ -189,13 +173,25 @@ hacer_flujo_dep <- function(data,
 
 ```
 
-# f_matching_multiple_tt
+# f_matching_tt
 
 ***
 
+Función que, para una fecha determinada (tiempo_0) realiza:
+
+- Los criterios de exclusión dependientes del tiempo.
+- Define la exposición en la población.
+- Realiza matching (1:1) de esa población.
+
+Además, permite definir cuál va a ser la variable de censura, cuál es el tiempo de seguimiento y si va a haber alguna variable de matching que sea dependiente del tiempo. 
+
+Asimismo, permite introducir una base de test previos, para crear una variable de test negativos previos en el tiempo_0, que será introducida como una variable de matching.
+
+Por último, se permite definir la cantidad de información que queremos que aparezca por pantalla (*verbose*) y el valor de la semilla (*seed*) para obtener siempre el mismo resultado en el matching.
+
 ```{r}
 # función de matching----------------------------------------------------------
-f_matching_multiple_tt <- function(data, 
+f_matching_tt <- function(data, 
                              tiempo_0, 
                              crit_exc,
                              exposure,
@@ -287,6 +283,50 @@ f_matching_multiple_tt <- function(data,
       as_tibble() 
     }
   )
+}
+
+```
+
+## f_matching_tt_mult 
+
+Extensión de la función f_matching_tt, en la cuál se obtiene un ensayo clínico emulado para cada tiempo_0 y se unen en un único *tibble*.
+
+```{r}
+# función de matching para múltiples fechas------------------------------------
+f_matching_tt_mult <- function(data, 
+                             tiempo_0, 
+                             crit_exc,
+                             exposure,
+                             out,
+                             censoring = "fdef",
+                             vector_match,
+                             follow_up = 60,
+                             temporal_var = NULL,
+                             base_test = NULL,
+                             verbose = TRUE,
+                             seed = 1) {
+  
+  map(tiempo_0, 
+      f_matching_tt,
+      data = data,
+      crit_exc = crit_exc,
+      vector_match = vector_match, 
+      exposure = exposure,
+      out = out, 
+      follow_up = follow_up,
+      base_test = base_test,
+      temporal_var = temporal_var,
+      verbose = FALSE,
+      seed = seed) %>% 
+    # descartar los días en los que no se encuentra matching
+    keep(~is_tibble(.x)) %>%  
+    # unir todos los tibbles de la lista en uno único
+    enframe() %>%
+    rename(target_trial_number = name) %>% 
+    unnest(value) %>% 
+    # para evitar errores en el matcheo
+    filter(!is.na(exposicion))
+  
 }
 
 ```

@@ -33,12 +33,6 @@ knitr::opts_chunk$set(eval = TRUE,
                       fig.height = 12)
 ```
 
-```{r librerias, echo=FALSE, message=FALSE, include=FALSE, warning=FALSE}
-# source("0_a_librerias.R")
-# ya se cargan cuando se carguen las funciones
-
-```
-
 ```{r}
 # función para cargar un .Rmd como si se hiciese source de un .r---------------
 source_rmd = function(file, ...) {
@@ -110,7 +104,7 @@ variables_matching = c(
 # Prueba con una fecha
 
 ```{r}
-prueba_matching_2022_01_03 <- f_matching_multiple_tt(
+prueba_matching_2022_01_03 <- f_matching_tt(
                 data = pobana_2,
                 tiempo_0 = "2022-01-03",
                 crit_exc = lista_exclusion_dep,
@@ -148,6 +142,23 @@ fechas <- seq.Date(from = fecha_inicio, to = fecha_fin, by = "days")
 ```
 
 ```{r}
+prueba_matching_2021_12_01_three_days <- f_matching_tt_mult(
+                data = pobana_2,
+                tiempo_0 = fechas, 
+                crit_exc = lista_exclusion_dep,
+                vector_match = variables_matching[1:8], 
+                exposure = "fvc3",
+                out = "fcv1", 
+                follow_up = 60,
+                base_test = test220613_cleaned,
+                temporal_var = "fpauta_90",
+                verbose = FALSE,
+                seed = 3)
+
+```
+
+
+```{r}
 # pasar un listado de fechas---------------------------------------------------
 prueba_matching_2021_12_01_three_days <- map(fechas, 
                 f_matching_multiple_tt,
@@ -155,8 +166,8 @@ prueba_matching_2021_12_01_three_days <- map(fechas,
                 crit_exc = lista_exclusion_dep,
                 vector_match = variables_matching[1:8], 
                 exposure = "fvc3",
-                out = "fih1", 
-                follow_up = 120,
+                out = "fcv1", 
+                follow_up = 60,
                 base_test = test220613_cleaned,
                 temporal_var = "fpauta_90",
                 verbose = FALSE,
@@ -176,20 +187,12 @@ prueba_matching_2021_12_01_three_days <- map(fechas,
 ```{r}
 # Función de análisis a mano---------------------------------------------------
 # check prueba-----------------------------------------------------------------
-prueba_matching_2021_12_01_three_days %>% 
-  janitor::tabyl(exposicion, caso) %>% 
-  janitor::adorn_title()
-
-prueba_matching_2021_12_01_three_days  %>% 
-  mutate(survtime = date_end - date_start) %>% 
-  arrange(survtime) 
-  
 base_analisis <- prueba_matching_2021_12_01_three_days
   print("tabla contingencia exposiciones/casos:")    
   print(base_analisis %>% 
-    janitor::tabyl(exposicion, caso) %>%
-    janitor::adorn_totals(where = c("row", "col")) %>% 
-    janitor::adorn_title())
+    tabyl(exposicion, caso) %>%
+    adorn_totals(where = c("row", "col")) %>% 
+    adorn_title())
 
   base_analisis <- base_analisis %>% 
     mutate(survtime = date_end - date_start)
@@ -202,7 +205,7 @@ base_analisis <- prueba_matching_2021_12_01_three_days
 
 print(ggsurvplot(fit, data = base_analisis, xlab = "days of follow-up",
            ylab = "Survival probability",
-           main = "Product-Limit Survival Estimates", ylim = c(0.996, 1), 
+           main = "Product-Limit Survival Estimates", ylim = c(0.8, 1), 
            risk.table = TRUE, conf.int = TRUE))
 
 ## hay que resolver mejor esto de hacer el cox sobre un intervalo.. (a partir del dia 7).. aqui solo indico que se le agrege 7 dias al start (pero no he excludio los casos que aparecen en esos primeros 7 dias!!)
@@ -210,12 +213,12 @@ print(ggsurvplot(fit, data = base_analisis, xlab = "days of follow-up",
   cpp = coxph(formula = Surv(survtime, caso) ~ exposicion, 
               subset = survtime > 7,
               data = base_analisis)
-  print(paste0("# Estimated effectiveness in Navarra was :",
-                round((1 - exp(coef(cpp))) * 100, 1), "% (", 
-                round((1 - exp(confint((cpp)))[2]) * 100, 1), "-",
-                round((1 - exp(confint((cpp)))[1]) * 100, 1), ")"))
-  base_analisis
-# ok
-
+  out <- "fcv1"
+  
+  print(glue("# Estimated effectiveness in Navarra for {md_bold(out)} is : \\
+             {round((1 - exp(coef(cpp))) * 100, 1)} % \\
+             ({round((1 - exp(confint(cpp))[2]) * 100, 1)} - \\
+             {round((1 - exp(confint((cpp)))[1]) * 100, 1)} %)"))
+  
 ```
 
