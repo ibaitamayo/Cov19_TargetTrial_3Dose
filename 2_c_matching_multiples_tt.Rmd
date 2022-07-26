@@ -61,13 +61,36 @@ source_rmd("0_b_funciones.rmd")
 
 ```{r cargar-datos, echo=FALSE, eval=TRUE, message=FALSE, warning=FALSE}
 # cargar datos-----------------------------------------------------------------
-# load(file.path("Datos", "Brutos", "ttcvc3d_220628.Rdata"))
 pobana_2 <- readRDS(file = file.path("Resultados", "pobana_2.RDS"))
 test220613_cleaned <- readRDS(file = file.path("Datos", "Procesados", 
                                              "test220613_cleaned.RDS"))
 
 ```
 
+```{r}
+# se crean listas que dependen del proyecto------------------------------------
+lista_exclusion_dep <- list(
+  criterios = list(
+  c1 = "Excluyendo: infección previa antes del tiempo_0...",
+  c2 = "Excluyendo: edad < 40 años en tiempo_0...", 
+  c3 = "Excluyendo: pauta incompleta 90 días antes del tiempo_0...",
+  c4 = "Excluyendo: fallecidos antes del tiempo_0...",
+  c5 = "Excluyendo: boosting antes del tiempo_0..."),
+  variables = list(
+  v1 = "fcv1",
+  v2 = "fnac_40",
+  v3 = "fpauta_90",
+  v4 = "fdef",
+  v5 = "fvc3"),
+  tipo_var = list(
+    "exc",
+    "inc",
+    "inc",
+    "exc",
+    "exc")
+  )
+
+```
 
 ```{r}
 # vectores de matching---------------------------------------------------------
@@ -84,10 +107,11 @@ variables_matching = c(
 
 ```
 
+# Prueba con una fecha
 
 ```{r}
-prueba_matching_purrr_test_c <- f_matching_multiple_tt(
-                data = pobana_1_adaptada,
+prueba_matching_2022_01_03 <- f_matching_multiple_tt(
+                data = pobana_2,
                 tiempo_0 = "2022-01-03",
                 crit_exc = lista_exclusion_dep,
                 vector_match = variables_matching[1:8], 
@@ -101,41 +125,42 @@ prueba_matching_purrr_test_c <- f_matching_multiple_tt(
 
 ```
 
-# Prueba
-
 ```{r}
-prueba_matching_purrr_test %>% 
+# check prueba
+prueba_matching_2022_01_03 %>% 
   mutate(survtime = date_end - date_start) %>% 
   arrange(survtime)
-# OK
 
-prueba_matching_purrr_test_b %>% count(exposicion, caso)
-prueba_matching_purrr_test_a %>% count(exposicion, caso)
+# OK
+prueba_matching_2022_01_03 %>% count(exposicion, caso)
 
 ```
+
+# Prueba con más de una fecha
 
 ```{r}
 # fechas-----------------------------------------------------------------------
 # fecha de inicio y fin: secuencia de fechas
 fecha_inicio = ymd("2021-12-01")
-fecha_fin = ymd("2022-06-01") 
+fecha_fin = ymd("2021-12-03") 
 fechas <- seq.Date(from = fecha_inicio, to = fecha_fin, by = "days")
 
 ```
 
 ```{r}
 # pasar un listado de fechas---------------------------------------------------
-prueba_matching_purrr_test_2 <- map(fechas, 
-                f_matching_purrr_test,
+prueba_matching_2021_12_01_three_days <- map(fechas, 
+                f_matching_multiple_tt,
                 data = pobana_2,
                 crit_exc = lista_exclusion_dep,
-                vector_match = c(vector_match_4, "n_0", "temp_var"), 
+                vector_match = variables_matching[1:8], 
                 exposure = "fvc3",
                 out = "fih1", 
                 follow_up = 120,
                 base_test = test220613_cleaned,
                 temporal_var = "fpauta_90",
-                verbose = FALSE) %>% 
+                verbose = FALSE,
+                seed = 3) %>% 
     # descartar los días en los que no se encuentra matching
     keep(~is_tibble(.x)) %>%  
     # unir todos los tibbles de la lista en uno único
@@ -151,15 +176,15 @@ prueba_matching_purrr_test_2 <- map(fechas,
 ```{r}
 # Función de análisis a mano---------------------------------------------------
 # check prueba-----------------------------------------------------------------
-prueba_matching_purrr_test_2 %>% 
+prueba_matching_2021_12_01_three_days %>% 
   janitor::tabyl(exposicion, caso) %>% 
   janitor::adorn_title()
 
-prueba_matching_purrr_test_2  %>% 
+prueba_matching_2021_12_01_three_days  %>% 
   mutate(survtime = date_end - date_start) %>% 
   arrange(survtime) 
   
-base_analisis <- prueba_matching_purrr_test_2
+base_analisis <- prueba_matching_2021_12_01_three_days
   print("tabla contingencia exposiciones/casos:")    
   print(base_analisis %>% 
     janitor::tabyl(exposicion, caso) %>%

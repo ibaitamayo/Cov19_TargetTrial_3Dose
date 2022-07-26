@@ -100,51 +100,11 @@ variables = list(
 ```
 
 ```{r}
-# función para excluir siguiendo un criterio-----------------------------------
-excluir <- function(pob, 
-                    crit,
-                    var)
-{
-  
-  if (is.logical(pob %>% pull(var)) == TRUE) {
-  print(glue("Variable lógica. {crit}"))
-  pob <- pob %>% filter(is.na(get(var)) |
-                     get(var) != TRUE)
-    print(glue("n : {nrow(pob)}"))
-  pob
-  }
-  else {
-  print(glue("Variable no lógica. {crit}"))
-  pob <- pob %>% filter(!is.na(get(var)))
-    print(glue("n : {nrow(pob)}"))
-  pob
-  }
-}
-
-```
-
-```{r}
-# flujo------------------------------------------------------------------------
-hacer_flujo <- function(poblacion,
-                        exc = lista_exclusion
-                   ) 
-  {
-  print(glue("n de partida: {nrow(poblacion)}"))
-
-  for(i in seq_along(exc$criterios)) {
-  poblacion <- excluir(pob = poblacion,
-                       crit = exc$criterios[[i]],
-                       var = exc$variables[[i]])
-}
-  poblacion
-  }
-
-```
-
-```{r}
 # aplicar exclusiones independientes del tiempo_0------------------------------
-pobana_1 <- hacer_flujo(poblacion = pobana_0, 
-            exc = lista_exclusion)
+pobana_1 <- hacer_flujo(
+                        data = pobana_0, 
+                        exc = lista_exclusion
+            )
 
 ```
 

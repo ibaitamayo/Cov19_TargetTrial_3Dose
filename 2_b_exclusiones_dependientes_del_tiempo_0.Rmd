@@ -79,7 +79,7 @@ Cuando se genere nueva casuística, se puede añadir entre el if() y el else() d
 
 ```{r}
 # arreglar variables exclusión/inclusión dinámicas-----------------------------
-pobana_1_adaptada <- pobana_1 %>% 
+pobana_2 <- pobana_1 %>% 
   # crear fecha 40 cumpleaños
   mutate(fnac_40 = fnac %m+% years(40)) %>% 
   # crear fecha 90 días tras pauta completa
@@ -91,22 +91,6 @@ pobana_1_adaptada <- pobana_1 %>%
 
 ```
    
-```{r}
-# arreglar base para que las variables se puedan introducir en el matching-----
-pobana_2 <- pobana_1_adaptada %>% 
-  # arreglar variables matching
-  mutate(
-    genn = as.numeric(gen) - 1,
-    gedadn = as.numeric(gedad),
-    czbs = as.numeric(czbs),
-    migran = as.numeric(migran),
-    vgp20 = as.numeric(vgp20),
-    vgp21 = as.numeric(vgp21),
-    tvc2n = as.numeric(as.factor(tvc2)),
-    domi = as.numeric(domi)) 
-
-```
-
 ```{r}
 # guardar base con exclusiones estáticas---------------------------------------
 saveRDS(pobana_2, file.path("Resultados", "pobana_2.RDS"))
@@ -139,58 +123,15 @@ lista_exclusion_dep <- list(
 
 ```
 
-```{r}
-# función para excluir siguiendo un criterio-----------------------------------
-excluir_dep <- function(pob, 
-                        crit,
-                        var,
-                        t_var,
-                        t0,
-                        vb)
-{
-  if (t_var == "exc"){
-    if (vb == TRUE) print(glue("Variable exclusión. {crit}"))
-  pob <- pob %>% filter(is.na(get(var)) | get(var) >= t0)
-    if (vb == TRUE) print(glue("n : {nrow(pob)}"))
-  pob
-  }
-  else {
-    if (vb == TRUE) print(glue("Variable inclusión. {crit}"))
-  pob <- pob %>% filter(get(var) <= t0)
-    if (vb == TRUE) print(glue("n : {nrow(pob)}"))
-  pob
-  }
-}
 
-```
-
-```{r}
-# flujo------------------------------------------------------------------------
-hacer_flujo_dep <- function(data,
-                            crit_exc = lista_exclusion_dep,
-                            tiempo_0 = tiempo_0
-                   ) 
-  {
-  tiempo_0 <- ymd(tiempo_0)
-  print(glue("n de partida: {nrow(data)}"))
-  for(i in seq_along(crit_exc$criterios)) {
-  data <- excluir_dep(
-                       pob = data,
-                       crit = crit_exc$criterios[[i]],
-                       var = crit_exc$variables[[i]],
-                       t_var = crit_exc$tipo_var[[i]],
-                       t0 = tiempo_0)
-}
-  data
-  }
-
-```
 
 ```{r}
 # aplicar exclusiones dependientes del tiempo_0------------------------------
-pobana_2_2022_01_03 <- hacer_flujo_dep(poblacion = pobana_2, 
-            exc = lista_exclusion_dep,
-            tiempo_0 = "2022-01-03")
+pobana_2_2022_01_03 <- hacer_flujo_dep(
+                                        data = pobana_2, 
+                                        exc = lista_exclusion_dep,
+                                        tiempo_0 = "2022-01-03"
+                                        )
 
 ```
 
