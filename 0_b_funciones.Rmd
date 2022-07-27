@@ -198,6 +198,7 @@ f_matching_tt <- function(data,
                              vector_match,
                              follow_up = 60,
                              temporal_var = NULL,
+                             temporal_var_unit,
                              base_test = NULL,
                              verbose = TRUE,
                              seed = 1) {
@@ -245,7 +246,8 @@ f_matching_tt <- function(data,
   # creación de variable temporal respecto a tiempo_0
   if (!is.null(temporal_var)) {
   data <- data %>% 
-  mutate(temp_var = as.numeric(tiempo_0 - get(temporal_var)))
+  mutate(temp_var = as.numeric(tiempo_0 - 
+                    floor_date(get(temporal_var), unit = temporal_var_unit)))
   vector_match <- c(vector_match, "temp_var")
   }
   
@@ -301,21 +303,14 @@ f_matching_tt_mult <- function(data,
                              vector_match,
                              follow_up = 60,
                              temporal_var = NULL,
+                             temporal_var_unit,
                              base_test = NULL,
                              verbose = TRUE,
-                             seed = 1) {
-
-  if (!is.null(temporal_var)) {
-  vector_match  <- c(vector_match, temporal_var)
-}  
-
-  if (!is.null(base_test)) {
-  vector_match <- c(vector_match, "n_0")
-}  
+                             seed = 1){
   
   fechas <- seq.Date(from = ymd(f_ini), to = ymd(f_fin), by = "days")
   
-tt_tibble =  map(fechas, 
+  tt_tibble =  map(fechas, 
       f_matching_tt,
       data = data,
       crit_exc = crit_exc,
@@ -325,6 +320,7 @@ tt_tibble =  map(fechas,
       follow_up = follow_up,
       base_test = base_test,
       temporal_var = temporal_var,
+      temporal_var_unit = temporal_var_unit,
       verbose = FALSE,
       seed = seed) %>% 
     # descartar los días en los que no se encuentra matching
@@ -336,10 +332,20 @@ tt_tibble =  map(fechas,
     # para evitar errores en el matcheo
     filter(!is.na(exposicion))
 
-return(lst(tt_tibble = tt_tibble,
+  if (!is.null(temporal_var)) {
+  vector_match  <- c(vector_match, 
+                     glue("{temporal_var} (in {temporal_var_unit})"))
+  }  
+
+  if (!is.null(base_test)) {
+  vector_match <- c(vector_match, "n_0")
+  }  
+
+  return(lst(tt_tibble = tt_tibble,
        out = out,
        vector_match = vector_match))  
-  }
+}
+
 
 ```
 

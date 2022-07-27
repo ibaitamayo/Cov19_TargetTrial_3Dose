@@ -62,6 +62,8 @@ source_rmd("0_b_funciones.rmd")
 
 ***
 
+## Análisis como el artículo de Monge-Hernán
+
 ```{r}
 # cargar datos-----------------------------------------------------------------
 matching_fcv1 <- readRDS(file.path("Resultados",
@@ -70,19 +72,20 @@ matching_fcv1 <- readRDS(file.path("Resultados",
 matching_fcv1_domi <- readRDS(file.path("Resultados",
         "matching_fcv1_domi.RDS"))
 
-
 ```
 
 
 ```{r}
+# análisis con variables de matching como el artículo--------------------------
 f_analisis(lista = matching_fcv1,
            tiempo_efecto = 7,
-           lim_1 = 0.85,
+           lim_1 = 0.8,
            lim_zoom = 0.9)
 
 ```
 
 ```{r}
+# análisis con domicilio como variable de matching-----------------------------
 f_analisis(lista = matching_fcv1_domi,
            tiempo_efecto = 7,
            lim_1 = 0.80,
@@ -92,20 +95,3 @@ f_analisis(lista = matching_fcv1_domi,
 
 
 
-
-# Programar la replicación completa del articulo
-
-***
-
-## Table 1: Baseline characteristics of the matched study population
-
-grupos de edad, genero, Number of previous SARS-CoV-2 tests, Primary vaccine schedule, Booster dose, Time since completion of primary vaccine schedule [80-150, 151-180, >180]
-
-## Table 2: Estimated effectiveness of an mRNA COVID-19 vaccine booster in individuals* who had completed primary vaccination schedule against COVID-19
-
-Analyses based on 2 083 857 matched pairs who remained under follow-up by day 7 after the booster dose. Overall, Age group (years): [40–59, 60–79, ≥80], Sex, Type of previous vaccination, Time since vaccination completed, Type of booster [mRNA-1273,BNT162b2]
- # Booster group [Events| Risk per 10 000 individuals] No booster group [Events| Risk per 10 000 individuals]  1–risk ratio (95% CI) | Risk difference per 10 000 individuals (95% CI)
-
-## Table 3: Sensitivity analyses of vaccine effectiveness 7–34 days after an mRNA COVID-19 vaccine booster dose // 1–risk ratio (95% CI) | Risk difference per 10 000 individuals (95% CI)
-
-Main analysis | Restricting to people with ≥1 negative lab test at enrolment | with no tests in the 7  days before enrollment |Censoring matched pairs 7 days after the control receives a booster rather than 0 days | Using date of PCR test result rather than subtracting 2 days | Selecting matched controls without replacement | Exact matching by age (year by year vs 5-year groups) | Restricting events to PCR test.

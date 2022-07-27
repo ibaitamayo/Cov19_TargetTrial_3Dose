@@ -58,28 +58,19 @@ source_rmd("0_b_funciones.rmd")
 
 ```
 
-# Análisis de supervivencia
+# Tablas de resultados
 
 ***
 
 ```{r}
 # cargar datos-----------------------------------------------------------------
-prueba_matching_2021_12_01_three_days <- readRDS(file.path("Resultados",
-        "prueba_matching_2021_12_01_three_days.RDS"))
+matching_fcv1 <- readRDS(file.path("Resultados",
+        "matching_fcv1.RDS"))
 
-
-```
-
-
-```{r}
-f_analisis(data = prueba_matching_2021_12_01_three_days,
-           out = "fcv1",
-           tiempo_efecto = 7)
+matching_fcv1_domi <- readRDS(file.path("Resultados",
+        "matching_fcv1_domi.RDS"))
 
 ```
-
-
-
 
 # Programar la replicación completa del articulo
 
