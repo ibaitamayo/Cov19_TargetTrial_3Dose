@@ -80,6 +80,61 @@ matching_fcv1_domi <- readRDS(file.path("Resultados",
 
 grupos de edad, genero, Number of previous SARS-CoV-2 tests, Primary vaccine schedule, Booster dose, Time since completion of primary vaccine schedule [80-150, 151-180, >180]
 
+```{r}
+# edad
+tabla_basal_edad <- hacer_basal_discreta(base = matching_fcv1$tt_tibble,
+                                         variable = p_edad_cat_label,
+                                         relabel = c(
+                                      "0-39",
+                                     "40-44", 
+                                     "45-49",
+                                     "50-54",
+                                     "55-59",
+                                     "60-64",
+                                     "65-69",
+                                     "70-74",
+                                     "75-79",
+                                     "80-84",
+                                     "85-89",
+                                     "&ge; 90")
+                                     )
+
+tabla_basal_sexo <- hacer_basal_discreta(base = matching_fcv1$tt_tibble,
+                                         variable = gen,
+                                         relabel = c(
+                                           "Men",
+                                           "Women")
+                                         )
+                                         
+tabla_basal_n_test <- hacer_basal_discreta(base = matching_fcv1$tt_tibble,
+                                         variable = n_0,
+                                         relabel = c(
+                                           "0",
+                                           "1",
+                                           "2",
+                                           "&ge; 3")
+                                         )
+
+tabla_booster_type <- hacer_basal_discreta(base = matching_fcv1$tt_tibble,
+                                         variable = tvc3,
+                                         relabel = NULL
+                                         )
+
+
+
+matching_fcv1$tt_tibble %>% 
+  mutate(t_desde_pauta_completa = date_start - fpauta_90) %>% 
+  skim(t_desde_pauta_completa)
+
+matching_fcv1$tt_tibble %>% 
+  mutate(t_desde_pauta_completa = case_when(
+    date_start - fpauta_90 <= 60)
+
+tabla_t_pauta_comp <- hacer_basal_discreta()
+
+```
+
+
 ## Table 2: Estimated effectiveness of an mRNA COVID-19 vaccine booster in individuals* who had completed primary vaccination schedule against COVID-19
 
 Analyses based on 2 083 857 matched pairs who remained under follow-up by day 7 after the booster dose. Overall, Age group (years): [40–59, 60–79, ≥80], Sex, Type of previous vaccination, Time since vaccination completed, Type of booster [mRNA-1273,BNT162b2]

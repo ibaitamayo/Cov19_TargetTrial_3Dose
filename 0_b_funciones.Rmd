@@ -460,14 +460,23 @@ f_tabla_1 <- function(lista){
 
 ```{r}
 # hacer basal discretas--------------------------------------------------------
-hacer_basal_discreta <- function(base, variable) {
-base %>% tabyl({{variable}}, exposicion) %>% 
-  adorn_totals("col") %>%  
-  adorn_percentages("col") %>%
-  adorn_pct_formatting(digits = 1) %>%
-  adorn_ns("front") %>% 
-  rename(Variable = {{variable}}) %>% 
-  mutate(Variable = as.character(Variable))
+hacer_basal_discreta <- function(base, 
+                                 variable,
+                                 relabel = NULL) {
+  
+  tabla <- base %>% tabyl({{variable}}, exposicion) %>% 
+    adorn_totals("col") %>%  
+    adorn_percentages("col") %>%
+    adorn_pct_formatting(digits = 1) %>%
+    adorn_ns("front") %>% 
+    rename(Variable = {{variable}}) %>% 
+    mutate(Variable = as.character(Variable))
+  
+  if (!is.null(relabel)){
+  tabla <- tabla %>% 
+    mutate(Variable = relabel)
+  }
+  tabla
 }
 
 ```
@@ -494,47 +503,3 @@ base %>%
 }
 
 ```
-
-```{r}
-# edad
-
-# tabla_basal_edad <- hacer_basal_discreta(base = matching_fcv1$tt_tibble %>%
-#   mutate(p_edad_cat = cut(as.numeric(difftime(date_start, fnac, unit = "days"))/365.25,
-#                           right = FALSE, 
-#                           breaks = c(0,
-#                                      45,
-#                                      50,
-#                                      55,
-#                                      60,
-#                                      65,
-#                                      70,
-#                                      75,
-#                                      80,
-#                                      85,
-#                                      90,
-#                                      200),
-#                           labels = c("40-44", 
-#                                      "45-49",
-#                                      "50-54",
-#                                      "55-59",
-#                                      "60-64",
-#                                      "65-69",
-#                                      "70-74",
-#                                      "75-79",
-#                                      "80-84",
-#                                      "85-89",
-#                                      "&ge; 90"))),
-#          variable = p_edad_cat)
-# 
-# 
-# matching_fcv1$tt_tibble %>% count(gedad)
-
-```
-
-
-```{r}
-# matching_fcv1$tt_tibble %>% 
-#   tabyl(gedad)
-
-```
-
