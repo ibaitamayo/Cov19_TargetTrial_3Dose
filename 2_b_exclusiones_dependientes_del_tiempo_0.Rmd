@@ -87,7 +87,11 @@ pobana_2 <- pobana_1 %>%
     !is.na(fvc2) ~ fvc2 %m+% days(90),
     tvc1 == "J&J / Janssen" ~ fvc1 %m+% days(90),
     T ~ NA_Date_
-    ))
+    )) %>%
+  mutate(tvc1_label = tvc1) %>% 
+  # pautas de Janssen o de la misma vacuna
+  tidylog::filter(tvc1 == "J&J / Janssen" | tvc1 == tvc2)
+pobana_2 %>% count(tvc1, tvc2)
 
 ```
    

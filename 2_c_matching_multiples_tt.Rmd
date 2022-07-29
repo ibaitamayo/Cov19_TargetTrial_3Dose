@@ -92,7 +92,7 @@ variables_matching = c(
   "gen",    # 1
   "gedad",  # 2
   "czbs",   # 3
-  "tvc2",   # 4
+  "tvc1",   # 4
   "migran", # 5
   "vgp20",  # 6
   "vgp21",  # 7
