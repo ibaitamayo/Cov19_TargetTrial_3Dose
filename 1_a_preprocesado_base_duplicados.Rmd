@@ -54,7 +54,7 @@ source_rmd = function(file, ...) {
 
 ```{r}
 # cargar funciones de 0_funciones----------------------------------------------
-source_rmd("0_b_funciones.rmd")
+suppressMessages(source_rmd("0_b_funciones.rmd"))
 
 ```
 

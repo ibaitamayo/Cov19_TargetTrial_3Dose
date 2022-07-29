@@ -54,7 +54,7 @@ source_rmd = function(file, ...) {
 ```{r}
 # cargar funciones de 0_funciones----------------------------------------------
 if (!exists("se_ha_cargado_f")) {
-source_rmd("0_b_funciones.rmd")
+suppressMessages(source_rmd("0_b_funciones.rmd"))
 }
 
 ```
@@ -328,7 +328,7 @@ pob10 %>% count(is.na(czbs))
 ## edad a 2022/01/01
 pob11 <- pob10 %>% 
   mutate(gedad = cut(round(as.numeric(ymd("2022-01-01") - fnac)/365.25), 
-         breaks = c(0, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 110))) %>%
+         breaks = c(0, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 200))) %>%
   relocate(gedad, .after = fnac) %>% 
   select(-aseg)
 

@@ -47,7 +47,7 @@ source_rmd = function(file, ...) {
 ```{r}
 # cargar funciones de 0_funciones----------------------------------------------
 if (!exists("se_ha_cargado_f")) {
-source_rmd("0_b_funciones.rmd")
+suppressMessages(source_rmd("0_b_funciones.rmd"))
 }
 
 ```
@@ -104,37 +104,54 @@ variables_matching = c(
 # Prueba con una fecha
 
 ```{r}
+# matching f_pauta en días
 prueba_matching_days <- f_matching_tt(
                 data = pobana_2,
                 tiempo_0 = "2022-01-03",
                 crit_exc = lista_exclusion_dep,
-                vector_match = variables_matching[1:8], 
                 exposure = "fvc3",
                 out = "fcv1", 
-                follow_up = 34,
+                vector_match = variables_matching[c(1, 3:8)], 
                 base_test = test220613_cleaned,
                 temporal_var = "fpauta_90",
                 temporal_var_unit = "days",
+                birth_date = "fnac",
+                age_first = 40,
+                age_last = 90,
+                age_by = 5,
+                censoring = "fdef",
+                follow_up = 34,
                 verbose = FALSE,
                 seed = 3)
 
 prueba_matching_days
 
+# matching f_pauta en semanas (menos restrictivo)
 prueba_matching_weeks <- f_matching_tt(
                 data = pobana_2,
                 tiempo_0 = "2022-01-03",
                 crit_exc = lista_exclusion_dep,
-                vector_match = variables_matching[1:8], 
                 exposure = "fvc3",
                 out = "fcv1", 
-                follow_up = 34,
+                vector_match = variables_matching[c(1, 3:8)], 
                 base_test = test220613_cleaned,
                 temporal_var = "fpauta_90",
                 temporal_var_unit = "weeks",
+                birth_date = "fnac",
+                age_first = 40,
+                age_last = 90,
+                age_by = 5,
+                censoring = "fdef",
+                follow_up = 34,
                 verbose = FALSE,
                 seed = 3)
 
 prueba_matching_weeks
+
+# comprobar categorías de edad
+prueba_matching_weeks %>% 
+tabyl(p_edad_cat_label, exposicion) %>% 
+  adorn_title()
 
 ```
 
@@ -150,43 +167,54 @@ prueba_matching_weeks %>%
   mutate(survtime = date_end - date_start) %>% 
   arrange(desc(survtime)) #ok
 
-prueba_matching_weeks %>% count(exposicion, caso)
+prueba_matching_weeks %>% tabyl(exposicion, caso)
 
 ```
 
 # Prueba con más de una fecha
 
 ```{r}
+# matching f_pauta en días (menos restrictivo)
 prueba_matching_mult_days <- f_matching_tt_mult(
                 data = pobana_2,
                 f_ini = "2022-01-03",
-                f_fin = "2022-01-03",
+                f_fin = "2022-01-05",
                 crit_exc = lista_exclusion_dep,
-                vector_match = variables_matching[1:8], 
                 exposure = "fvc3",
                 out = "fcv1", 
-                follow_up = 34,
+                vector_match = variables_matching[c(1, 3:8)], 
                 base_test = test220613_cleaned,
                 temporal_var = "fpauta_90",
                 temporal_var_unit = "days",
+                birth_date = "fnac",
+                age_first = 40,
+                age_last = 90,
+                age_by = 5,
+                censoring = "fdef",
+                follow_up = 34,
                 verbose = FALSE,
                 seed = 3)
 
 prueba_matching_mult_days
 
-
+# matching f_pauta en semanas (menos restrictivo)
 prueba_matching_mult_weeks <- f_matching_tt_mult(
                 data = pobana_2,
                 f_ini = "2022-01-03",
-                f_fin = "2022-01-03",
+                f_fin = "2022-01-05",
                 crit_exc = lista_exclusion_dep,
-                vector_match = variables_matching[1:8], 
                 exposure = "fvc3",
                 out = "fcv1", 
-                follow_up = 34,
+                vector_match = variables_matching[c(1, 3:8)], 
                 base_test = test220613_cleaned,
                 temporal_var = "fpauta_90",
                 temporal_var_unit = "weeks",
+                birth_date = "fnac",
+                age_first = 40,
+                age_last = 90,
+                age_by = 5,
+                censoring = "fdef",
+                follow_up = 34,
                 verbose = FALSE,
                 seed = 3)
 
@@ -232,13 +260,18 @@ matching_fcv1 <- f_matching_tt_mult(
                 f_ini = "2022-01-03",
                 f_fin = "2022-02-06",
                 crit_exc = lista_exclusion_dep,
-                vector_match = variables_matching[1:8], 
                 exposure = "fvc3",
                 out = "fcv1", 
-                follow_up = 34,
+                vector_match = variables_matching[c(1, 3:8)], 
                 base_test = test220613_cleaned,
                 temporal_var = "fpauta_90",
                 temporal_var_unit = "weeks",
+                birth_date = "fnac",
+                age_first = 40,
+                age_last = 90,
+                age_by = 5,
+                censoring = "fdef",
+                follow_up = 34,
                 verbose = FALSE,
                 seed = 3)
 
@@ -250,208 +283,6 @@ saveRDS(matching_fcv1, file.path("Resultados",
         "matching_fcv1.RDS"))
 
 ```
-
-### Variables de matching como el artículo + número de test primera semana tras tiempo_0
-
-Se añade el número de test en la primera semana como variable de matching, para comprobar si así se consigue que las curvas de supervivencia sean coincidentes esa primera semana
-
-```{r}
-f_matching_tt_ad_hoc <- function(data, 
-                             tiempo_0, 
-                             crit_exc,
-                             exposure,
-                             out,
-                             censoring = "fdef",
-                             vector_match,
-                             follow_up = 60,
-                             temporal_var = NULL,
-                             temporal_var_unit,
-                             base_test = NULL,
-                             verbose = TRUE,
-                             seed = 1) {
-  
-  set.seed(seed)
-  tiempo_0 <- ymd(tiempo_0)
-  print(glue("tiempo_0 = {tiempo_0}"))
-  if (verbose == TRUE) print(glue("Outcome = {out}"))
-  if (verbose == TRUE) print(glue("n de partida: {nrow(data)}"))
-  
-  # exclusiones dependientes del tiempo
-  for(i in seq_along(crit_exc$criterios)) {
-  data <- excluir_dep(
-                       pob = data,
-                       crit = crit_exc$criterios[[i]],
-                       var = crit_exc$variables[[i]],
-                       t_var = crit_exc$tipo_var[[i]],
-                       t0 = tiempo_0,
-                       vb = verbose)
-  }
-  
-  # exclusión por el outcome
-    if (verbose == TRUE) print(glue("Variable exclusión. {out}"))
-    if (out %in% crit_exc$variables) {
-    if (verbose == TRUE) print("Criterio de exclusión ya aplicado")
-    } else {
-     data <- data %>% filter(is.na(get(out)) | get(out) >= tiempo_0)
-    if (verbose == TRUE) print(glue("n : {nrow(pob)}"))
-    }
-  
-  # obtención número de test negativos previos al primer positivo
-  if (!is.null(base_test)) {
-  data <- base_test %>% filter(id %in% data$id,
-                               tpos == FALSE,
-                               ftes < tiempo_0) %>% 
-    group_by(id) %>% 
-    summarise(n_0 = max(n)) %>% 
-    right_join(data, by = "id") %>% 
-    mutate(n_0 = case_when(is.na(n_0) ~ 0L, 
-                 n_0 > 3 ~ 3L,
-                 T ~ n_0)) 
-  vector_match <- c(vector_match, "n_0")
-  }
-  
-  # creación de variable temporal respecto a tiempo_0
-  if (!is.null(temporal_var)) {
-  data <- data %>% 
-  mutate(temp_var = as.numeric(tiempo_0 - 
-                    floor_date(get(temporal_var), unit = temporal_var_unit)))
-  vector_match <- c(vector_match, "temp_var")
-  }
-  
-  # introducir número de test primera semana
-  data <- base_test %>% filter(id %in% data$id,
-                               tpos == FALSE,
-                               ftes >= tiempo_0,
-                               ftes <= tiempo_0 %m+% days(7)) %>% 
-    group_by(id) %>% 
-    summarise(n_1 = max(n)) %>% 
-    right_join(data, by = "id") %>% 
-    mutate(n_1 = case_when(is.na(n_1) ~ 0L, 
-                 n_1 > 3 ~ 3L,
-                 T ~ n_1)) 
-  vector_match <- c(vector_match, "n_1")
-
-
-  # exposicion-seguimiento
-  data <- data %>% 
-    mutate( exposicion = if_else(tiempo_0 == get(exposure) & 
-                                     !is.na(get(exposure)), 1, 0),
-              date_start = tiempo_0,
-              date_end = tiempo_0 %m+% days(follow_up),
-              date_end = if_else(!is.na(get(censoring)) & 
-                          get(censoring) < date_end, get(censoring), date_end),
-              date_end = if_else(exposicion == 0 & !is.na(get(exposure)) & 
-                         get(exposure) < date_end,  get(exposure), date_end))
-  
-  # meter variables del matching como numéricas  
-  suppressWarnings(data <- data %>%
-    mutate(across(.cols = all_of(vector_match), 
-                  .fns = ~if_else(is.na(as.numeric(.x)) == TRUE, 
-                                  as.numeric(as.factor(.x)),
-                                  as.numeric(.x)))))      
-  # hacer matching (investigar distintas opciones)
-  try({
-    greedymatch <- Matching::Match(Tr = data$exposicion, M = 1, 
-                   X = data[vector_match], exact = TRUE, ties = FALSE)
-    a <- data[unlist(greedymatch[c("index.treated", "index.control")]),]
-    par <- rep(1:(nrow(a)/2), 2)
-    bind_cols(par = par, a) %>%
-      group_by(par) %>%
-      mutate(date_end = min(date_end),
-        # creo la variable de resultado y finalizo el seguimiento cuando aparece)
-         caso = if_else(get(out) <= date_end & !is.na(get(out)), 1, 0),
-         date_end = if_else(caso == 1, get(out), date_end)) %>% 
-      as_tibble() 
-    }
-  )
-}
-
-```
-
-
-```{r}
-f_matching_tt_mult_ad_hoc <- function(data, 
-                             f_ini,
-                             f_fin,
-                             crit_exc,
-                             exposure,
-                             out,
-                             censoring = "fdef",
-                             vector_match,
-                             follow_up = 60,
-                             temporal_var = NULL,
-                             temporal_var_unit,
-                             base_test = NULL,
-                             verbose = TRUE,
-                             seed = 1){
-  
-  fechas <- seq.Date(from = ymd(f_ini), to = ymd(f_fin), by = "days")
-  
-  tt_tibble =  map(fechas, 
-      f_matching_tt_ad_hoc,
-      data = data,
-      crit_exc = crit_exc,
-      vector_match = vector_match, 
-      exposure = exposure,
-      out = out, 
-      follow_up = follow_up,
-      base_test = base_test,
-      temporal_var = temporal_var,
-      temporal_var_unit = temporal_var_unit,
-      verbose = FALSE,
-      seed = seed) %>% 
-    # descartar los días en los que no se encuentra matching
-    keep(~is_tibble(.x)) %>%  
-    # unir todos los tibbles de la lista en uno único
-    enframe() %>%
-    rename(target_trial_number = name) %>% 
-    unnest(value) %>% 
-    # para evitar errores en el matcheo
-    filter(!is.na(exposicion))
-
-  if (!is.null(temporal_var)) {
-  vector_match  <- c(vector_match, 
-                     glue("{temporal_var} (in {temporal_var_unit})"))
-  }  
-
-  if (!is.null(base_test)) {
-  vector_match <- c(vector_match, "n_0")
-  }  
-
-  return(lst(tt_tibble = tt_tibble,
-       out = out,
-       vector_match = vector_match))  
-}
-
-```
-
-
-```{r}
-# hacer ajuste como en el artículo
-matching_fcv1_test_semana_tras_tiempo_0 <- f_matching_tt_mult_ad_hoc(
-                data = pobana_2,
-                f_ini = "2022-01-03",
-                f_fin = "2022-02-06",
-                crit_exc = lista_exclusion_dep,
-                vector_match = variables_matching[1:8], 
-                exposure = "fvc3",
-                out = "fcv1", 
-                follow_up = 34,
-                base_test = test220613_cleaned,
-                temporal_var = "fpauta_90",
-                temporal_var_unit = "weeks",
-                verbose = FALSE,
-                seed = 3)
-
-```
-
-```{r}
-# guardar resultados-----------------------------------------------------------
-saveRDS(matching_fcv1_test_semana_tras_tiempo_0, file.path("Resultados",
-        "matching_fcv1_test_semana_tras_tiempo_0.RDS"))
-
-```
-
 
 ### Variables de matching: Domicilio
 

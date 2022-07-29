@@ -52,8 +52,8 @@ source_rmd = function(file, ...) {
 
 ```{r}
 # cargar funciones de 0_funciones----------------------------------------------
-if (!exists("fnullna")) {
-source_rmd("0_b_funciones.rmd")
+if (!exists("se_ha_cargado_f")) {
+suppressMessages(source_rmd("0_b_funciones.rmd"))
 }
 
 ```
