@@ -88,14 +88,6 @@ hacer_tabla_1 <- function(tt_tibble) {
   
 tt_tibble <- matching_fcv1$tt_tibble
     
-  tabla_basal_n <- tt_tibble %>%
-    mutate(cuentas = "n") %>% tabyl(cuentas, exposicion) %>%
-    adorn_totals("col") %>%  
-    adorn_percentages("row") %>%
-    adorn_pct_formatting(digits = 1) %>%
-    adorn_ns("front") %>% 
-    rename(Variable = cuentas)
-
   tabla_basal_edad <- hacer_basal_discreta(base = tt_tibble,
                                          variable = p_edad_cat_label,
                                          relabel = c(
@@ -154,7 +146,7 @@ tt_tibble <- matching_fcv1$tt_tibble
         levels = c("91-150 days", "151-180 days", "&ge; 181 days"))),
     variable = t_desde_pauta_completa_cat)
 
-  tabla_basal <- bind_rows(tabla_basal_n,
+  tabla_basal <- bind_rows(
                            tabla_basal_edad,
                            tabla_basal_sexo,
                            tabla_basal_n_test,
@@ -183,20 +175,19 @@ tt_tibble <- matching_fcv1$tt_tibble
                     glue("No booster group (n = {n_unexposed}*)"),
                     glue("Booster group (n = {n_exposed})")),
       table.attr = "style = \"color: black;\"",
-      caption = "Baseline characteristics of tt-person") %>%
+      caption = "Baseline characteristics of the matched study population") %>%
   kable_styling(bootstrap_options = c("striped", 
                                       "hover", 
                                       "condensed"),
                 full_width = FALSE, fixed_thead = T) %>%
   row_spec(0, bold = T, color = "white", background = "dodgerblue",
            extra_css = "vertical-align:middle") %>% 
-  pack_rows("Total, n (row-wise %)", 1, 1) %>%
-  pack_rows("Age group (years), n (%)", 2, 12) %>%
-  pack_rows("Sex, n (%)", 13, 14) %>%
-  pack_rows("Number of previous SARS-CoV-2 tests, n (%)", 15, 18) %>%
-  pack_rows("Primary vaccine schedule, n (%)", 19, 22) %>%
-  pack_rows("Booster dose, n (%)", 23, 24) %>%
-  pack_rows("Time since primary vaccine schedule, n (%)", 25, 27) %>%  
+  pack_rows("Age group (years), n (%)", 1, 11) %>%
+  pack_rows("Sex, n (%)", 12, 13) %>%
+  pack_rows("Number of previous SARS-CoV-2 tests, n (%)", 14, 17) %>%
+  pack_rows("Primary vaccine schedule, n (%)", 18, 21) %>%
+  pack_rows("Booster dose, n (%)", 22, 23) %>%
+  pack_rows("Time since primary vaccine schedule, n (%)", 24, 26) %>%  
   footnote(footnote_as_chunk = TRUE, 
            general = glue("NA = not applicable, *{id_uniques} unique individuals in the no booster group."))
 
@@ -208,10 +199,7 @@ tt_tibble <- matching_fcv1$tt_tibble
 
 ```{r}
 # ejecutar la función para hacer la tabla--------------------------------------
-tabla_1_matching_fcv1 <- hacer_tabla_1(
-  tt_tibble = matching_fcv1$tt_tibble %>% 
-    mutate(exposicion = factor(exposicion, levels = c(0, 1),
-                        labels = c("No booster", "booster"))))
+tabla_1_matching_fcv1 <- hacer_tabla_1(tt_tibble = matching_fcv1$tt_tibble)
 
 tabla_1_matching_fcv1
 
@@ -225,6 +213,23 @@ Analyses based on 2 083 857 matched pairs who remained under follow-up by day 7 
  # Booster group [Events| Risk per 10 000 individuals] No booster group [Events| Risk per 10 000 individuals]  1–risk ratio (95% CI) | Risk difference per 10 000 individuals (95% CI)
 
 ```{r}
+
+diftime_match <- matching_fcv1$tt_tibble %>% 
+  mutate(survtime = date_end - date_start) %>% 
+  # filter(survtime >= 7) %>% 
+  group_by(target_trial_number, par) %>% 
+  summarise(dif = max(survtime)-min(survtime)) %>% 
+  ungroup()
+
+diftime_match %>% arrange(desc(dif))
+
+matching_fcv1$tt_tibble %>% filter(!is.na(fdef),
+                                   fdef - date_start < 34)
+
+matching_fcv1$tt_tibble %>% filter(target_trial_number == 12,
+                                   par == 304)
+
+# 1044184
 
 ```
 

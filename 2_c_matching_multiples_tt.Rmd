@@ -218,8 +218,6 @@ prueba_matching_mult_weeks <- f_matching_tt_mult(
                 verbose = FALSE,
                 seed = 3)
 
-prueba_matching_mult_weeks
-
 ```
 
 ```{r}
