@@ -276,8 +276,6 @@ f_matching_tt <- function(data,
                                      !is.na(get(exposure)), 1, 0),
               date_start = tiempo_0,
               date_end = tiempo_0 %m+% days(follow_up),
-              # date_end = if_else(!is.na(get(censoring)) & 
-              #             get(censoring) < date_end, get(censoring), date_end),
               date_end = if_else(exposicion == 0 & !is.na(get(exposure)) & 
                          get(exposure) < date_end,  get(exposure), date_end))
   
@@ -296,9 +294,11 @@ f_matching_tt <- function(data,
     par <- rep(1:(nrow(a)/2), 2)
     bind_cols(par = par, a) %>%
       group_by(par) %>%
-      mutate(date_end = min(date_end),
-             date_end = if_else(!is.na(get(censoring)) & 
-             get(censoring) < date_end, get(censoring), date_end),     
+      mutate(
+        date_end = min(date_end),
+        # censurar si fallece (sin censurar al otro componente de la pareja)
+        date_end = if_else(!is.na(get(censoring)) &
+                   get(censoring) < date_end, get(censoring), date_end),     
         # creo la variable de resultado y finalizo el seguimiento cuando aparece)
          caso = if_else(get(out) <= date_end & !is.na(get(out)), 1, 0),
          date_end = if_else(caso == 1, get(out), date_end)) %>% 
