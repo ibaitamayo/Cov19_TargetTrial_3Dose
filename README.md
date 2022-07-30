@@ -42,27 +42,23 @@ Arregla la base de test de COVID-19: *poblacion_Pruebas_dtcas_06_2022.csv (test2
 
 ## 2_a_exclusiones_independientes_del_tiempo_0.Rmd
 
-Realiza los criterios de exclusión *independientes del tiempo 0* escogido. Las funciones utilizadas aparecen repetidas tanto en 0_b como aquí, pero en el futuro sólo estarán en 0_b. Pasa de *pobana_0.RDS* a *pobana_1.RDS*.
+Realiza los criterios de exclusión *independientes del tiempo 0* escogido. Pasa de *pobana_0.RDS* a *pobana_1.RDS*.
 
 ## 2_b_exclusiones_dependientes_del_tiempo_0.Rmd
 
-Realiza los criterios de exclusión *dependientes del tiempo 0* escogido. Las funciones utilizadas aparecen repetidas tanto en 0_b como aquí, pero en el futuro sólo estarán en 0_b. Se prueba el proceso para una fecha en concreto.
+Se prepara la base para poder aplicar criterios de exclusión que dependen del tiempo_0 (pobana_2). Se aplican los criterios de exclusión *dependientes del tiempo 0* escogido. Se prueba el proceso para una fecha en concreto.
 
-## 2_c_multiples_tiempos.Rmd
+## 2_c_matching_multiples_tt.Rmd
 
-Aplica el criterio de exclusión realizado en 2_b a múltiples ventanas temporales.
+Aplica el criterio de exclusión realizado en 2_b a múltiples ventanas temporales. Permite introducir como argumento la base de test de covid y obtener como variable de matching el número de test negativos previos al tiempo_0.
 
-## 2_d_multiples_tiempos_test_prosp.Rmd
-
-Añade a la función de múltiples tiempos un argumento donde se puede añadir una base, en formato largo, de tests.
-
-## 2_e_multiples_tiempos_test_retro.Rmd
+## 2_d_multiples_tiempos_test_retro.Rmd
 
 Añade a la función de múltiples tiempos un argumento donde se puede añadir una base, en formato largo, de tests, para su uso en un análisis de caso-controles negativo.
 
 ## 3_a_supervivencia.Rmd
 
-Se analizan los resultados obtenidos en 2_c (ó 2_d ó 2_e).
+Se analizan los resultados obtenidos en 2_c mediante un análisis de supervivencia.
 
 <br>
 
