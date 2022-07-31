@@ -85,9 +85,6 @@ matching_fcv1_domi <- readRDS(file.path("Resultados",
 ```{r}
 hacer_tabla_1 <- function(tt_tibble) {
 
-  
-tt_tibble <- matching_fcv1$tt_tibble
-    
   tabla_basal_edad <- hacer_basal_discreta(base = tt_tibble,
                                          variable = p_edad_cat_label,
                                          relabel = c(
@@ -214,22 +211,27 @@ Analyses based on 2 083 857 matched pairs who remained under follow-up by day 7 
 
 ```{r}
 
-diftime_match <- matching_fcv1$tt_tibble %>% 
+tiempo_efecto = 7
+
+tt_tible <- matching_fcv1$tt_tibble %>% 
   mutate(survtime = date_end - date_start) %>% 
-  # filter(survtime >= 7) %>% 
   group_by(target_trial_number, par) %>% 
-  summarise(dif = max(survtime)-min(survtime)) %>% 
+    filter(min(survtime) >= tiempo_efecto) %>%
   ungroup()
 
-diftime_match %>% arrange(desc(dif))
+tt_tible %>% tabyl(caso, exposicion)
 
-matching_fcv1$tt_tibble %>% filter(!is.na(fdef),
-                                   fdef - date_start < 34)
+cpp = coxph(formula = Surv(survtime, caso) ~ exposicion, 
+              data = tt_tible)
 
-matching_fcv1$tt_tibble %>% filter(target_trial_number == 12,
-                                   par == 304)
+summary(cpp)
 
-# 1044184
+print(glue("
+  
+             # Estimated effectiveness in Navarra for  is : \\
+             {round((1 - exp(coef(cpp))) * 100, 1)} % \\
+             ({round((1 - exp(confint(cpp))[2]) * 100, 1)} - \\
+             {round((1 - exp(confint((cpp)))[1]) * 100, 1)} %)"))
 
 ```
 
