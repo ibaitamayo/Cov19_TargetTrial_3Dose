@@ -92,21 +92,21 @@ Otros trabajos de Qatar (https://www.nejm.org/doi/full/10.1056/NEJMc2117933),  -
 #           eliminar los test negativos posteriores 
 #           eliminar los test negativos anteriores si es menor de cierto tiempo
 # resultado: un data frame con fecha del test(ftes), resultado(0-,1+),n(nº de ese test en la experiencia de la persona), id
-
-
-test0 <- test220613_cleaned
-
-
-test0 <- test0 %>% group_by(id) %>% arrange(ftes) %>% mutate(n=1:n())  %>% ungroup()
-data=test0
-tiempo_i="2021-12-23"
-tiempo_f="2022-2-21"
+# 
+# 
+# test0 <- test220613_cleaned
+# rm(test220613_cleaned)
+# 
+# test0 <- test0 %>% group_by(id) %>% arrange(ftes) %>% mutate(n=1:n())  %>% ungroup()
+# data=test0
+# tiempo_i="2021-12-23"
+# tiempo_f="2022-2-21"
 
 f_test0 = function(data,  tiempo_i,  tiempo_f,  tbnp=7) {
   require(tidyr)
   tiempo_i <- ymd(tiempo_i)
   tiempo_f <- ymd(tiempo_f)  
-  data = data %>% filter(tiempo_i<=ftes & ftes<=tiempo_f) %>% select(id,n,ftes,tpos)
+  data = data %>% filter(tiempo_i<=ftes & ftes<=tiempo_f) %>% dplyr::select(id,n,ftes,tpos)
  
 ## como mantemos n, la unidad seguira siendo la persona test, pero ahora tenemos una columna para test+/- y toma como valor la fecha
 
@@ -117,10 +117,10 @@ wide_test <- wide_test %>% as_tibble() %>% group_by(id)
 wide_test <- wide_test %>% filter(!is.na(test_0) | min_rank(desc(test_1)) <= 1) 
 
  # eliminar los negativos posteriores
-long_test <- wide_test %>% gather(res,ftes,test_0:test_1) %>% na.omit() %>% group_by(id) %>% arrange(n)  %>% mutate(no=lag(res)=="test_1") %>% filter(is.na(no) | !no)  %>% select(-no) 
+long_test <- wide_test %>% gather(res,ftes,test_0:test_1) %>% na.omit() %>% group_by(id) %>% arrange(n)  %>% mutate(no=lag(res)=="test_1") %>% filter(is.na(no) | !no)  %>% dplyr::select(-no) 
 
 ## tbt tiempo entre test, eliminar negativos seguidos de positivo en un lapso corto ( parametro: tbnp)
-long_test <- long_test %>% mutate(res=str_sub(res,-1),tbt=ifelse(lead(res)=="1",lead(ftes)-ftes,NA)) %>% filter(is.na(tbt) | tbt<(tbnp +1)) %>% select(-tbt) %>% data.frame()
+long_test <- long_test %>% mutate(res=as.numeric(str_sub(res,-1)),tbt=ifelse(lead(res)=="1",lead(ftes)-ftes,NA)) %>% filter(is.na(tbt) | tbt<(tbnp +1)) %>%  dplyr::select(-tbt) %>% data.frame()
 }
 
 
@@ -132,6 +132,7 @@ lt=f_test0(data=test0, tiempo_i="2021-12-23",tiempo_f="2022-2-21", tbnp=7)
 # 1837 1850 1241  940  767  666  664  464  376  388  362  347  359  300  278  276 ...
 # decido eliminar los test negativos que se siguen en menos de 8 dias de uno positivo (sin tener en cuenta el tipo -se podria matizar si es autodiagnostico de antigeno vs pcr)
 
+## casos para comprobaciones
 #%>% filter(no!=TRUE) %>% select(-no)
 # escoger el primer positivo (ej 1001264 o 100128 tiene 2!) y eliminar todos tus test posteriores (ej de 1000736
 # 218331  al hacerlo asi, elimina casos positivos si se acompaña de negativos (ej 1000736)

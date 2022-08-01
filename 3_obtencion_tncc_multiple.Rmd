@@ -189,9 +189,9 @@ try({
   
     df=bind_cols(par = par, a) %>%
       group_by(par) %>%
-      mutate(# date_end = min(date_end),
-             # creo/codifico? la variable de exposicion y finalizo el seguimiento cuando aparece)
-             exp = mexp)%>%
+      # mutate(# date_end = min(date_end),
+      #        # creo/codifico? la variable de exposicion y finalizo el seguimiento cuando aparece)
+      #        exp = mexp)%>%
       data.frame() 
              # date_end = ifelse(caso==1, !!as.name(out), date_end),
              # date_end = as.Date.numeric(date_end, origin ="1970-01-01")) 
@@ -208,8 +208,22 @@ try({
 # vector_match=c("gen" ,"gedad", "migran") # 1
 
 pp=f_matching(fecha0="2021-12-23",data=lt,vector_match=c("gen" ,"gedad", "migran")  )
+pp2=f_matching(fecha0="2021-12-24",data=lt,vector_match=c("gen" ,"gedad", "migran")  )
 
 ###########
+
+
+
+summary(clogit(res ~  mexp, strata(par), data=pp %>% droplevels()))
+
+## codficarlo?
+
+library(Epi)
+res.clogistic <- clogistic(res ~  mexp, strata=par, data=pp %>% droplevels())
+
+
+
+table(droplevels(pp2$mexp), pp2$res)
 
 
 ```
