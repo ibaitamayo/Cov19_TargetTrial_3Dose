@@ -94,8 +94,4 @@ f_analisis(lista = matching_fcv1_domi,
 
 ```
 
-```{r}
-
-```
-
 

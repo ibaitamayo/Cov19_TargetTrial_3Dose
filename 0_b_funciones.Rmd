@@ -482,15 +482,7 @@ f_analisis <- function(
 
 ## f_tabla_1
 
-```{r}
-f_tabla_1 <- function(lista){
-  
-  
-  
-  
-}
-
-```
+A continuación, se presentan dos funciones auxiliares, que permiten hacer la Tabla 1.
 
 ```{r}
 # hacer basal discretas--------------------------------------------------------

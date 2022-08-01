@@ -210,30 +210,227 @@ Analyses based on 2 083 857 matched pairs who remained under follow-up by day 7 
  # Booster group [Events| Risk per 10 000 individuals] No booster group [Events| Risk per 10 000 individuals]  1–risk ratio (95% CI) | Risk difference per 10 000 individuals (95% CI)
 
 ```{r}
-
 tiempo_efecto = 7
 
-tt_tible <- matching_fcv1$tt_tibble %>% 
+tt_tibble <- matching_fcv1$tt_tibble %>% 
   mutate(survtime = date_end - date_start) %>% 
   group_by(target_trial_number, par) %>% 
     filter(min(survtime) >= tiempo_efecto) %>%
   ungroup()
 
-tt_tible %>% tabyl(caso, exposicion)
-
-cpp = coxph(formula = Surv(survtime, caso) ~ exposicion, 
-              data = tt_tible)
-
-summary(cpp)
-
-print(glue("
-  
-             # Estimated effectiveness in Navarra for  is : \\
-             {round((1 - exp(coef(cpp))) * 100, 1)} % \\
-             ({round((1 - exp(confint(cpp))[2]) * 100, 1)} - \\
-             {round((1 - exp(confint((cpp)))[1]) * 100, 1)} %)"))
+tt_tibble %>% tabyl(caso, exposicion)
 
 ```
+
+
+```{r}
+hacer_grupo_tabla_2 <- function(tt_tibble, 
+         group_description,
+         number_of_bootstrap = 500){
+
+max_survtime <- tt_tibble %>% 
+    summarise(max_survtime = as.numeric(max(survtime))) %>% pull()
+
+fit <- survfit(Surv(survtime, caso) ~ exposicion, data = tt_tibble) 
+
+s_unexposed <- Surv(tt_tibble %>% 
+                      filter(exposicion == 0) %>% 
+                      pull(survtime), 
+                    tt_tibble %>% 
+                      filter(exposicion == 0) %>% 
+                      pull(caso))
+boot_unexposed <- bootkm(s_unexposed, times = max_survtime, B = number_of_bootstrap) 
+
+s_exposed <- Surv(tt_tibble %>% 
+                      filter(exposicion == 1) %>% 
+                      pull(survtime), 
+                    tt_tibble %>% 
+                      filter(exposicion == 1) %>% 
+                      pull(caso))
+boot_exposed <- bootkm(s_exposed, times = max_survtime, B = number_of_bootstrap) 
+
+
+
+unexposed_events <- tt_tibble %>% 
+  filter(exposicion == 0, caso == 1) %>% nrow()
+
+unexposed_risk <- (1 - fit$surv[length(fit$surv)/2]) * 1e4
+
+exposed_events <- tt_tibble %>% 
+  filter(exposicion == 1, caso == 1) %>% nrow()
+
+exposed_risk <- (1 - fit$surv[length(fit$surv)]) * 1e4
+
+point_estimate_rr <- 100 * (1 - (exposed_risk/unexposed_risk))
+qci <- quantile(100*(1-(1 - boot_exposed)/(1 - boot_unexposed)), c(.025,.975), na.rm = TRUE)
+
+point_estimate_rabs <- round(unexposed_risk - exposed_risk)
+qci2 <- quantile((1-boot_unexposed) * 1e4 - (1-boot_exposed) * 1e4, c(.025,.975), na.rm = TRUE)
+
+tibble(
+       group = group_description, 
+       unexposed_events = unexposed_events,
+       unexposed_risk = round(unexposed_risk),
+       exposed_events = exposed_events,
+       exposed_risk = round(exposed_risk),
+       rr_eff = glue("{round(point_estimate_rr, 1)} % \\
+                     ({round(qci[1], 1)}-{round(qci[2], 1)})"), 
+       rabs_eff = glue("{round(point_estimate_rabs, 2)} \\
+                     ({round(qci2[1])}-{round(qci2[2])})"))
+
+}
+
+```
+
+```{r}
+# hacer tabla 2
+tiempo_efecto = 7
+
+# arreglar tibble
+tt_tibble_after_7_days <- matching_fcv1$tt_tibble %>% 
+  # filtrar parejas con seguimiento después del día 7
+      mutate(survtime = date_end - date_start) %>% 
+      group_by(target_trial_number, par) %>% 
+      filter(min(survtime) >= tiempo_efecto) %>%
+      ungroup() %>% 
+  # crear tiempo desde pauta completa
+      mutate(
+        t_desde_pauta_completa = 90 + temp_var,
+        t_desde_pauta_completa_cat = case_when(
+          between(t_desde_pauta_completa, 91, 150) ~  "91-150 days",
+          between(t_desde_pauta_completa, 151, 180) ~ "151-180 days",
+        t_desde_pauta_completa > 180 ~  "&ge; 181 days"),
+        t_desde_pauta_completa_cat = factor(t_desde_pauta_completa_cat,
+          levels = c("91-150 days", "151-180 days", "&ge; 181 days")))
+
+table2_overall <- hacer_grupo_tabla_2(
+    tt_tibble = tt_tibble_after_7_days, 
+    group_description = "Overall",
+    number_of_bootstrap = 500)
+
+table2_grupo_edad_1 <- hacer_grupo_tabla_2(
+    tt_tibble = tt_tibble_after_7_days %>% 
+      filter(p_edad_cat_label %in% c(
+        "[40,45)",	
+        "[45,50)",		
+        "[50,55)")), 
+    group_description = "Age 40-54 years",
+    number_of_bootstrap = 500)
+
+table2_grupo_edad_2 <- hacer_grupo_tabla_2(
+    tt_tibble = tt_tibble_after_7_days %>% 
+      filter(min(survtime) >= tiempo_efecto) %>%
+      ungroup() %>% 
+      filter(p_edad_cat_label %nin% c(
+        "[40,45)",	
+        "[45,50)",		
+        "[50,55)")), 
+    group_description = "Age &ge; 55 years",
+    number_of_bootstrap = 500)
+
+table2_hombre <- hacer_grupo_tabla_2(
+    tt_tibble = tt_tibble_after_7_days %>% 
+      filter(gen == 1), 
+    group_description = "Male",
+    number_of_bootstrap = 500)
+
+table2_mujer <- hacer_grupo_tabla_2(
+    tt_tibble = tt_tibble_after_7_days %>% 
+      filter(gen == 2), 
+    group_description = "Female",
+    number_of_bootstrap = 500)
+
+table2_vac_pfizer <- hacer_grupo_tabla_2(
+    tt_tibble = tt_tibble_after_7_days %>% 
+      filter(tvc1_label == "BioNTech/Pfizer"), 
+    group_description = "Previous vaccination: BioNTech/Pfizer",
+    number_of_bootstrap = 500)
+
+table2_vac_janssen <- hacer_grupo_tabla_2(
+    tt_tibble = tt_tibble_after_7_days %>% 
+      filter(tvc1_label == "J&J / Janssen"), 
+    group_description = "Previous vaccination: J&J / Janssen",
+    number_of_bootstrap = 500)
+
+table2_vac_moderna <- hacer_grupo_tabla_2(
+    tt_tibble = tt_tibble_after_7_days %>% 
+      filter(tvc1_label == "Moderna/Lonza"), 
+    group_description = "Previous vaccination: Moderna/Lonza",
+    number_of_bootstrap = 500)
+
+table2_vac_az <- hacer_grupo_tabla_2(
+    tt_tibble = tt_tibble_after_7_days %>% 
+      filter(tvc1_label == "Oxford/AstraZeneca"), 
+    group_description = "Previous vaccination: Oxford/AstraZeneca",
+    number_of_bootstrap = 500)
+  
+table2_tsv1 <- hacer_grupo_tabla_2(
+    tt_tibble = tt_tibble_after_7_days %>% 
+      filter(t_desde_pauta_completa_cat == "91-150 days"), 
+    group_description = "91-150 days",
+    number_of_bootstrap = 500)
+
+table2_tsv2 <- hacer_grupo_tabla_2(
+    tt_tibble = tt_tibble_after_7_days %>% 
+      filter(t_desde_pauta_completa_cat == "151-180 days"), 
+    group_description = "151-180 days",
+    number_of_bootstrap = 500)
+
+table2_tsv3 <- hacer_grupo_tabla_2(
+    tt_tibble = tt_tibble_after_7_days %>% 
+      filter(t_desde_pauta_completa_cat == "&ge; 181 days"), 
+    group_description = "&ge; 181 days",
+    number_of_bootstrap = 500)
+
+table2_tvc3_pfizer <- hacer_grupo_tabla_2(
+    tt_tibble = tt_tibble_after_7_days %>% 
+      filter(tvc3 == "BioNTech/Pfizer"), 
+    group_description = "Booster: BioNTech/Pfizer",
+    number_of_bootstrap = 500)
+
+table2_tvc3_moderna <- hacer_grupo_tabla_2(
+    tt_tibble = tt_tibble_after_7_days %>% 
+      filter(tvc3 == "Moderna/Lonza"), 
+    group_description = "Booster: Moderna/Lonza",
+    number_of_bootstrap = 500)
+
+```
+
+
+
+```{r}
+# general
+
+fit <- survfit(Surv(survtime, caso) ~ exposicion, data = tt_tibble) 
+(1 - fit$surv[length(fit$surv)/2]) * 1e4
+(1 - fit$surv[length(fit$surv)]) * 1e4
+
+s_unexposed <- Surv(tt_tibble %>% 
+                      filter(exposicion == 0) %>% 
+                      pull(survtime), 
+                    tt_tibble %>% 
+                      filter(exposicion == 0) %>% 
+                      pull(caso))
+
+boot_unexposed <- bootkm(s_unexposed, times = , B = 500) 
+
+s_exposed <- Surv(tt_tibble %>% 
+                      filter(exposicion == 1) %>% 
+                      pull(survtime), 
+                    tt_tibble %>% 
+                      filter(exposicion == 1) %>% 
+                      pull(caso))
+
+boot_exposed <- bootkm(s_exposed, times = 34, B = 500) 
+
+describe(1 - boot_unexposed)
+describe(1 - boot_exposed)
+median(1 - boot_exposed) /  median(1 - boot_unexposed)
+quantile((1 - boot_exposed)/(1 - boot_unexposed), c(.025,.975), na.rm = TRUE)
+
+```
+
+
 
 
 ## Table 3: Sensitivity analyses of vaccine effectiveness 7–34 days after an mRNA COVID-19 vaccine booster dose // 1–risk ratio (95% CI) | Risk difference per 10 000 individuals (95% CI)
