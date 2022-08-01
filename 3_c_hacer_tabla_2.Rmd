@@ -58,10 +58,6 @@ suppressMessages(source_rmd("0_b_funciones.rmd"))
 
 ```
 
-# Tablas de resultados
-
-***
-
 ```{r}
 # cargar datos-----------------------------------------------------------------
 matching_fcv1 <- readRDS(file.path("Resultados",
