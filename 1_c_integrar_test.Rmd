@@ -14,7 +14,7 @@ output:
       smooth_scroll: yes
       toc_depth: 3     
 editor_options: 
-  chunk_output_type: inline
+  chunk_output_type: console
 ---
 
 

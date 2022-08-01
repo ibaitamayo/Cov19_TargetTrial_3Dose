@@ -354,7 +354,7 @@ save(out,file="out4.Rdata")
  names(out)[4]
   f_analisis(out[[2]])
 # 
-https://r4ds.had.co.nz/model-building.html
+#https://r4ds.had.co.nz/model-building.html
 
 ```
 
