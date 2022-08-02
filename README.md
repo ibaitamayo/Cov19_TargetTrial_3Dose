@@ -48,9 +48,13 @@ Realiza los criterios de exclusión *independientes del tiempo 0* escogido. Las 
 
 Realiza los criterios de exclusión *dependientes del tiempo 0* escogido. Las funciones utilizadas aparecen repetidas tanto en 0_b como aquí, pero en el futuro sólo estarán en 0_b. Se prueba el proceso para una fecha en concreto.
 
-## 2_c_multiples_tiempos.Rmd
+## 2_c_matching_multiples_tt.Rmd
 
-Aplica el criterio de exclusión realizado en 2_b a múltiples ventanas temporales. VOY POR AQUÍ.
+Aplica el criterio de exclusión realizado en 2_b a múltiples ventanas temporales.
+
+## 3_a_supervivencia
+
+Realiza el análisis de supervivencia
 
 <br>
 
