@@ -194,5 +194,8 @@ tabla_1_matching_fcv1 <- hacer_tabla_1(tt_tibble = matching_fcv1$tt_tibble)
 
 tabla_1_matching_fcv1
 
+saveRDS(tabla_1_matching_fcv1, file.path("Resultados", 
+                                         "tabla_1_matching_fcv1.RDS"))
+
 ```
 

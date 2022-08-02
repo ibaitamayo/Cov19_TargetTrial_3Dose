@@ -18,28 +18,12 @@ editor_options:
 ---
 
 
-```{r set-global-options, echo = FALSE}
-knitr::opts_chunk$set(eval = TRUE, 
-                      echo = TRUE, 
-                      cache = FALSE,
-                      include = TRUE,
-                      collapse = FALSE,
-                       dependson = NULL,
-                      engine = "R", # Chunks will always have R code, unless noted
-                      error = TRUE,
-                      fig.path="Figures/",  # Set the figure options
-                      fig.align = "center", 
-                      fig.width = 12,
-                      fig.height = 12)
-```
 
-```{r echo=FALSE, message=FALSE, include=FALSE, warning=FALSE}
-# source("0_a_librerias.R")
-# ya se cargan cuando se carguen las funciones
 
-```
 
-```{r}
+
+
+```r
 # función para cargar un .Rmd como si se hiciese source de un .r---------------
 source_rmd = function(file, ...) {
   tmp_file = tempfile(fileext = ".R")
@@ -47,23 +31,24 @@ source_rmd = function(file, ...) {
   knitr::purl(file, output = tmp_file)
   source(file = tmp_file, ...)
 }
-
 ```
 
-```{r}
+
+```r
 # cargar funciones de 0_funciones----------------------------------------------
 if (!exists("se_ha_cargado_f")) {
 suppressMessages(source_rmd("0_b_funciones.rmd"))
 }
+```
 
+```
+## Error in parse_block(g[-1], g[1], params.src, markdown_mode): Duplicate chunk label 'librerias', which has been used for the chunk:
+## # source("0_a_librerias.R")
+## # ya se cargan cuando se carguen las funciones
 ```
 
 
-```{r cargar-datos, echo=FALSE, eval=TRUE, message=FALSE, warning=FALSE}
-# cargar datos-----------------------------------------------------------------
-pobana_0 <- readRDS(file = file.path("Datos", "Procesados", "pobana_0.RDS"))
 
-```
 
 # Exclusiones estáticas
 
@@ -77,15 +62,18 @@ En este .Rmd se realizan las **exclusiones que no dependen del tiempo 0** y por 
 
 Cuando se genere nueva casuística, se puede añadir entre el if() y el else() de la función *excluir()*.
       
-```{r}
+
+```r
 # se crean listas que dependen del proyecto------------------------------------
 lista_exclusion <- list(
   criterios = list(
   c1 = "Excluyendo: socio y/o sanitarios...",
-  c2 = "Excluyendo: trabaja en educacion...",
+  c2 = "Excluyendo: trabj educacion...", # no tengo claro que se hayan de excluir
   c3 = "Excluyendo: viven en residencia...",
   c4 = "Excluyendo: dependientes...",
   c5 = "Excluyendo: zona basica desconocida..."
+  # c6 = "Excluyendo: tuvo infección previa...", # esta es dependiente del tiempo
+  # c7 = "Excluyendo: no finalizo vacunacion completa 90 dias antes..." # dependiente del tiempo
 ),
 variables = list(
   v1 = "prfss",
@@ -94,20 +82,69 @@ variables = list(
   v4 = "depe",
   v5 = "czbs"
 ))
-
 ```
 
-```{r}
+
+```r
+# función para excluir siguiendo un criterio-----------------------------------
+excluir <- function(pob, 
+                    crit,
+                    var)
+{
+  
+  if (is.logical(pob %>% pull(var)) == TRUE) {
+  print(glue("Variable lógica. {crit}"))
+  pob <- pob %>% filter(is.na(get(var)) |
+                     get(var) != TRUE)
+    print(glue("n : {nrow(pob)}"))
+  pob
+  }
+  else {
+  print(glue("Variable no lógica. {crit}"))
+  pob <- pob %>% filter(!is.na(get(var)))
+    print(glue("n : {nrow(pob)}"))
+  pob
+  }
+}
+```
+
+
+```r
+# flujo------------------------------------------------------------------------
+hacer_flujo <- function(poblacion,
+                        exc = lista_exclusion
+                   ) 
+  {
+  print(glue("n de partida: {nrow(poblacion)}"))
+
+  for(i in seq_along(exc$criterios)) {
+  poblacion <- excluir(pob = poblacion,
+                       crit = exc$criterios[[i]],
+                       var = exc$variables[[i]])
+}
+  poblacion
+  }
+```
+
+
+```r
 # aplicar exclusiones independientes del tiempo_0------------------------------
-pobana_1 <- hacer_flujo(data = pobana_0, 
+pobana_1 <- hacer_flujo(poblacion = pobana_0, 
             exc = lista_exclusion)
-
 ```
 
-```{r}
+```
+## Error in glue("n de partida: {nrow(poblacion)}"): no se pudo encontrar la función "glue"
+```
+
+
+```r
 # guardar base con exclusiones estáticas---------------------------------------
 saveRDS(pobana_1, file.path("Resultados", "pobana_1.RDS"))
+```
 
+```
+## Error in saveRDS(pobana_1, file.path("Resultados", "pobana_1.RDS")): objeto 'pobana_1' no encontrado
 ```
     
 

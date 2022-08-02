@@ -53,7 +53,7 @@ fnullna <- function(x) {
 
 Función que transforma una cadena con texto "NULL" a "0".
 
-```{r fnull0}
+```{r}
 
 fnull0 <- function(x) {
   x = if_else(x == "NULL", 0, as.numeric(x))
@@ -359,7 +359,7 @@ f_matching_tt_mult <- function(
                              age_last = NULL,
                              age_by = NULL,
                              censoring = "fdef",
-                             delayed_exposure_censoring,
+                             delayed_exposure_censoring = NULL,               
                              follow_up = 60,
                              verbose = TRUE,
                              seed = 1){

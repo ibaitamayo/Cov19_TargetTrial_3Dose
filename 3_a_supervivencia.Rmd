@@ -33,7 +33,7 @@ knitr::opts_chunk$set(eval = TRUE,
                       fig.height = 12)
 ```
 
-```{r librerias, echo=FALSE, message=FALSE, include=FALSE, warning=FALSE}
+```{r echo=FALSE, message=FALSE, include=FALSE, warning=FALSE}
 # source("0_a_librerias.R")
 # ya se cargan cuando se carguen las funciones
 
@@ -179,4 +179,38 @@ f_analisis(lista = matching_fcv1_domi,
 
 ```
 
+# fcv1 Longer
 
+```{r}
+# guardar resultados-----------------------------------------------------------
+matching_fcv1_longer <- readRDS(file.path("Resultados",
+        "matching_fcv1_longer.RDS"))
+
+```
+
+```{r}
+# análisis---------------------------------------------------------------------
+f_analisis(lista = matching_fcv1_longer,
+           tiempo_efecto = 7,
+           lim_1 = 0.80,
+           lim_zoom = 0.9)
+
+```
+
+# fih1 Longer
+
+```{r}
+# guardar resultados-----------------------------------------------------------
+matching_fih1_longer <- readRDS(file.path("Resultados",
+        "matching_fih1_longer.RDS"))
+
+```
+
+```{r}
+# análisis---------------------------------------------------------------------
+f_analisis(lista = matching_fih1_longer,
+           tiempo_efecto = 7,
+           lim_1 = 0.80,
+           lim_zoom = 0.9)
+
+```
