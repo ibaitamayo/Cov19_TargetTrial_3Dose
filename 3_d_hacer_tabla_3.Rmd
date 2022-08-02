@@ -185,7 +185,7 @@ variables_matching = c(
 
 ```{r}
 # matching f_pauta en semanas (menos restrictivo)
-prueba_matching_weeks <- f_matching_tt_sens(
+prueba_matching_weeks <- f_matching_tt(
                 data = pobana_2,
                 tiempo_0 = "2022-01-03",
                 crit_exc = lista_exclusion_dep,
@@ -199,21 +199,20 @@ prueba_matching_weeks <- f_matching_tt_sens(
                 birth_date = "fnac",
                 age_first = 40,
                 age_last = 90,
-                age_by = 5,
+                age_by = 1,
                 censoring = "fdef",
                 follow_up = 34,
                 verbose = FALSE,
                 seed = 3)
 
-prueba_matching_weeks
-
-prueba_matching_weeks2 <- f_matching_tt(
+prueba_matching_weeks2 <-f_matching_tt(
                 data = pobana_2,
                 tiempo_0 = "2022-01-03",
                 crit_exc = lista_exclusion_dep,
                 exposure = "fvc3",
                 out = "fcv1", 
-                vector_match = variables_matching[c(1, 3:8)], 
+                vector_match = variables_matching[c(1, 3:8)],
+                match_with_replacement = FALSE,
                 base_test = test220613_cleaned,
                 dias_a_excluir_test_previos = NULL,
                 temporal_var = "fpauta_90",
@@ -223,12 +222,9 @@ prueba_matching_weeks2 <- f_matching_tt(
                 age_last = 90,
                 age_by = 5,
                 censoring = "fdef",
-                delayed_exposure_censoring = 7,
                 follow_up = 34,
                 verbose = FALSE,
                 seed = 3)
-
-prueba_matching_weeks2
 
 ```
 

@@ -195,6 +195,7 @@ f_matching_tt <- function(data,
                           exposure,
                           out,
                           vector_match,
+                          match_with_replacement = TRUE,
                           base_test = NULL,
                           dias_a_excluir_test_previos = NULL,
                           temporal_var = NULL,
@@ -313,7 +314,8 @@ f_matching_tt <- function(data,
   # hacer matching (investigar distintas opciones)
   try({
     greedymatch <- Matching::Match(Tr = data$exposicion, M = 1, 
-                   X = data[vector_match], exact = TRUE, ties = FALSE)
+                   X = data[vector_match], exact = TRUE, ties = FALSE,
+                   replace = match_with_replacement)
     a <- data[unlist(greedymatch[c("index.treated", "index.control")]),]
     par <- rep(1:(nrow(a)/2), 2)
     bind_cols(par = par, a) %>%
@@ -347,6 +349,7 @@ f_matching_tt_mult <- function(
                              exposure,
                              out,
                              vector_match,
+                             match_with_replacement = TRUE,
                              base_test = NULL,
                              dias_a_excluir_test_previos = NULL,
                              temporal_var = NULL,
@@ -367,7 +370,8 @@ f_matching_tt_mult <- function(
       f_matching_tt,
       data = data,
       crit_exc = crit_exc,
-      vector_match = vector_match, 
+      vector_match = vector_match,
+      match_with_replacement = match_with_replacement,
       exposure = exposure,
       out = out, 
       base_test = base_test,

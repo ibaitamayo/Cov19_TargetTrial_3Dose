@@ -1,20 +1,22 @@
 ---
-title: "Target Trial: Efectividad de la tercera dosis vacunal contra la infección por la variante Omicron en Navarra"
+title: "Descriptivo Target Trial"
+author: "Francisco Sánchez Sáez"
+date: "`r format(Sys.Date())`"
 output: 
-  html_document:
-    code_folding: show
-    highlight: espresso
+  bookdown::html_document2:
+    keep_md: true 
+    theme: cerulean
+    highlight: breezedark
     css: style.css
-    keep_md: yes
-    number_sections: yes
-    theme: readable
-    toc: yes  
+    anchor_sections: false
+    toc: yes
     toc_float:
       collapsed: yes
       smooth_scroll: yes
-      toc_depth: 3     
-editor_options: 
-  chunk_output_type: console
+      code_folding: show
+    toc_depth: 3
+bibliography: References.bib
+csl: tl.csl
 ---
 
 
@@ -35,30 +37,7 @@ knitr::opts_chunk$set(eval = TRUE,
 
 
 ```{r libraries, echo=FALSE, message=FALSE, include = FALSE, warning=FALSE}
-library(readxl)
-library(readr)
-library(data.table)
-library(lubridate)
 
-library(tidyverse)
-library(knitr)
-library(kableExtra)
-library(plyr)
-library(dplyr)
-library(ggpubr)
-library(scales)
-library(stringr)
-
-library(plotly)
-library(Matching)
-#library(MatchIt)
-
-library(plotrix)  # para sacar piramides descriptivas de las tablas_analisis
-
-library(ggpmisc) # para series temporales
-
-library(survminer)
-library(survival)
 
 ```
 

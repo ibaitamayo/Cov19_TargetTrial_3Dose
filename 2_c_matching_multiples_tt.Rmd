@@ -247,9 +247,9 @@ Se replica el análisis realizado en España en el cuál se investiga la efectiv
 
 Las fechas que ponen en el artículo son del *2022-01-03* al *2022-02-06*.
 
-### Variables de matching como el artículo
+### Análisis principal
 
-Se utilizan las variables de matching y criterios de exclusión del análisis principal.
+Se utilizan las variables de matching y criterios de exclusión del **análisis principal** como en el artículo.
 
 ```{r}
 # hacer ajuste como en el artículo
@@ -380,6 +380,74 @@ matching_fcv1_sens3 <- f_matching_tt_mult(
 # guardar resultados-----------------------------------------------------------
 saveRDS(matching_fcv1_sens3, file.path("Resultados",
         "matching_fcv1_sens3.RDS"))
+
+```
+
+### Sensibilidad 4
+
+Matching sin reemplazamiento.
+
+```{r}
+matching_fcv1_sens4 <- f_matching_tt_mult(
+                data = pobana_2,
+                f_ini = "2022-01-03",
+                f_fin = "2022-02-06",
+                crit_exc = lista_exclusion_dep,
+                exposure = "fvc3",
+                out = "fcv1", 
+                vector_match = variables_matching[c(1, 3:8)],
+                match_with_replacement = FALSE,
+                base_test = test220613_cleaned,
+                dias_a_excluir_test_previos = NULL,
+                temporal_var = "fpauta_90",
+                temporal_var_unit = "weeks",
+                birth_date = "fnac",
+                age_first = 40,
+                age_last = 90,
+                age_by = 5,
+                censoring = "fdef",
+                delayed_exposure_censoring = NULL,
+                follow_up = 34,
+                verbose = FALSE,
+                seed = 3)
+
+# guardar resultados-----------------------------------------------------------
+saveRDS(matching_fcv1_sens4, file.path("Resultados",
+        "matching_fcv1_sens4.RDS"))
+
+```
+
+### Sensibilidad 5
+
+Matching sin reemplazamiento.
+
+```{r}
+matching_fcv1_sens5 <- f_matching_tt_mult(
+                data = pobana_2,
+                f_ini = "2022-01-03",
+                f_fin = "2022-02-06",
+                crit_exc = lista_exclusion_dep,
+                exposure = "fvc3",
+                out = "fcv1", 
+                vector_match = variables_matching[c(1, 3:8)],
+                match_with_replacement = FALSE,
+                base_test = test220613_cleaned,
+                dias_a_excluir_test_previos = NULL,
+                temporal_var = "fpauta_90",
+                temporal_var_unit = "weeks",
+                birth_date = "fnac",
+                age_first = 40,
+                age_last = 90,
+                age_by = 1,
+                censoring = "fdef",
+                delayed_exposure_censoring = NULL,
+                follow_up = 34,
+                verbose = FALSE,
+                seed = 3)
+
+# guardar resultados-----------------------------------------------------------
+saveRDS(matching_fcv1_sens5, file.path("Resultados",
+        "matching_fcv1_sens5.RDS"))
 
 ```
 

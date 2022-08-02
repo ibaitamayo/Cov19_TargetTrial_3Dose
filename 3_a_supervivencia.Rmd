@@ -58,14 +58,14 @@ suppressMessages(source_rmd("0_b_funciones.rmd"))
 
 ```
 
-# Análisis de supervivencia
+# Análisis de supervivencia Omicrón-España
 
 ***
 
 Se realizan los análisis como el artículo de Monge-Hernán
 
 ```{r}
-# cargar datos-----------------------------------------------------------------
+# cargar datos tt Monge-Hernán-------------------------------------------------
 matching_fcv1 <- readRDS(file.path("Resultados",
         "matching_fcv1.RDS"))
 matching_fcv1_sens1 <- readRDS(file.path("Resultados",
@@ -74,6 +74,11 @@ matching_fcv1_sens2 <- readRDS(file.path("Resultados",
         "matching_fcv1_sens2.RDS"))
 matching_fcv1_sens3 <- readRDS(file.path("Resultados",
         "matching_fcv1_sens3.RDS"))
+matching_fcv1_sens4 <- readRDS(file.path("Resultados",
+        "matching_fcv1_sens4.RDS"))
+matching_fcv1_sens5 <- readRDS(file.path("Resultados",
+        "matching_fcv1_sens5.RDS"))
+# prueba domicilio-------------------------------------------------------------
 matching_fcv1_domi <- readRDS(file.path("Resultados",
         "matching_fcv1_domi.RDS"))
 
@@ -92,7 +97,19 @@ f_analisis(lista = matching_fcv1,
 
 ## Sensibilidad 0
 
+No hace falta ejecutar la f_matching de nuevo. Se hace un filtrado en el tibble de la lista y con eso es suficiente.
+
 ```{r}
+# análisis con variables de matching como el artículo--------------------------
+matching_fcv1_sens0 <- matching_fcv1
+matching_fcv1_sens0$tt_tibble <- matching_fcv1_sens0$tt_tibble %>%
+  filter(n_0 >= 1)
+
+
+f_analisis(lista = matching_fcv1_sens0,
+           tiempo_efecto = 7,
+           lim_1 = 0.8,
+           lim_zoom = 0.9)
 
 ```
 
@@ -128,6 +145,30 @@ f_analisis(lista = matching_fcv1_sens3,
            lim_zoom = 0.9)
 
 ```
+
+## Sensibilidad 4
+
+```{r}
+# análisis con variables de matching como el artículo--------------------------
+f_analisis(lista = matching_fcv1_sens4,
+           tiempo_efecto = 7,
+           lim_1 = 0.8,
+           lim_zoom = 0.9)
+
+```
+
+## Sensibilidad 5
+
+```{r}
+# análisis con variables de matching como el artículo--------------------------
+f_analisis(lista = matching_fcv1_sens5,
+           tiempo_efecto = 7,
+           lim_1 = 0.8,
+           lim_zoom = 0.9)
+
+```
+
+# Prueba con domicilio
 
 ```{r}
 # análisis con domicilio como variable de matching-----------------------------
