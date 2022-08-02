@@ -196,6 +196,7 @@ f_matching_tt <- function(data,
                           out,
                           vector_match,
                           base_test = NULL,
+                          dias_a_excluir_test_previos = NULL,
                           temporal_var = NULL,
                           temporal_var_unit = "days",
                           birth_date = NULL,
@@ -203,6 +204,7 @@ f_matching_tt <- function(data,
                           age_last = NULL,
                           age_by = NULL,
                           censoring = "fdef",
+                          delayed_exposure_censoring = NULL,
                           follow_up = 60,
                           verbose = TRUE,
                           seed = 1) {
@@ -243,6 +245,17 @@ f_matching_tt <- function(data,
   vector_match <- c(vector_match, "n_0")
   }
   
+  if (!is.null(dias_a_excluir_test_previos)) {
+    ids_a_excluir <- base_test %>% 
+      filter(id %in% data$id,
+             ftes > tiempo_0 %m-% days(dias_a_excluir_test_previos),
+             ftes <= tiempo_0 ) %>%
+      distinct(id) %>% pull()
+    data <- data %>% 
+      filter(id %nin% ids_a_excluir)
+  }   
+        
+  
   # creación de variable temporal respecto a tiempo_0
   if (!is.null(temporal_var)) {
   data <- data %>% 
@@ -272,13 +285,24 @@ f_matching_tt <- function(data,
 
   # exposicion-seguimiento
   data <- data %>% 
-    mutate( exposicion = if_else(tiempo_0 == get(exposure) & 
-                                     !is.na(get(exposure)), 1, 0),
-              date_start = tiempo_0,
-              date_end = tiempo_0 %m+% days(follow_up),
-              date_end = if_else(exposicion == 0 & !is.na(get(exposure)) & 
-                         get(exposure) < date_end,  get(exposure), date_end))
-  
+    mutate(exposicion = if_else(tiempo_0 == get(exposure) & 
+                         !is.na(get(exposure)), 1, 0),
+           date_start = tiempo_0,
+           date_end = tiempo_0 %m+% days(follow_up))
+    if (is.null(delayed_exposure_censoring)){
+    data <- data %>%
+      mutate(date_end = if_else(exposicion == 0 & 
+                                !is.na(get(exposure)) &
+                                get(exposure) < date_end,  
+                                get(exposure), date_end))
+    } else {
+    data <- data %>%
+      mutate(date_end = if_else(exposicion == 0 & 
+                                !is.na(get(exposure)) &
+                                get(exposure) < date_end,  
+      pmin(get(exposure) %m+% days(delayed_exposure_censoring), date_end), 
+      date_end))
+    }
   # meter variables del matching como numéricas  
   suppressWarnings(data <- data %>%
     mutate(across(.cols = all_of(vector_match), 
@@ -324,6 +348,7 @@ f_matching_tt_mult <- function(
                              out,
                              vector_match,
                              base_test = NULL,
+                             dias_a_excluir_test_previos = NULL,
                              temporal_var = NULL,
                              temporal_var_unit = "days",
                              birth_date = NULL,
@@ -331,6 +356,7 @@ f_matching_tt_mult <- function(
                              age_last = NULL,
                              age_by = NULL,
                              censoring = "fdef",
+                             delayed_exposure_censoring,
                              follow_up = 60,
                              verbose = TRUE,
                              seed = 1){
@@ -345,6 +371,7 @@ f_matching_tt_mult <- function(
       exposure = exposure,
       out = out, 
       base_test = base_test,
+      dias_a_excluir_test_previos = dias_a_excluir_test_previos,
       temporal_var = temporal_var,
       temporal_var_unit = temporal_var_unit,
       birth_date = birth_date,
@@ -352,6 +379,7 @@ f_matching_tt_mult <- function(
       age_last = age_last,
       age_by = age_by,
       censoring = censoring,
+      delayed_exposure_censoring = delayed_exposure_censoring,
       follow_up = follow_up,
       verbose = verbose,
       seed = seed) %>% 
