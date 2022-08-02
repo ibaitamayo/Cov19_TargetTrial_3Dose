@@ -56,6 +56,18 @@ Aplica el criterio de exclusión realizado en 2_b a múltiples ventanas temporal
 
 Realiza el análisis de supervivencia
 
+## 3_b_hacer_tabla_1
+
+Hace la Tabla 1 como en el artículo de Omicron de España [2].
+
+## 3_c_hacer_tabla_2
+
+Hace la Tabla 3 como en el artículo de Omicron de España [2].
+
+## 3_d_hacer_tabla_3
+
+Hace la Tabla 3 como en el artículo de Omicron de España [2].
+
 <br>
 
 # Referencias
