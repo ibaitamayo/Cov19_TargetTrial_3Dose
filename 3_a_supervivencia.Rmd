@@ -72,6 +72,8 @@ matching_fcv1_sens1 <- readRDS(file.path("Resultados",
         "matching_fcv1_sens1.RDS"))
 matching_fcv1_sens2 <- readRDS(file.path("Resultados",
         "matching_fcv1_sens2.RDS"))
+matching_fcv1_sens3 <- readRDS(file.path("Resultados",
+        "matching_fcv1_sens3.RDS"))
 matching_fcv1_domi <- readRDS(file.path("Resultados",
         "matching_fcv1_domi.RDS"))
 
@@ -116,6 +118,16 @@ f_analisis(lista = matching_fcv1_sens2,
 
 ```
 
+## Sensibilidad 3
+
+```{r}
+# análisis con variables de matching como el artículo--------------------------
+f_analisis(lista = matching_fcv1_sens3,
+           tiempo_efecto = 7,
+           lim_1 = 0.8,
+           lim_zoom = 0.9)
+
+```
 
 ```{r}
 # análisis con domicilio como variable de matching-----------------------------
