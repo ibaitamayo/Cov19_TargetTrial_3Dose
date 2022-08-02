@@ -5,22 +5,6 @@ output: html_document
 ---
 
 
-```{r set-global-options, echo = FALSE}
-knitr::opts_chunk$set(eval = TRUE, 
-                      echo = TRUE, 
-                      cache = FALSE,
-                      include = TRUE,
-                      collapse = FALSE,
-                      dependson = NULL,
-                      engine = "R", # Chunks will always have R code, unless noted
-                      error = TRUE,
-                      fig.path="Figures/",  # Set the figure options
-                      fig.align = "center", 
-                      fig.width = 12,
-                      fig.height = 12)
-```
-
-
 ```{r librerias, echo=FALSE, message=FALSE, include=FALSE, warning=FALSE}
 source("0_a_librerias.R")
 
@@ -112,24 +96,436 @@ excluir <- function(pob,
 
 ## hacer_flujo
 
-Está función aplica los criterios de exclusión uno detras de otro, informando del flow.
+Está función aplica los **criterios de exclusión que no dependen del tiempo**, uno detrás de otro, informando del flow.
 
 ```{r}
 # flujo------------------------------------------------------------------------
-hacer_flujo <- function(poblacion,
+hacer_flujo <- function(data,
                         exc = lista_exclusion
                    ) 
   {
-  print(glue("n de partida: {nrow(poblacion)}"))
+  print(glue("n de partida: {nrow(data)}"))
 
   for( i in seq_along(exc$criterios)) {
-  poblacion <- excluir(pob = poblacion,
-                         crit = exc$criterios[[i]],
-                         var = exc$variables[[i]])
+  data <- excluir(pob = data,
+                  crit = exc$criterios[[i]],
+                  var = exc$variables[[i]])
 }
-  poblacion
+  data
   }
   
 ```
 
+## excluir_dep
 
+Función que realiza un criterio de exclusión a partir de una variable de un tibble que es dependiente del tiempo_0 elegido.
+
+```{r}
+# función para excluir siguiendo un criterio-----------------------------------
+excluir_dep <- function(pob, 
+                        crit,
+                        var,
+                        t_var,
+                        t0,
+                        vb)
+{
+  if (t_var == "exc"){
+    if (vb == TRUE) print(glue("Variable exclusión. {crit}"))
+  pob <- pob %>% filter(is.na(get(var)) | get(var) >= t0)
+    if (vb == TRUE) print(glue("n : {nrow(pob)}"))
+  pob
+  }
+  else {
+    if (vb == TRUE) print(glue("Variable inclusión. {crit}"))
+  pob <- pob %>% filter(get(var) <= t0)
+    if (vb == TRUE) print(glue("n : {nrow(pob)}"))
+  pob
+  }
+}
+
+```
+
+## hacer_flujo_dep
+
+Está función aplica los **criterios de exclusión que sí dependen del tiempo**, uno detrás de otro, informando del flow.
+
+```{r}
+# flujo------------------------------------------------------------------------
+hacer_flujo_dep <- function(data,
+                            exc = lista_exclusion_dep,
+                            tiempo_0 = tiempo_0,
+                            verbose = TRUE
+                   ) 
+  {
+  tiempo_0 <- ymd(tiempo_0)
+  print(glue("n de partida: {nrow(data)}"))
+  for(i in seq_along(exc$criterios)) {
+  data <- excluir_dep(
+                       pob = data,
+                       crit = exc$criterios[[i]],
+                       var = exc$variables[[i]],
+                       t_var = exc$tipo_var[[i]],
+                       t0 = tiempo_0,
+                       vb = verbose)
+}
+  data
+  }
+
+```
+
+## f_matching_tt
+
+Función que, para una fecha determinada (tiempo_0) realiza:
+
+- Los criterios de exclusión dependientes del tiempo.
+- Define la exposición en la población.
+- Realiza matching (1:1) de esa población.
+
+Además, permite definir cuál va a ser la variable de censura, cuál es el tiempo de seguimiento y si va a haber alguna variable de matching que sea dependiente del tiempo. 
+
+Asimismo, permite introducir una base de test previos, para crear una variable de test negativos previos en el tiempo_0, que será introducida como una variable de matching.
+
+Por último, se permite definir la cantidad de información que queremos que aparezca por pantalla (*verbose*) y el valor de la semilla (*seed*) para obtener siempre el mismo resultado en el matching.
+
+```{r}
+# función de matching----------------------------------------------------------
+f_matching_tt <- function(data, 
+                          tiempo_0, 
+                          crit_exc,
+                          exposure,
+                          out,
+                          vector_match,
+                          base_test = NULL,
+                          temporal_var = NULL,
+                          temporal_var_unit = "days",
+                          birth_date = NULL,
+                          age_first = NULL,
+                          age_last = NULL,
+                          age_by = NULL,
+                          censoring = "fdef",
+                          follow_up = 60,
+                          verbose = TRUE,
+                          seed = 1) {
+  
+  set.seed(seed)
+  tiempo_0 <- ymd(tiempo_0)
+  print(glue("tiempo_0 = {tiempo_0}"))
+  if (verbose == TRUE) print(glue("Outcome = {out}"))
+  if (verbose == TRUE) print(glue("n de partida: {nrow(data)}"))
+  
+  # exclusiones dependientes del tiempo
+  for(i in seq_along(crit_exc$criterios)) {
+  data <- excluir_dep(
+                       pob = data,
+                       crit = crit_exc$criterios[[i]],
+                       var = crit_exc$variables[[i]],
+                       t_var = crit_exc$tipo_var[[i]],
+                       t0 = tiempo_0,
+                       vb = verbose)
+  }
+  
+  # exclusión por el outcome
+  if (verbose == TRUE) print(glue("Variable exclusión. {out}"))
+     data <- data %>% filter(is.na(get(out)) | get(out) > tiempo_0)
+  if (verbose == TRUE) print(glue("n : {nrow(pob)}"))
+  
+  # obtención número de test negativos previos al primer positivo
+  if (!is.null(base_test)) {
+  data <- base_test %>% filter(id %in% data$id,
+                               tpos == FALSE,
+                               ftes < tiempo_0) %>% 
+    group_by(id) %>% 
+    summarise(n_0 = max(n)) %>% 
+    right_join(data, by = "id") %>% 
+    mutate(n_0 = case_when(is.na(n_0) ~ 0L, 
+                 n_0 > 3 ~ 3L,
+                 T ~ n_0)) 
+  vector_match <- c(vector_match, "n_0")
+  }
+  
+  # creación de variable temporal respecto a tiempo_0
+  if (!is.null(temporal_var)) {
+  data <- data %>% 
+  mutate(temp_var = as.numeric(tiempo_0 - 
+                    floor_date(get(temporal_var), unit = temporal_var_unit)))
+  vector_match <- c(vector_match, "temp_var")
+  }
+  
+  # introducir edad como variable de matching respecto a tiempo_0
+  if (!is.null(birth_date)) {
+    if(is.null(age_first) || is.null(age_last) || is.null(age_by)) {
+      stop(strwrap(prefix = " ", initial = "", 
+           "Have you introduced 'age_first', 'age_last',
+           and, 'age_by' arguments properly?"))
+    }
+  data <- data %>% 
+    mutate(p_edad_cat = cut(as.numeric(difftime(tiempo_0, get(birth_date), 
+                                              unit = "days"))/365.25,
+                          right = FALSE, 
+                          breaks = c(0,
+                                     seq(age_first, age_last, by = age_by),
+                                     200))) %>% 
+    mutate(p_edad_cat_label = p_edad_cat)
+  
+  vector_match <- c(vector_match, "p_edad_cat")
+  }
+
+  # exposicion-seguimiento
+  data <- data %>% 
+    mutate( exposicion = if_else(tiempo_0 == get(exposure) & 
+                                     !is.na(get(exposure)), 1, 0),
+              date_start = tiempo_0,
+              date_end = tiempo_0 %m+% days(follow_up),
+              date_end = if_else(exposicion == 0 & !is.na(get(exposure)) & 
+                         get(exposure) < date_end,  get(exposure), date_end))
+  
+  # meter variables del matching como numéricas  
+  suppressWarnings(data <- data %>%
+    mutate(across(.cols = all_of(vector_match), 
+                  .fns = ~if_else(is.na(as.numeric(.x)) == TRUE, 
+                                  as.numeric(as.factor(.x)),
+                                  as.numeric(.x)))))      
+  
+  # hacer matching (investigar distintas opciones)
+  try({
+    greedymatch <- Matching::Match(Tr = data$exposicion, M = 1, 
+                   X = data[vector_match], exact = TRUE, ties = FALSE)
+    a <- data[unlist(greedymatch[c("index.treated", "index.control")]),]
+    par <- rep(1:(nrow(a)/2), 2)
+    bind_cols(par = par, a) %>%
+      group_by(par) %>%
+      mutate(
+        date_end = min(date_end),
+        # censurar si fallece (sin censurar al otro componente de la pareja)
+        date_end = if_else(!is.na(get(censoring)) &
+                   get(censoring) < date_end, get(censoring), date_end),     
+        # creo la variable de resultado y finalizo el seguimiento cuando aparece)
+         caso = if_else(get(out) <= date_end & !is.na(get(out)), 1, 0),
+         date_end = if_else(caso == 1, get(out), date_end)) %>% 
+      as_tibble() 
+    }
+  )
+}
+
+```
+
+## f_matching_tt_mult 
+
+Extensión de la función f_matching_tt, en la cuál se obtiene un ensayo clínico emulado para cada tiempo_0 y se unen en un único *tibble*.
+
+```{r}
+# función de matching para múltiples fechas------------------------------------
+f_matching_tt_mult <- function(
+                             data, 
+                             f_ini,
+                             f_fin,
+                             crit_exc,
+                             exposure,
+                             out,
+                             vector_match,
+                             base_test = NULL,
+                             temporal_var = NULL,
+                             temporal_var_unit = "days",
+                             birth_date = NULL,
+                             age_first = NULL,
+                             age_last = NULL,
+                             age_by = NULL,
+                             censoring = "fdef",
+                             follow_up = 60,
+                             verbose = TRUE,
+                             seed = 1){
+  
+  fechas <- seq.Date(from = ymd(f_ini), to = ymd(f_fin), by = "days")
+  
+  tt_tibble =  map(fechas, 
+      f_matching_tt,
+      data = data,
+      crit_exc = crit_exc,
+      vector_match = vector_match, 
+      exposure = exposure,
+      out = out, 
+      base_test = base_test,
+      temporal_var = temporal_var,
+      temporal_var_unit = temporal_var_unit,
+      birth_date = birth_date,
+      age_first = age_first,
+      age_last = age_last,
+      age_by = age_by,
+      censoring = censoring,
+      follow_up = follow_up,
+      verbose = verbose,
+      seed = seed) %>% 
+    # descartar los días en los que no se encuentra matching
+    keep(~is_tibble(.x)) %>%  
+    # unir todos los tibbles de la lista en uno único
+    enframe() %>%
+    rename(target_trial_number = name) %>% 
+    unnest(value) %>% 
+    # para evitar errores en el matcheo
+    filter(!is.na(exposicion))
+
+  if (!is.null(base_test)) {
+  vector_match <- c(vector_match, "n_0")
+  }  
+  
+  if (!is.null(temporal_var)) {
+  vector_match  <- c(vector_match, 
+                     glue("{temporal_var} (in {temporal_var_unit})"))
+  }  
+  
+  if (!is.null(birth_date)) {
+  vector_match  <- c(vector_match, 
+                     glue("age (in {age_by}-years groups)"))
+  }  
+  
+  return(lst(tt_tibble = tt_tibble,
+       out = out,
+       vector_match = vector_match))  
+}
+
+
+```
+
+## f_analisis
+
+En esta función se analizan los resultados obtenidos en la función *f_matching_tt_mult*. En la lista que se genera en la función anterior, se incluye el *outcome* y *las variables de matching*, las cuales se muestran por pantalla en la función de análisis. Además, se puede introducir el tiempo necesario para que la exposición surta efecto (*tiempo_efecto*). En el caso de que haya un *tiempo_efecto*, se muestra un aumento de la figura de Kaplan-Meier para ese intervalo de tiempo, en el que idealmente, las curvas se deberían superponer. Asimismo, se puede configurar el límite inferior del eje y (*lim_1* y *lim_zoom*) de la gráfica de Kaplan-Meier.
+
+```{r}
+# función que realiza el análisis de supervivencia-----------------------------
+f_analisis <- function(
+                lista,
+                tiempo_efecto = 0,
+                lim_1 = 0.8,
+                lim_zoom = 0.95
+                       ) {
+  
+  base_analisis <- lista$tt_tibble %>% 
+    mutate(survtime = date_end - date_start)
+  
+  max_survtime <- base_analisis %>% 
+    summarise(max_survtime = as.numeric(max(survtime))) %>% pull()
+  
+  print(glue("Se está analizando el outcome: {lista$out} \\
+             mediante la emulación de un ensayo clínico  \\
+             con múltiples inicios de tiempo. Se ha utilizado matching por: \\
+             {str_c(lista$vector_match, collapse = ', ')}.
+             
+             "))
+  
+  print(glue("Análisis de supervivencia días 0-{max_survtime}"))  
+  print(base_analisis %>% 
+             tabyl(exposicion, caso) %>%
+             adorn_totals(where = c('row', 'col')) %>%
+             adorn_title())
+
+  fit <- survfit(Surv(survtime, caso) ~ exposicion, data = base_analisis) 
+
+  print(ggsurvplot(fit, data = base_analisis, xlab = "days of follow-up",
+           ylab = "Survival probability",
+           main = "Product-Limit Survival Estimates", 
+           ylim = c(lim_1, 1), 
+           risk.table = TRUE, conf.int = TRUE))
+  
+  cpp0 = coxph(formula = Surv(survtime, caso) ~ exposicion, 
+              data = base_analisis)
+  
+  # imprimir resultado
+  print(glue("
+  
+             # Estimated effectiveness in Navarra for {lista$out} is : \\
+             {round((1 - exp(coef(cpp0))) * 100, 1)} % \\
+             ({round((1 - exp(confint(cpp0))[2]) * 100, 1)} - \\
+             {round((1 - exp(confint((cpp0)))[1]) * 100, 1)} %)"))
+  
+  # El tiempo_efecto se introduce como un argumento
+  if (tiempo_efecto != 0) {
+  base_analisis_2 <- base_analisis %>% 
+  group_by(target_trial_number, par) %>% 
+    filter(min(survtime) >= tiempo_efecto) %>%
+  ungroup() 
+  
+  print(ggsurvplot(fit, data = base_analisis, 
+           xlab = "days of follow-up",
+           ylab = "Survival probability",
+           main = "Product-Limit Survival Estimates: Zoom at tiempo-efecto", 
+           xlim = c(0, tiempo_efecto),
+           ylim = c(lim_zoom, 1), 
+           risk.table = TRUE, conf.int = TRUE))
+   
+   print(glue("
+              
+               ####################################\\
+              ####################################
+              
+              Análisis de supervivencia días \\
+              {tiempo_efecto}-{max_survtime}"))  
+   
+   print(base_analisis_2 %>% 
+             tabyl(exposicion, caso) %>%
+             adorn_totals(where = c('row', 'col')) %>%
+             adorn_title())  
+    
+  cpp = coxph(formula = Surv(survtime, caso) ~ exposicion, 
+              data = base_analisis_2)
+  
+  # imprimir resultado
+  print(glue("
+  
+             # Estimated effectiveness in Navarra for {lista$out} is : \\
+             {round((1 - exp(coef(cpp))) * 100, 1)} % \\
+             ({round((1 - exp(confint(cpp))[2]) * 100, 1)} - \\
+             {round((1 - exp(confint((cpp)))[1]) * 100, 1)} %)"))
+  }
+}
+
+```
+
+## f_tabla_1
+
+A continuación, se presentan dos funciones auxiliares, que permiten hacer la Tabla 1.
+
+```{r}
+# hacer basal discretas--------------------------------------------------------
+hacer_basal_discreta <- function(base, 
+                                 variable,
+                                 relabel = NULL) {
+  
+  tabla <- base %>% tabyl({{variable}}, exposicion) %>% 
+    adorn_totals("col") %>%  
+    adorn_percentages("col") %>%
+    adorn_pct_formatting(digits = 1) %>%
+    adorn_ns("front") %>% 
+    rename(Variable = {{variable}}) %>% 
+    mutate(Variable = as.character(Variable))
+  
+  if (!is.null(relabel)){
+  tabla <- tabla %>% 
+    mutate(Variable = relabel)
+  }
+  tabla
+}
+
+```
+
+```{r}
+# hacer basal continuas--------------------------------------------------------
+hacer_basal_continua <- function(base, variable) {
+base %>%
+  group_by(exposicion) %>% 
+  get_summary_stats({{variable}}, type = "mean_sd") %>% 
+  mutate(mean = format(round(mean, 2), nsmall =2)) %>% 
+  mutate(sd = format(round(sd, 2), nsmall =2)) %>% 
+  mutate(mean_sd = glue("{mean} ({sd})")) %>% 
+  select(trat_medico, mean_sd) %>% 
+  pivot_wider(values_from = mean_sd, names_from = trat_medico) %>% 
+  bind_cols( (base %>% 
+              get_summary_stats({{variable}}, type = "mean_sd") %>% 
+  mutate(mean = format(round(mean, 2), nsmall = 2)) %>% 
+  mutate(sd = format(round(sd, 2), nsmall = 2)) %>% 
+  mutate(mean_sd = glue("{mean} ({sd})")) %>% 
+  select(mean_sd) %>% 
+  rename(Total = mean_sd))) %>% 
+  mutate(Variable = "mean (sd)", .before = 1)
+}
+
+```
