@@ -66,6 +66,8 @@ El caso de estudio que se va a analizar es el de la efectivad vacunal de la terc
 ```{r cargar-datos, echo=FALSE, eval=TRUE, message=FALSE, warning=FALSE}
 # cargar datos-----------------------------------------------------------------
 pobana_0 <- readRDS(file = file.path("Datos", "Procesados", "pobana_0.RDS"))
+test220613_cleaned <- readRDS(file = file.path("Datos", "Procesados", 
+                                             "test220613_cleaned.RDS"))
 
 ```
 
