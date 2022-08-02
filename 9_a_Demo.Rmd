@@ -17,6 +17,8 @@ output:
     toc_depth: 3
 bibliography: References.bib
 csl: tl.csl
+editor_options: 
+  chunk_output_type: inline
 ---
 
 
@@ -57,17 +59,15 @@ En este proyecto se va a realizar la metodología del *Target trial*. Dicha meto
 El caso de estudio que se va a analizar es el de la efectivad vacunal de la tercera dosis (segunda para los pacientes de Janssen) en la población general de la comunidad foral de Navarra. En el conjunto de la población española, la efectividad estimada entre los días 7 hasta el 34 después de la tercera dosis, con fechas de vacunación comprendidas entre el 3 de enero y el 6 de febrero de 2022, fue del 51.3% (95% CI 50.2–52.4) [@Monge2022]. 
 <br>
 
-# Criterios de exclusión independientes del tiempo 0
+# Exclusiones estáticas
+
+***
 
 ```{r cargar-datos, echo=FALSE, eval=TRUE, message=FALSE, warning=FALSE}
 # cargar datos-----------------------------------------------------------------
 pobana_0 <- readRDS(file = file.path("Datos", "Procesados", "pobana_0.RDS"))
 
 ```
-
-# Exclusiones estáticas
-
-***
 
 En este .Rmd se realizan las **exclusiones que no dependen del tiempo 0** y por tanto se realizan antes de determinar la fecha (fechas) de inicio de las emulaciones de los ensayos clínicos. Se alimenta a la función con una lista que contiene el texto del criterio de exclusión, para que se muestre por pantalla, y de las variables que definen dicho criterio. De momento, el tipo de variables que definen las exclusiones son de dos tipos:
 
@@ -148,14 +148,489 @@ pobana_1 <- hacer_flujo(poblacion = pobana_0,
 
 ```
 
+# Exclusiones dinámicas
+
+***
+
+En este .Rmd se realizan las **exclusiones que sí dependen del tiempo 0** y por tanto se realizan en conjunción con la determinación del tiempo 0. De momento, el tipo de variables que definen las exclusiones son de dos tipos:
+
+- **Variables de exclusión (NA se mantiene)**. Sí la fecha de la variable es menor a la del tiempo 0 se excluye al individuo. Si no hay fecha, se mantiene al individuo (p.e. *fcv1* o *fdef*).
+
+- **Variables inclusión (NA se excluye)**. Sí la fecha de la variable es mayor a la del tiempo 0 se excluye al individuo. Si no hay fecha, se excluye al individuo (p.e. *fnac_40* o *f_pauta_90*).
+
+Cuando se genere nueva casuística, se puede añadir entre el if() y el else() de la función *excluir_dep()*.
+
 ```{r}
-# guardar base con exclusiones estáticas---------------------------------------
-saveRDS(pobana_1, file.path("Resultados", "pobana_1.RDS"))
+# arreglar variables exclusión/inclusión dinámicas-----------------------------
+pobana_2 <- pobana_1 %>% 
+  # crear fecha 40 cumpleaños
+  mutate(fnac_40 = fnac %m+% years(40)) %>% 
+  # crear fecha 90 días tras pauta completa
+  mutate(fpauta_90 = case_when(
+    !is.na(fvc2) ~ fvc2 %m+% days(90),
+    tvc1 == "J&J / Janssen" ~ fvc1 %m+% days(90),
+    T ~ NA_Date_
+    )) %>%
+  mutate(tvc1_label = tvc1) %>% 
+  # pautas de Janssen o de la misma vacuna
+  tidylog::filter(tvc1 == "J&J / Janssen" | tvc1 == tvc2)
+pobana_2 %>% count(tvc1, tvc2)
+
+```
+   
+```{r}
+# se crean listas que dependen del proyecto------------------------------------
+lista_exclusion_dep <- list(
+  criterios = list(
+  c1 = "Excluyendo: infección previa antes del tiempo_0...",
+  c2 = "Excluyendo: edad < 40 años en tiempo_0...", 
+  c3 = "Excluyendo: pauta incompleta 90 días antes del tiempo_0...",
+  c4 = "Excluyendo: fallecidos antes del tiempo_0...",
+  c5 = "Excluyendo: boosting antes del tiempo_0..."),
+  variables = list(
+  v1 = "fcv1",
+  v2 = "fnac_40",
+  v3 = "fpauta_90",
+  v4 = "fdef",
+  v5 = "fvc3"),
+  tipo_var = list(
+    "exc",
+    "inc",
+    "inc",
+    "exc",
+    "exc")
+  )
 
 ```
 
 
 
+```{r}
+# aplicar exclusiones dependientes del tiempo_0------------------------------
+pobana_2_2022_01_03 <- hacer_flujo_dep(
+                                        data = pobana_2, 
+                                        exc = lista_exclusion_dep,
+                                        tiempo_0 = "2022-01-03"
+                                        )
+
+```
+
+# Target Trial (TT) emulation
+
+```{r}
+# vectores de matching---------------------------------------------------------
+variables_matching = c(
+  "gen",    # 1
+  "gedad",  # 2
+  "czbs",   # 3
+  "tvc1",   # 4
+  "migran", # 5
+  "vgp20",  # 6
+  "vgp21",  # 7
+  "ucn8",   # 8
+  "domi")   # 9
+
+```
+
+## TT con una fecha
+
+```{r}
+# matching f_pauta en días
+prueba_matching_days <- f_matching_tt(
+                data = pobana_2,
+                tiempo_0 = "2022-01-03",
+                crit_exc = lista_exclusion_dep,
+                exposure = "fvc3",
+                out = "fcv1", 
+                vector_match = variables_matching[c(1, 3:8)], 
+                base_test = test220613_cleaned,
+                temporal_var = "fpauta_90",
+                temporal_var_unit = "days",
+                birth_date = "fnac",
+                age_first = 40,
+                age_last = 90,
+                age_by = 5,
+                censoring = "fdef",
+                follow_up = 34,
+                verbose = FALSE,
+                seed = 3)
+
+prueba_matching_days
+
+```
+
+
+```{r}
+# check prueba-----------------------------------------------------------------
+prueba_matching_days %>% 
+  tabyl(exposicion, caso) %>% 
+  adorn_title()
+
+```
+
+## TT con más de una fecha
+
+```{r}
+# matching f_pauta en días (menos restrictivo)
+prueba_matching_mult_days <- f_matching_tt_mult(
+                data = pobana_2,
+                f_ini = "2022-01-03",
+                f_fin = "2022-01-05",
+                crit_exc = lista_exclusion_dep,
+                exposure = "fvc3",
+                out = "fcv1", 
+                vector_match = variables_matching[c(1, 3:8)], 
+                base_test = test220613_cleaned,
+                temporal_var = "fpauta_90",
+                temporal_var_unit = "days",
+                birth_date = "fnac",
+                age_first = 40,
+                age_last = 90,
+                age_by = 5,
+                censoring = "fdef",
+                follow_up = 34,
+                verbose = FALSE,
+                seed = 3)
+
+prueba_matching_mult_days
+
+
+```
+
+# Análisis
+
+***
+
+```{r}
+# análisis con variables de matching como el artículo--------------------------
+f_analisis(lista = prueba_matching_mult_days,
+           tiempo_efecto = 7,
+           lim_1 = 0.8,
+           lim_zoom = 0.9)
+
+```
+
+# Hacer tabla 1
+
+***
+
+```{r}
+hacer_tabla_1 <- function(tt_tibble) {
+
+  tabla_basal_edad <- hacer_basal_discreta(base = tt_tibble,
+                                         variable = p_edad_cat_label,
+                                         relabel = c(
+                                      "0-39",
+                                     "40-44", 
+                                     "45-49",
+                                     "50-54",
+                                     "55-59",
+                                     "60-64",
+                                     "65-69",
+                                     "70-74",
+                                     "75-79",
+                                     "80-84",
+                                     "85-89",
+                                     "&ge; 90")
+                                     ) %>% 
+    filter(Variable != "0-39")
+
+  tabla_basal_sexo <- hacer_basal_discreta(base = tt_tibble,
+                                         variable = gen,
+                                         relabel = c(
+                                           "Men",
+                                           "Women")
+                                         )
+                                         
+  tabla_basal_n_test <- hacer_basal_discreta(base = tt_tibble,
+                                         variable = n_0,
+                                         relabel = c(
+                                           "0",
+                                           "1",
+                                           "2",
+                                           "&ge; 3")
+                                         )
+
+  tabla_basal_vaccine_type <- hacer_basal_discreta(base = tt_tibble,
+                                         variable = tvc1_label,
+                                         relabel = NULL
+                                         )
+
+  
+  tabla_basal_booster_type <- hacer_basal_discreta(base = tt_tibble,
+                                         variable = tvc3,
+                                         relabel = NULL
+                                         ) %>% 
+    mutate(`0` = NA) %>% 
+    filter(Variable != "<NA>")
+
+  tabla_basal_t_pauta_comp <- hacer_basal_discreta(tt_tibble %>% 
+    mutate(
+      t_desde_pauta_completa = 90 + temp_var,
+      t_desde_pauta_completa_cat = case_when(
+        between(t_desde_pauta_completa, 91, 150) ~  "91-150 days",
+        between(t_desde_pauta_completa, 151, 180) ~ "151-180 days",
+        t_desde_pauta_completa > 180 ~  "&ge; 181 days"),
+      t_desde_pauta_completa_cat = factor(t_desde_pauta_completa_cat,
+        levels = c("91-150 days", "151-180 days", "&ge; 181 days"))),
+    variable = t_desde_pauta_completa_cat)
+
+  tabla_basal <- bind_rows(
+                           tabla_basal_edad,
+                           tabla_basal_sexo,
+                           tabla_basal_n_test,
+                           tabla_basal_vaccine_type,
+                           tabla_basal_t_pauta_comp,
+                           tabla_basal_booster_type) %>% 
+    select(-Total)
+  
+  
+  n_unexposed <- tt_tibble %>% 
+    filter(exposicion == 0) %>%
+    nrow()
+    
+  n_exposed <- tt_tibble %>% 
+    filter(exposicion == 1) %>%
+    nrow()
+  
+  id_uniques <- tt_tibble %>% 
+    filter(exposicion == 0) %>%
+    distinct(id) %>%
+    nrow()
+  
+  
+  kable(tabla_basal, align = c("c"), escape = FALSE,
+      col.names = c("Variable",
+                    glue("No booster group (n = {n_unexposed}*)"),
+                    glue("Booster group (n = {n_exposed})")),
+      table.attr = "style = \"color: black;\"",
+      caption = "Baseline characteristics of the matched study population") %>%
+  kable_styling(bootstrap_options = c("striped", 
+                                      "hover", 
+                                      "condensed"),
+                full_width = FALSE, fixed_thead = T) %>%
+  row_spec(0, bold = T, color = "white", background = "dodgerblue",
+           extra_css = "vertical-align:middle") %>% 
+  pack_rows("Age group (years), n (%)", 1, 11) %>%
+  pack_rows("Sex, n (%)", 12, 13) %>%
+  pack_rows("Number of previous SARS-CoV-2 tests, n (%)", 14, 17) %>%
+  pack_rows("Type of previous vaccination, n (%)", 18, 21) %>%
+  pack_rows("Time since primary vaccine schedule, n (%)", 22, 24) %>%
+  pack_rows("Type of booster, n (%)", 25, 26) %>%
+  footnote(footnote_as_chunk = TRUE, 
+           general = glue("NA = not applicable, *{id_uniques} unique individuals in the no booster group."))
+
+  }
+
+```
+
+<br>
+
+```{r}
+# ejecutar la función para hacer la tabla--------------------------------------
+tabla_1_demo <- hacer_tabla_1(tt_tibble = prueba_matching_mult_days$tt_tibble)
+
+tabla_1_demo
+
+```
+
+# Hacer tabla 2
+
+***
+
+```{r}
+# hacer tabla 2----------------------------------------------------------------
+hacer_tabla_2 <- function(tt_tibble, 
+                          tiempo_efecto = 7) {
+
+# arreglar tibble
+  tt_tibble_after_7_days <- tt_tibble %>% 
+  # filtrar parejas con seguimiento después del día 7
+      mutate(survtime = date_end - date_start) %>% 
+      group_by(target_trial_number, par) %>% 
+      filter(min(survtime) >= tiempo_efecto) %>%
+      ungroup() %>% 
+  # crear tiempo desde pauta completa
+      mutate(
+        t_desde_pauta_completa = 90 + temp_var,
+        t_desde_pauta_completa_cat = case_when(
+          between(t_desde_pauta_completa, 91, 195) ~  "91-195 days",
+          between(t_desde_pauta_completa, 196, 220) ~ "196-220 days",
+        t_desde_pauta_completa > 221 ~  "&ge; 221 days"),
+        t_desde_pauta_completa_cat = factor(t_desde_pauta_completa_cat,
+          levels = c("91-195 days", "196-220 days", "&ge; 221 days")))
+
+  tt_tibble_after_7_days_pairs <- tt_tibble_after_7_days %>% 
+    filter(exposicion == 1) %>% nrow()
+
+# hacer estratos tabla 2
+  table2_overall <- hacer_grupo_tabla_2(
+    tt_tibble = tt_tibble_after_7_days, 
+    group_description = "Overall",
+    number_of_bootstrap = 500)
+
+  table2_grupo_edad_1 <- hacer_grupo_tabla_2(
+    tt_tibble = tt_tibble_after_7_days %>% 
+      filter(p_edad_cat_label %in% c(
+        "[40,45)",	
+        "[45,50)",		
+        "[50,55)")), 
+    group_description = "40-54",
+    number_of_bootstrap = 500)
+
+  table2_grupo_edad_2 <- hacer_grupo_tabla_2(
+    tt_tibble = tt_tibble_after_7_days %>% 
+      filter(min(survtime) >= tiempo_efecto) %>%
+      ungroup() %>% 
+      filter(p_edad_cat_label %nin% c(
+        "[40,45)",	
+        "[45,50)",		
+        "[50,55)")), 
+    group_description = "&ge; 55",
+    number_of_bootstrap = 500)
+
+  table2_hombre <- hacer_grupo_tabla_2(
+    tt_tibble = tt_tibble_after_7_days %>% 
+      filter(gen == 1), 
+    group_description = "Male",
+    number_of_bootstrap = 500)
+
+  table2_mujer <- hacer_grupo_tabla_2(
+    tt_tibble = tt_tibble_after_7_days %>% 
+      filter(gen == 2), 
+    group_description = "Female",
+    number_of_bootstrap = 500)
+
+  table2_vac_pfizer <- hacer_grupo_tabla_2(
+    tt_tibble = tt_tibble_after_7_days %>% 
+      filter(tvc1_label == "BioNTech/Pfizer"), 
+    group_description = "BioNTech/Pfizer",
+    number_of_bootstrap = 500)
+
+  table2_vac_janssen <- hacer_grupo_tabla_2(
+    tt_tibble = tt_tibble_after_7_days %>% 
+      filter(tvc1_label == "J&J / Janssen"), 
+    group_description = "J&J / Janssen",
+    number_of_bootstrap = 500)
+
+  table2_vac_moderna <- hacer_grupo_tabla_2(
+    tt_tibble = tt_tibble_after_7_days %>% 
+      filter(tvc1_label == "Moderna/Lonza"), 
+    group_description = "Moderna/Lonza",
+    number_of_bootstrap = 500)
+
+  table2_vac_az <- hacer_grupo_tabla_2(
+    tt_tibble = tt_tibble_after_7_days %>% 
+      filter(tvc1_label == "Oxford/AstraZeneca"), 
+    group_description = "Oxford/AstraZeneca",
+    number_of_bootstrap = 500)
+  
+  table2_tsv1 <- hacer_grupo_tabla_2(
+    tt_tibble = tt_tibble_after_7_days %>% 
+      filter(t_desde_pauta_completa_cat == "91-195 days"), 
+    group_description = "91-195 days",
+    number_of_bootstrap = 500)
+
+  table2_tsv2 <- hacer_grupo_tabla_2(
+    tt_tibble = tt_tibble_after_7_days %>% 
+      filter(t_desde_pauta_completa_cat == "196-220 days"), 
+    group_description = "196-220 days",
+    number_of_bootstrap = 500)
+
+  table2_tsv3 <- hacer_grupo_tabla_2(
+    tt_tibble = tt_tibble_after_7_days %>% 
+      filter(t_desde_pauta_completa_cat == "&ge; 221 days"), 
+    group_description = "&ge; 221 days",
+    number_of_bootstrap = 500)
+
+# para el booster el filtrado es algo más complicado
+  ids_pfizer <- tt_tibble_after_7_days %>% 
+  # seleccionar booster pfizer
+    filter(exposicion == 1,
+         tvc3 == "BioNTech/Pfizer") %>% 
+    select(target_trial_number, par)
+# seleccionar todas las parejas de booster pfizer
+  tt_tibble_after_7_days_pfizer <- tt_tibble_after_7_days %>% 
+    semi_join(ids_pfizer)
+
+  ids_moderna <- tt_tibble_after_7_days %>% 
+  # seleccionar booster pfizer
+    filter(exposicion == 1,
+         tvc3 == "Moderna/Lonza") %>% 
+    select(target_trial_number, par)
+# seleccionar todas las parejas de booster pfizer
+  tt_tibble_after_7_days_moderna <- tt_tibble_after_7_days %>% 
+    semi_join(ids_moderna)
+
+  table2_tvc3_pfizer <- hacer_grupo_tabla_2(
+    tt_tibble = tt_tibble_after_7_days_pfizer, 
+    group_description = "BioNTech/Pfizer",
+    number_of_bootstrap = 500)
+
+  table2_tvc3_moderna <- hacer_grupo_tabla_2(
+    tt_tibble = tt_tibble_after_7_days_moderna, 
+    group_description = "Moderna/Lonza",
+    number_of_bootstrap = 500)
+
+  # ensamblar tabla 2
+  table2_ensambled <- bind_rows(
+    table2_overall,
+    table2_grupo_edad_1,
+    table2_grupo_edad_2,
+    table2_hombre,
+    table2_mujer,
+    table2_vac_pfizer,
+    table2_vac_janssen,
+    table2_vac_moderna,
+    table2_vac_az,
+    table2_tsv1,
+    table2_tsv2,
+    table2_tsv3,
+    table2_tvc3_pfizer,
+    table2_tvc3_moderna)
+  
+ # kable table 2  
+ kable(table2_ensambled, align = c("c"), escape = FALSE,
+      col.names = c(" ",
+                    "Events",
+                    "Risk per 10 000 individuals",
+                    "Events",
+                    "Risk per 10 000 individuals",
+                    " ",
+                    " "),
+      table.attr = "style = \"color: black;\"",
+      caption = "Estimated effectiveness of an mRNA COVID-19 vaccine booster in individuals* who had completed primary vaccination schedule against COVID-19") %>%
+   add_header_above(c(" ",
+                      "No booster group" = 2, 
+                      "Booster group" = 2, 
+                      "1–risk ratio (95% CI)", 
+                      "Risk difference per 10 000 individuals (95% CI)"),
+                    bold = T, color = "white", background = "dodgerblue",
+           extra_css = "vertical-align:middle") %>% 
+  kable_styling(bootstrap_options = c("striped", 
+                                      "hover", 
+                                      "condensed"),
+                full_width = FALSE, fixed_thead = T) %>%
+  row_spec(0, bold = T, color = "white", background = "dodgerblue",
+           extra_css = "vertical-align:middle") %>% 
+  pack_rows("Age group (years)", 2, 3) %>%
+  pack_rows("Sex", 4, 5) %>%
+  pack_rows("Type of previous vaccination", 6, 9) %>%
+  pack_rows("Time since vaccination completed", 10, 12) %>%  
+  pack_rows("Type of booster", 13, 14) %>%
+  footnote(footnote_as_chunk = TRUE, 
+           general = glue("Analyses based on {tt_tibble_after_7_days_pairs} matched pairs who remained under follow-up by day 7 after the booster dose"))
+}
+
+
+```
+
+```{r}
+# ejecutar la función para hacer la tabla--------------------------------------
+tabla_2_demo <- hacer_tabla_2(tt_tibble = prueba_matching_mult_days$tt_tibble)
+tabla_2_demo
+
+```
 
 # Referencias
 
