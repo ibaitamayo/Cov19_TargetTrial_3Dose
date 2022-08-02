@@ -1,5 +1,5 @@
 ---
-title: "Criterios de exclusión estáticos"
+title: "Análisis de supervivencia"
 output: 
   html_document:
     code_folding: show
@@ -53,7 +53,7 @@ source_rmd = function(file, ...) {
 ```{r}
 # cargar funciones de 0_funciones----------------------------------------------
 if (!exists("se_ha_cargado_f")) {
-source_rmd("0_b_funciones.rmd")
+suppressMessages(source_rmd("0_b_funciones.rmd"))
 }
 
 ```
@@ -62,67 +62,6 @@ source_rmd("0_b_funciones.rmd")
 
 ***
 
-<<<<<<< HEAD
-```{r}
-# cargar lista----------------------------------------------------------------
-lista_vm2_fih1 <- readRDS(file.path("Resultados", "lista_vm2_fih1.RDS")) %>% 
-  keep(~is.tbl(.))
-
-lista_vm3_fih1 <- readRDS(file.path("Resultados", "lista_vm3_fih1.RDS")) %>% 
-  keep(~is.tbl(.))
-
-```
-
-```{r}
-# función que realiza el análisis de supervivencia-----------------------------
-f_analisis <- function(lista) {
-  # pasar de lista a un tibble (name indica el número de tiempo_0)
-  base_analisis <- enframe(lista) %>%
-    rename(target_trial_number = name) %>% 
-    unnest(value)
-
-  print("tabla contingencia exposiciones/casos:")    
-  print(base_analisis %>% 
-    janitor::tabyl(exposicion, caso) %>%
-    janitor::adorn_totals(where = c("row", "col")) %>% 
-    janitor::adorn_title())
-
-  base_analisis <- base_analisis %>% mutate(survtime = date_end - date_start)
-  base_analisis %>% count(survtime, exposicion)
-    
-  fit <- survfit(Surv(survtime, caso) ~ exposicion, data = base_analisis) # , subset=survtime>7
-
-
-print(ggsurvplot(fit, data = base_analisis, xlab = "days of follow-up",
-           ylab = "Survival probability",
-           main = "Product-Limit Survival Estimates", ylim = c(0.985, 1), 
-           risk.table = TRUE, conf.int = TRUE))
-
-## hay que resolver mejor esto de hacer el cox sobre un intervalo.. (a partir del dia 7).. aqui solo indico que se le agrege 7 dias al start (pero no he excludio los casos que aparecen en esos primeros 7 dias!!)
-### cox
-  cpp = coxph(formula = Surv(survtime, caso) ~ exposicion, 
-            data = base_analisis, subset = survtime > 7)
-  print("# Estimated effectiveness in Spain from day 7 to 34 after a booster was: 
-        51·3% (95% CI 50·2–52·4)")
-  print(paste0("# Estimated effectiveness in Navarra was :",
-                round((1 - exp(coef(cpp))) * 100, 1), "% (", 
-                round((1 - exp(confint((cpp)))[2]) * 100, 1), "-",
-                round((1 - exp(confint((cpp)))[1]) * 100, 1), ")"))
-  base_analisis
-}
-
-```
-
-
-```{r}
-# ejecutamos el análisis-------------------------------------------------------
-resultado_prueba_2 <- f_analisis(lista = prueba_matching_purrr_2)
-resultado_prueba_2 %>% arrange(survtime)
-
-```
-
-Este resultado índica que la vacuna es efectiva contra las hospitalizaciones.
-=======
 Se realizan los análisis como el artículo de Monge-Hernán
 
 ```{r}
@@ -139,10 +78,13 @@ matching_fcv1_domi <- readRDS(file.path("Resultados",
 ```
 
 ## Análisis principal
->>>>>>> 26b101752e7a8b02a4e017158224e0163e649dfa
 
 ```{r}
-f_analisis(lista = lista_vm3_fih1)
+# análisis con variables de matching como el artículo--------------------------
+f_analisis(lista = matching_fcv1,
+           tiempo_efecto = 7,
+           lim_1 = 0.8,
+           lim_zoom = 0.9)
 
 ```
 
@@ -176,27 +118,12 @@ f_analisis(lista = matching_fcv1_sens2,
 
 
 ```{r}
-# comprobaciones outcomes
-pobana_2 %>% count(is.na(fih1))
-pobana_2 %>% ggplot(aes(x = fih1)) +
-  geom_histogram()
-pobana_2 %>% count(is.na(fcv1))
+# análisis con domicilio como variable de matching-----------------------------
+f_analisis(lista = matching_fcv1_domi,
+           tiempo_efecto = 7,
+           lim_1 = 0.80,
+           lim_zoom = 0.9)
 
 ```
 
-# Programar la replicación completa del articulo
 
-***
-
-## Table 1: Baseline characteristics of the matched study population
-
-grupos de edad, genero, Number of previous SARS-CoV-2 tests, Primary vaccine schedule, Booster dose, Time since completion of primary vaccine schedule [80-150, 151-180, >180]
-
-## Table 2: Estimated effectiveness of an mRNA COVID-19 vaccine booster in individuals* who had completed primary vaccination schedule against COVID-19
-
-Analyses based on 2 083 857 matched pairs who remained under follow-up by day 7 after the booster dose. Overall, Age group (years): [40–59, 60–79, ≥80], Sex, Type of previous vaccination, Time since vaccination completed, Type of booster [mRNA-1273,BNT162b2]
- # Booster group [Events| Risk per 10 000 individuals] No booster group [Events| Risk per 10 000 individuals]  1–risk ratio (95% CI) | Risk difference per 10 000 individuals (95% CI)
-
-## Table 3: Sensitivity analyses of vaccine effectiveness 7–34 days after an mRNA COVID-19 vaccine booster dose // 1–risk ratio (95% CI) | Risk difference per 10 000 individuals (95% CI)
-
-Main analysis | Restricting to people with ≥1 negative lab test at enrolment | with no tests in the 7  days before enrollment |Censoring matched pairs 7 days after the control receives a booster rather than 0 days | Using date of PCR test result rather than subtracting 2 days | Selecting matched controls without replacement | Exact matching by age (year by year vs 5-year groups) | Restricting events to PCR test.
