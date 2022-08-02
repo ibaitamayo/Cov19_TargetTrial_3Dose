@@ -62,6 +62,7 @@ source_rmd("0_b_funciones.rmd")
 
 ***
 
+<<<<<<< HEAD
 ```{r}
 # cargar lista----------------------------------------------------------------
 lista_vm2_fih1 <- readRDS(file.path("Resultados", "lista_vm2_fih1.RDS")) %>% 
@@ -121,9 +122,55 @@ resultado_prueba_2 %>% arrange(survtime)
 ```
 
 Este resultado índica que la vacuna es efectiva contra las hospitalizaciones.
+=======
+Se realizan los análisis como el artículo de Monge-Hernán
+
+```{r}
+# cargar datos-----------------------------------------------------------------
+matching_fcv1 <- readRDS(file.path("Resultados",
+        "matching_fcv1.RDS"))
+matching_fcv1_sens1 <- readRDS(file.path("Resultados",
+        "matching_fcv1_sens1.RDS"))
+matching_fcv1_sens2 <- readRDS(file.path("Resultados",
+        "matching_fcv1_sens2.RDS"))
+matching_fcv1_domi <- readRDS(file.path("Resultados",
+        "matching_fcv1_domi.RDS"))
+
+```
+
+## Análisis principal
+>>>>>>> 26b101752e7a8b02a4e017158224e0163e649dfa
 
 ```{r}
 f_analisis(lista = lista_vm3_fih1)
+
+```
+
+## Sensibilidad 0
+
+```{r}
+
+```
+
+## Sensibilidad 1
+
+```{r}
+# análisis con variables de matching como el artículo--------------------------
+f_analisis(lista = matching_fcv1_sens1,
+           tiempo_efecto = 7,
+           lim_1 = 0.8,
+           lim_zoom = 0.9)
+
+```
+
+## Sensibilidad 2
+
+```{r}
+# análisis con variables de matching como el artículo--------------------------
+f_analisis(lista = matching_fcv1_sens2,
+           tiempo_efecto = 7,
+           lim_1 = 0.8,
+           lim_zoom = 0.9)
 
 ```
 
