@@ -529,3 +529,74 @@ base %>%
 }
 
 ```
+
+## f_tabla_2
+
+A continuación se realiza la función *hacer_grupo_tabla_2*, que permite obtener los resultados de la tabla 2 introduciendo: 
+
+- El estrato de interés (tibble filtrado por condición del estrato con n parejas expuesto/no expuesto).
+- La descripción del estrato.
+- Número de réplicas bootstrap para obtener los intervalos de confianza.
+
+```{r}
+hacer_grupo_tabla_2 <- function(tt_tibble, 
+         group_description,
+         number_of_bootstrap = 500){
+  
+  print(group_description)
+  print(tt_tibble %>% 
+             tabyl(exposicion, caso) %>%
+             adorn_totals(where = c('row', 'col')) %>%
+             adorn_title())  
+  
+  max_survtime <- tt_tibble %>% 
+    summarise(max_survtime = as.numeric(max(survtime))) %>% pull()
+
+  fit <- survfit(Surv(survtime, caso) ~ exposicion, data = tt_tibble) 
+
+  s_unexposed <- Surv(tt_tibble %>% 
+                      filter(exposicion == 0) %>% 
+                      pull(survtime), 
+                    tt_tibble %>% 
+                      filter(exposicion == 0) %>% 
+                      pull(caso))
+  boot_unexposed <- bootkm(s_unexposed, times = max_survtime, B = number_of_bootstrap) 
+
+  s_exposed <- Surv(tt_tibble %>% 
+                      filter(exposicion == 1) %>% 
+                      pull(survtime), 
+                    tt_tibble %>% 
+                      filter(exposicion == 1) %>% 
+                      pull(caso))
+  boot_exposed <- bootkm(s_exposed, times = max_survtime, B = number_of_bootstrap) 
+
+  unexposed_events <- tt_tibble %>% 
+    filter(exposicion == 0, caso == 1) %>% nrow()
+
+  unexposed_risk <- (1 - fit$surv[length(fit$surv)/2]) * 1e4
+
+  exposed_events <- tt_tibble %>% 
+    filter(exposicion == 1, caso == 1) %>% nrow()
+
+  exposed_risk <- (1 - fit$surv[length(fit$surv)]) * 1e4
+
+  point_estimate_rr <- 100 * (1 - (exposed_risk/unexposed_risk))
+  qci <- quantile(100*(1-(1 - boot_exposed)/(1 - boot_unexposed)), c(.025,.975), na.rm = TRUE)
+
+  point_estimate_rabs <- round(unexposed_risk - exposed_risk)
+  qci2 <- quantile((1-boot_unexposed) * 1e4 - (1-boot_exposed) * 1e4, c(.025,.975), na.rm = TRUE)
+
+  tibble(
+       group = group_description, 
+       unexposed_events = unexposed_events,
+       unexposed_risk = round(unexposed_risk),
+       exposed_events = exposed_events,
+       exposed_risk = round(exposed_risk),
+       rr_eff = glue("{round(point_estimate_rr, 1)} % \\
+                     ({round(qci[1], 1)}, {round(qci[2], 1)})"), 
+       rabs_eff = glue("{round(point_estimate_rabs, 2)} \\
+                     ({round(qci2[1])}, {round(qci2[2])})"))
+
+}
+
+```
