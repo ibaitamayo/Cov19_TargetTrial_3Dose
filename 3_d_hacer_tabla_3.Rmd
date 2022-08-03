@@ -63,6 +63,8 @@ suppressMessages(source_rmd("0_b_funciones.rmd"))
 # cargar datos-----------------------------------------------------------------
 matching_fcv1 <- readRDS(file.path("Resultados",
         "matching_fcv1.RDS"))
+matching_fcv1_sens0 <- readRDS(file.path("Resultados",
+        "matching_fcv1_sens0.RDS"))
 matching_fcv1_sens1 <- readRDS(file.path("Resultados",
         "matching_fcv1_sens1.RDS"))
 matching_fcv1_sens2 <- readRDS(file.path("Resultados",
@@ -152,7 +154,7 @@ t3_sens5 <- hacer_fila_tabla_3(matching_fcv1_sens5$tt_tibble,
                     "1–risk ratio (95% CI)", 
                     "Risk difference per 10 000 individuals (95% CI)"),
       table.attr = "style = \"color: black;\"",
-      caption = "Table 3: Sensitivity analyses of vaccine effectiveness 7–34 days after an mRNA COVID-19 vaccine booster dose") %>%
+      caption = "Sensitivity analyses of vaccine effectiveness 7–34 days after an mRNA COVID-19 vaccine booster dose") %>%
   kable_styling(bootstrap_options = c("striped", 
                                       "hover", 
                                       "condensed"),

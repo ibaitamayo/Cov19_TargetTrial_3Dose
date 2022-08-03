@@ -105,6 +105,7 @@ matching_fcv1_sens0 <- matching_fcv1
 matching_fcv1_sens0$tt_tibble <- matching_fcv1_sens0$tt_tibble %>%
   filter(n_0 >= 1)
 
+saveRDS(matching_fcv1_sens0, file.path("Resultados", "matching_fcv1_sens0.RDS"))
 
 f_analisis(lista = matching_fcv1_sens0,
            tiempo_efecto = 7,
