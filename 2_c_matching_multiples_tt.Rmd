@@ -452,7 +452,7 @@ saveRDS(matching_fcv1_sens5, file.path("Resultados",
 ```
 
 
-### Variables de matching: Domicilio
+### Matching: Domicilio
 
 ```{r}
 # hacer ajuste con el domicilio como matching

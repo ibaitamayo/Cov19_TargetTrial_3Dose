@@ -266,8 +266,6 @@ prueba_matching_days <- f_matching_tt(
                 verbose = FALSE,
                 seed = 3)
 
-
-
 ```
 
 
