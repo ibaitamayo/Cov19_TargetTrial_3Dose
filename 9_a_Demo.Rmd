@@ -4,7 +4,7 @@ author: "Francisco Sánchez Sáez"
 date: "`r format(Sys.Date())`"
 output: 
   bookdown::html_document2:
-    keep_md: true 
+    keep_md: false 
     theme: cerulean
     highlight: breezedark
     css: style.css
@@ -33,7 +33,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ```
 
-```{r}
+```{r echo=FALSE, message=FALSE, include=FALSE, warning=FALSE}
 # función para cargar un .Rmd como si se hiciese source de un .r---------------
 source_rmd = function(file, ...) {
   tmp_file = tempfile(fileext = ".R")
@@ -44,7 +44,7 @@ source_rmd = function(file, ...) {
 
 ```
 
-```{r}
+```{r echo=FALSE, message=FALSE, include=FALSE, warning=FALSE}
 # cargar funciones de 0_funciones----------------------------------------------
 if (!exists("se_ha_cargado_f")) {
 suppressMessages(source_rmd("0_b_funciones.rmd"))
@@ -54,9 +54,12 @@ suppressMessages(source_rmd("0_b_funciones.rmd"))
 
 # Introducción
 
+***
+
 En este proyecto se va a realizar la metodología del *Target trial*. Dicha metodología consiste en realizar la emulación de un ensayo clínico a través de datos observacionales. En particular se aplica la metodología descrita en [@Danaei2013]. Empleando esta metodología, se van a emular múltiples ensayos con diferentes tiempos índice. Para cada tiempo índice se aplicaran los criterios de inclusión/exclusión del ensayo clínico a emular. Por lo tanto, vamos a tener individuos que pueden participar en más de un ensayo. En concreto, los no-iniciadores durante todo el periodo, y, los iniciadores, en el periodo previo a la iniciación, van a participar en más de una emulación del ensayo clínico siempre y cuando cumplan el resto de criterios de inclusión/exclusión.
 
 El caso de estudio que se va a analizar es el de la efectivad vacunal de la tercera dosis (segunda para los pacientes de Janssen) en la población general de la comunidad foral de Navarra. En el conjunto de la población española, la efectividad estimada entre los días 7 hasta el 34 después de la tercera dosis, con fechas de vacunación comprendidas entre el 3 de enero y el 6 de febrero de 2022, fue del 51.3% (95% CI 50.2–52.4) [@Monge2022]. 
+
 <br>
 
 # Exclusiones estáticas
@@ -175,8 +178,7 @@ pobana_2 <- pobana_1 %>%
     )) %>%
   mutate(tvc1_label = tvc1) %>% 
   # pautas de Janssen o de la misma vacuna
-  tidylog::filter(tvc1 == "J&J / Janssen" | tvc1 == tvc2)
-pobana_2 %>% count(tvc1, tvc2)
+  filter(tvc1 == "J&J / Janssen" | tvc1 == tvc2)
 
 ```
    
@@ -219,6 +221,8 @@ pobana_2_2022_01_03 <- hacer_flujo_dep(
 
 # Target Trial (TT) emulation
 
+***
+
 ```{r}
 # vectores de matching---------------------------------------------------------
 variables_matching = c(
@@ -235,6 +239,8 @@ variables_matching = c(
 ```
 
 ## TT con una fecha
+
+***
 
 ```{r}
 # matching f_pauta en días
@@ -257,12 +263,10 @@ prueba_matching_days <- f_matching_tt(
                 verbose = FALSE,
                 seed = 3)
 
-prueba_matching_days
-
 ```
 
 
-```{r}
+```{r include=FALSE}
 # check prueba-----------------------------------------------------------------
 prueba_matching_days %>% 
   tabyl(exposicion, caso) %>% 
@@ -293,9 +297,6 @@ prueba_matching_mult_days <- f_matching_tt_mult(
                 follow_up = 34,
                 verbose = FALSE,
                 seed = 3)
-
-prueba_matching_mult_days
-
 
 ```
 
@@ -627,9 +628,14 @@ hacer_tabla_2 <- function(tt_tibble,
 
 ```
 
-```{r}
+```{r include=FALSE, eval=TRUE}
 # ejecutar la función para hacer la tabla--------------------------------------
 tabla_2_demo <- hacer_tabla_2(tt_tibble = prueba_matching_mult_days$tt_tibble)
+
+```
+
+
+```{r}
 tabla_2_demo
 
 ```
