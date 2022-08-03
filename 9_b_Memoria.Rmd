@@ -108,7 +108,7 @@ We estimated risk of laboratory-confirmed SARS-CoV-2 infection using the Kaplan-
 
 ## Comparison
 
-In [@Monge2022], the estimated effectiveness from day 7 to 34 after a booster was 51·3% (95% CI 50·2–52·4).
+In the study of Omicron in Spain [@Monge2022], the estimated effectiveness from day 7 to 34 after a booster was 51·3% (95% CI 50·2–52·4).
 
 In Navarra, we have the following results shown in Tables \@ref(tab:tabla1), \@ref(tab:tabla2) and \@ref(tab:tabla3). 
 
