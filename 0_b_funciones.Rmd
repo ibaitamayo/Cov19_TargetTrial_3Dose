@@ -928,5 +928,91 @@ hacer_tabla_2 <- function(tt_tibble,
            general = glue("Analyses based on {tt_tibble_after_7_days_pairs} matched pairs who remained under follow-up by day 7 after the booster dose"))
 }
 
+```
 
+## f_tabla_3
+
+```{r}
+# hacer tabla 3----------------------------------------------------------------
+hacer_fila_tabla_3 <- function(
+  tt_tibble,  
+  tiempo_efecto = 7,
+  description) {
+
+# arreglar tibble
+  tt_tibble_after_7_days <- tt_tibble %>% 
+  # filtrar parejas con seguimiento después del día 7
+      mutate(survtime = date_end - date_start) %>% 
+      group_by(target_trial_number, par) %>% 
+      filter(min(survtime) >= tiempo_efecto) %>%
+      ungroup()
+  
+  tt_tibble_after_7_days_pairs <- tt_tibble_after_7_days %>% 
+    filter(exposicion == 1) %>% nrow()
+
+# hacer estratos tabla 2
+  table3_overall <- hacer_grupo_tabla_2(
+    tt_tibble = tt_tibble_after_7_days, 
+    group_description = description,
+    number_of_bootstrap = 500)
+  }
+  
+  
+```
+
+```{r}
+hacer_tabla_3 <- function(){
+t3_main <- hacer_fila_tabla_3(matching_fcv1$tt_tibble,
+                      description = "Main analysis")
+
+t3_sens0 <- hacer_fila_tabla_3(matching_fcv1_sens0$tt_tibble,
+                      description = "Restricting to people with &ge; 1
+                      negative lab test at enrolment")
+
+t3_sens1 <- hacer_fila_tabla_3(matching_fcv1_sens1$tt_tibble,
+                      description = "Restricting to persons with no
+                      tests in the 7 days before enrolment")
+
+t3_sens2 <- hacer_fila_tabla_3(matching_fcv1_sens2$tt_tibble,
+                      description = "Censoring matched pairs 7 days
+                      after the control receives a booster rather than 0 days")
+
+t3_sens3 <- hacer_fila_tabla_3(matching_fcv1_sens3$tt_tibble,
+                      description = "subtracting 2 days to the PCR test result
+                      rather than the day of the PCR test result")
+
+t3_sens4 <- hacer_fila_tabla_3(matching_fcv1_sens4$tt_tibble,
+                      description = "Selecting matched controls without
+                      replacement")
+
+t3_sens5 <- hacer_fila_tabla_3(matching_fcv1_sens5$tt_tibble,
+                      description = "Exact matching by age (year by year vs 5-year
+                      groups)")
+
+
+# ensamblar tabla 3
+  table3_ensambled <- bind_rows(
+    t3_main,
+    t3_sens0,
+    t3_sens1,
+    t3_sens2,
+    t3_sens3,
+    t3_sens4,
+    t3_sens5) %>% 
+    select(group, rr_eff, rabs_eff)
+  
+ # kable table 3  
+ kable(table3_ensambled, align = c("c"), escape = FALSE,
+      col.names = c(" ",
+                    "1–risk ratio (95% CI)", 
+                    "Risk difference per 10 000 individuals (95% CI)"),
+      table.attr = "style = \"color: black;\"",
+      caption = "Sensitivity analyses of vaccine effectiveness 7–34 days after an mRNA COVID-19 vaccine booster dose") %>%
+  kable_styling(bootstrap_options = c("striped", 
+                                      "hover", 
+                                      "condensed"),
+                full_width = FALSE, fixed_thead = T) %>%
+  row_spec(0, bold = T, color = "white", background = "dodgerblue",
+           extra_css = "vertical-align:middle")
+}
 ```

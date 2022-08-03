@@ -114,26 +114,60 @@ In Navarra, we have the following results shown in Tables \@ref(tab:tabla1), \@r
 
 <br>
 
-```{r tabla1}
-tabla1 <- readRDS(file.path("Resultados", "tabla_1_matching_fcv1.RDS"))
+```{r}
+# cargar datos-----------------------------------------------------------------
+matching_fcv1 <- readRDS(file.path("Resultados",
+        "matching_fcv1.RDS"))
+matching_fcv1_sens0 <- readRDS(file.path("Resultados",
+        "matching_fcv1_sens0.RDS"))
+matching_fcv1_sens1 <- readRDS(file.path("Resultados",
+        "matching_fcv1_sens1.RDS"))
+matching_fcv1_sens2 <- readRDS(file.path("Resultados",
+        "matching_fcv1_sens2.RDS"))
+matching_fcv1_sens3 <- readRDS(file.path("Resultados",
+        "matching_fcv1_sens3.RDS"))
+matching_fcv1_sens4 <- readRDS(file.path("Resultados",
+        "matching_fcv1_sens4.RDS"))
+matching_fcv1_sens5 <- readRDS(file.path("Resultados",
+        "matching_fcv1_sens5.RDS"))
 
+```
+
+
+```{r tabla1, include=FALSE, eval=TRUE}
+tabla1 <- hacer_tabla_1(matching_fcv1$tt_tibble)
+
+```
+
+```{r}
 tabla1
 
 ```
 
 <br>
 
-```{r tabla2}
-tabla2 <- readRDS(file.path("Resultados", "tabla_2_matching_fcv1.RDS"))
+```{r tabla2, include=FALSE, eval=TRUE}
+set.seed(1)
+tabla2 <- hacer_tabla_2(matching_fcv1$tt_tibble, 
+                        tiempo_efecto = 7)
+```
 
+
+```{r}
 tabla2
 
 ```
 
 <br>
 
-```{r tabla3}
-tabla3 <- readRDS(file.path("Resultados", "tabla_3.RDS"))
+```{r tabla3, include=FALSE, eval=TRUE}
+set.seed(1)
+tabla3 <- hacer_tabla_3()
+
+```
+
+
+```{r}
 
 tabla3
   
@@ -174,13 +208,13 @@ t1_fcv1_longer
 
 <br>
 
-```{r include=FALSE, eval=TRUE}
+```{r t2-fcv1-longer, include=FALSE, eval=TRUE}
 set.seed(1)
 t2_fcv1_longer <- hacer_tabla_2(matching_fcv1_longer$tt_tibble)
 
 ```
 
-```{r t2-fcv1-longer}
+```{r}
 t2_fcv1_longer
 
 ```
@@ -220,15 +254,14 @@ t1_fih1_longer
 
 <br>
 
-```{r include=FALSE, eval=TRUE}
+```{r t2-fih1-longer, include=FALSE, eval=TRUE}
 set.seed(1)
 t2_fih1_longer <- hacer_tabla_2(matching_fih1_longer$tt_tibble)
 
 ```
 
 
-```{r t2-fih1-longer}
-
+```{r }
 t2_fih1_longer
 
 ```
