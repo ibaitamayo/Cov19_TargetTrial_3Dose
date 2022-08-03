@@ -70,6 +70,18 @@ Hace la Tabla 3 como en el artículo de Omicron de España [2].
 
 <br>
 
+# Rpubmed
+
+***
+
+- Demo:
+
+https://rpubs.com/Frasansa/demo_target_trial_emulation[https://rpubs.com/Frasansa/demo_target_trial_emulation]
+
+- Report:
+
+https://rpubs.com/Frasansa/tt_report[https://rpubs.com/Frasansa/tt_report]
+
 # Referencias
 
 ***
