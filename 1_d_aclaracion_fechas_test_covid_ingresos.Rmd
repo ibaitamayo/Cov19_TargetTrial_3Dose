@@ -62,27 +62,41 @@ suppressMessages(source_rmd("0_b_funciones.rmd"))
 
 ***
 
-Se cargan las bases: 
-
-- pobana_2, donde se han aplicado algunos criterio de exclusión (sociosanitarios, residentes y trabajadores en educación).
-
-- test220613_cleaned, donde para cada persona está como máximo un test por día, con la fecha, el tipo de test y el resultado del mismo.
+Se cargan las bases originales: 
 
 ```{r cargar-datos, echo=FALSE, eval=TRUE, message=FALSE, warning=FALSE}
 # cargar datos-----------------------------------------------------------------
-pobana_2 <- readRDS(file = file.path("Resultados", "pobana_2.RDS"))
-test220613_cleaned <- readRDS(file = file.path("Datos", "Procesados", 
-                                             "test220613_cleaned.RDS"))
+poblacion_Pruebas_dtcas_06_2022 <- fread(file = file.path("Datos", "Brutos",
+                                   "poblacion_Pruebas_dtcas_06_2022.csv"))
+poblacion_Vacunas_Infecc_06_2022 <- fread(file = file.path("Datos", "Brutos", 
+                                   "poblacion_Vacunas_Infecc_06_2022.csv"))
 
 ```
-
-Se define el tiempo a partir del cual se quiere revisar las fechas (el 3 de enero de 2022, por ser el momento en el que omicron paso a ser dominante en España).
 
 ```{r}
 # inicio omicron navarra
 tiempo_0 <- ymd("2022-01-03")
 
 ```
+
+```{r}
+poblacion <- poblacion_Vacunas_Infecc_06_2022 %>% 
+  clean_names("snake") %>% 
+  mutate(across(starts_with("fecha"), fymd))
+
+poblacion %>% 
+  filter(fecha_ingreso_1 >= tiempo_0) %>%
+  filter(fecha_ini_covid_1 > fecha_ingreso_1) %>% 
+  mutate(d = fecha_ini_covid_1 - fecha_ingreso_1) %>% 
+  filter(d > 1) %>% 
+  arrange(d)
+
+```
+
+
+Se define el tiempo a partir del cual se quiere revisar las fechas (el 3 de enero de 2022, por ser el momento en el que omicron paso a ser dominante en España).
+
+
 
 
 ```{r}
@@ -110,15 +124,52 @@ pobana_con_test <- pobana_2  %>%
          !is.na(fcv1) |
          !is.na(fih1))
 
+# comprobar na fcv1 y f_test
+pobana_con_test %>% filter(is.na(fcv1), is.na(f_test_positivo_1))
+# 67 individuos sólo tienen fecha de ingreso hospitalario
+
 # comprobar que sí sea na fcv1 pero no f_test
 pobana_con_test %>% filter(is.na(fcv1), !is.na(f_test_positivo_1)) # OK
+# Todos los individuos que tienen una f_test_positivo tienen fcv1
+
 # comprobar que no sea na fcv1 pero sí f_test
 pobana_con_test %>% filter(!is.na(fcv1), is.na(f_test_positivo_1))
 # 455 individuos que tienen fcv1 pero ningún f_test_positivo
 
-pobana_con_test %>% 
+pobana_con_test %>% count(fcv1 - f_test_positivo_1, sort = TRUE)
+
+id_un_dia <- pobana_con_test %>% 
   mutate(diferencia_fcv1_f_test_1 = fcv1 - f_test_positivo_1) %>%
-  skim(diferencia_fcv1_f_test_1)
+  arrange(diferencia_fcv1_f_test_1) %>% 
+  filter(diferencia_fcv1_f_test_1 == 1) %>% 
+  pull(id)
+
+ test220613_cleaned %>% 
+  filter(tpos == TRUE) %>% 
+   filter(id %in% id_un_dia) %>% 
+   count(tori, tprof)
+
+ test220613_cleaned %>% 
+  filter(tpos == TRUE) %>% 
+   # filter(id %in% id_un_dia) %>% 
+   count(tori, tprof)
+ 
+test220613 <- fread(file.path("Datos", "Brutos",
+                                   "poblacion_Pruebas_dtcas_06_2022.csv"),
+                        col.names = c(
+                         "tori",
+                         "id",
+                         "tfreg",
+                         "tfval",
+                         "ct",
+                         "tmot",
+                         "tres",
+                         "tcen",
+                         "tamb",
+                         "tprof",
+                         "tmot2"))
+  
+test220613 %>% mutate(d = round(as.numeric(tfreg-tfval)/(3600*24))) %>% count(d)
 
 ```
 

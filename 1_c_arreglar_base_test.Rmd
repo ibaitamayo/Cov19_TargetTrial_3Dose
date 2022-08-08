@@ -14,7 +14,7 @@ output:
       smooth_scroll: yes
       toc_depth: 3     
 editor_options: 
-  chunk_output_type: console
+  chunk_output_type: inline
 ---
 
 
@@ -90,15 +90,12 @@ Nos interesa sacar o bien un basal (antes de mayo 2020), o bien hacer algo dinam
 ```{r datos}
 # Escoger pruebas con pcr-antigeno---------------------------------------------
 test220613 %>% count(tori)
-# test220613 <- test220613 
-
 
 test0 <- test220613 %>%
   # quitar algunas variables
-  select(-c(tamb,tmot,tcen,tfval)) %>% 
+  select(-c(tamb, tmot, tcen)) %>% 
   # seleccionar PCR y antígenos
   filter(tori %in% c("PCR","Antigenos"))  # 1627129
-
 
 ```
 
@@ -110,7 +107,7 @@ test1 <- test0 %>%
          tpos = tres == "Positivo", 
          profr = tprof == "Profesional") %>%
   select( -c(tres)) %>% 
-  mutate(ftes = as.Date(tfreg)) %>% 
+  mutate(ftes = as.Date(tfval)) %>% 
   select(-tfreg) %>% 
   # seleccionar como mucho un test por persona y día
   tidylog::distinct(id, ftes, .keep_all = TRUE)   # 1581855
