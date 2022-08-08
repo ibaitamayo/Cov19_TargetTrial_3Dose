@@ -1,0 +1,203 @@
+---
+title: "Preprocesado test-negative case-control"
+output: 
+  html_document:
+    code_folding: show
+    highlight: espresso
+    css: style.css
+    keep_md: yes
+    number_sections: yes
+    theme: readable
+    toc: yes  
+    toc_float:
+      collapsed: yes
+      smooth_scroll: yes
+      toc_depth: 3     
+editor_options: 
+  chunk_output_type: console
+---
+
+
+```{r set-global-options, echo = FALSE}
+knitr::opts_chunk$set(eval = TRUE, 
+                      echo = TRUE, 
+                      cache = FALSE,
+                      include = TRUE,
+                      collapse = FALSE,
+                       dependson = NULL,
+                      engine = "R", # Chunks will always have R code, unless noted
+                      error = TRUE,
+                      fig.path="Figures/",  # Set the figure options
+                      fig.align = "center", 
+                      fig.width = 12,
+                      fig.height = 12)
+
+```
+
+```{r librerias, echo=FALSE, message=FALSE, include = FALSE, warning=FALSE}
+# source("0_a_librerias.R")
+# ya se cargan cuando se carguen las funciones
+
+```
+
+```{r}
+# función para cargar un .Rmd como si se hiciese source de un .r---------------
+source_rmd = function(file, ...) {
+  tmp_file = tempfile(fileext=".R")
+  on.exit(unlink(tmp_file), add = TRUE)
+  knitr::purl(file, output=tmp_file)
+  source(file = tmp_file, ...)
+}
+
+```
+
+```{r}
+# cargar funciones de 0_funciones----------------------------------------------
+source_rmd("0_b_funciones.rmd")
+
+```
+
+```{r datos}
+# cargar datos----------------------------------------------------------------
+# obentido en 1_c_integrar_test.Rmd
+
+test220613_cleaned <- readRDS("~/Dropbox/ju/Asesorias/FranciscoSanchezSaez/targettrial/covidvacunas/Cov19_TargetTrial_3Dose/Datos/Procesados/test220613_cleaned.RDS")
+
+```
+
+# Desplegar test como base del T0
+
+***
+
+En este caso hay que partir de la tabla long de test, como hay varios por persona, se escogen para cada persona su primer test positivos y el conjunto de los negativos
+
+
+Nos interesa, para replicar el trabajo (https://www.nejm.org/doi/pdf/10.1056/NEJMoa2203965) centrarnos en  (a "matched, test-negative, case–control study in Qatar from December 23, 2021, through February 21, 2022".
+
+Otros trabajos de Qatar (https://www.nejm.org/doi/full/10.1056/NEJMc2117933),  -con un como ejemplo de carta a NEJM- diseño prospectivo
+
+
+```{r f_test}
+
+# se trata de crear una funcion que, a partir de una ventana, escoja los test positivos (los primeros aparecidos en esa ventana) y todos los negativos (a lo ancho para tener como unidad la persona?, o a lo largo persona-test? )
+
+# si aplicamos los criterios de inclusion del trabajo lancet-spain deberia de usar pobana_0
+
+
+# función que crear el negative test--------------------------------------------
+## muy mejorable
+
+# parametro: ventana temporal/ datos/ tiempo para excluir secuencia negativo-postivo
+# acciones: escoger entre los test positivos de un sujeto el primero 
+#           eliminar los test negativos posteriores 
+#           eliminar los test negativos anteriores si es menor de cierto tiempo
+# resultado: un data frame con fecha del test(ftes), resultado(0-,1+),n(nº de ese test en la experiencia de la persona), id
+# 
+# 
+# test0 <- test220613_cleaned
+# rm(test220613_cleaned)
+# 
+# test0 <- test0 %>% group_by(id) %>% arrange(ftes) %>% mutate(n=1:n())  %>% ungroup()
+# data=test0
+# tiempo_i="2021-12-23"
+# tiempo_f="2022-2-21"
+
+f_test0 = function(data,  tiempo_i,  tiempo_f,  tbnp=7) {
+  require(tidyr)
+  tiempo_i <- ymd(tiempo_i)
+  tiempo_f <- ymd(tiempo_f)  
+  data = data %>% filter(tiempo_i<=ftes & ftes<=tiempo_f) %>% dplyr::select(id,n,ftes,tpos)
+ 
+## como mantemos n, la unidad seguira siendo la persona test, pero ahora tenemos una columna para test+/- y toma como valor la fecha
+
+  # escoger el primer positivo
+wide_test <- data  %>% spread(key=tpos, value=ftes) # 248015
+names(wide_test)[3:4]=c("test_0", "test_1") 
+wide_test <- wide_test %>% as_tibble() %>% group_by(id)
+wide_test <- wide_test %>% filter(!is.na(test_0) | min_rank(desc(test_1)) <= 1) 
+
+ # eliminar los negativos posteriores
+long_test <- wide_test %>% gather(res,ftes,test_0:test_1) %>% na.omit() %>% group_by(id) %>% arrange(n)  %>% mutate(no=lag(res)=="test_1") %>% filter(is.na(no) | !no)  %>% dplyr::select(-no) 
+
+## tbt tiempo entre test, eliminar negativos seguidos de positivo en un lapso corto ( parametro: tbnp)
+long_test <- long_test %>% mutate(res=as.numeric(str_sub(res,-1)),tbt=ifelse(lead(res)=="1",lead(ftes)-ftes,NA)) %>% filter(is.na(tbt) | tbt<(tbnp +1)) %>%  dplyr::select(-tbt) %>% data.frame()
+}
+
+
+lt=f_test0(data=test0, tiempo_i="2021-12-23",tiempo_f="2022-2-21", tbnp=7)
+
+
+#table(long_test$tbt)
+#    1    2    3    4    5    6    7    8    9   10   11   12   13   14   15   16 
+# 1837 1850 1241  940  767  666  664  464  376  388  362  347  359  300  278  276 ...
+# decido eliminar los test negativos que se siguen en menos de 8 dias de uno positivo (sin tener en cuenta el tipo -se podria matizar si es autodiagnostico de antigeno vs pcr)
+
+## casos para comprobaciones
+#%>% filter(no!=TRUE) %>% select(-no)
+# escoger el primer positivo (ej 1001264 o 100128 tiene 2!) y eliminar todos tus test posteriores (ej de 1000736
+# 218331  al hacerlo asi, elimina casos positivos si se acompaña de negativos (ej 1000736)
+
+
+
+
+```
+
+
+```{r f_exposicionantecente}
+
+## las funciones ya creadas 1_b_creacion_pobana_0, 2_a y 2_b exclusiones
+## con todo esto se consigue determinar la población incluida (id), y se eliminan de test0 la poblacion 
+
+#
+# objetivo: clasificar la exposicion previa
+# parametro: dia 0 -test0- [puede que haya que aplicar un lag]/ datos
+# acciones: seleciona de pobana las variables con las que trabajar matching y antecedentes/wexposiciones 
+#           elimina las fechas de exposicion posteriores a t0
+#           elabora la tipologia de exposiciones (mexp: vacunas e infeccion)
+#           obtiene el tiempo desde la ultima exposicion
+
+#levels(data$mexp) 
+# "0_ncvvc":  no antecedente de infeccion, no vacunado
+# "1dvc_cv":  antecedente de infeccion, vacuna incompleta
+# "1dvc_ncv": no antecedente de infeccion, vacuna incompleta
+# "2dvc_cv":  antecedente de infeccion, vacuna completa 
+# "2dvc_ncv": no antecedente de infeccion, vacuna completa 
+# "3dvc_cv":  antecedente de infeccion, vacuna completa + 3dosis
+# "3dvc_ncv": no antecedente de infeccion, vacuna completa + 3dosis
+ 
+
+f_exposicionantecente= function(data, fecha0) {
+  fecha0=ymd(fecha0)
+  data= data %>% select(id,gen,gedad,fdef,migran,domi,czbs,tvc1,fcv1,fvc1,fvc2,fvc3) 
+  data=data %>% mutate_at(vars(fcv1,fvc1,fvc2,fvc3), ~ifelse(.>=fecha0,NA,.))
+  data=data %>% mutate_at(vars(fcv1,fvc1,fvc2,fvc3), ~as.Date.numeric(., origin ="1970-01-01"))
+ data= data %>% mutate(
+    mexp = factor(case_when(
+       is.na(fcv1) & is.na(fvc1) ~ "0_ncvvc",
+       is.na(fcv1) & !is.na(fvc3) ~ "3dvc_ncv",
+       is.na(fcv1) &  tvc1 == "J&J / Janssen" ~ "2dvc_ncv",
+       is.na(fcv1) & is.na(fvc3) & !is.na(fvc2) ~ "2dvc_ncv",
+       is.na(fcv1) & is.na(fvc2) & !is.na(fvc1) ~ "1dvc_ncv",
+       !is.na(fcv1) & !is.na(fvc3) ~ "3dvc_cv",
+       !is.na(fcv1) &  tvc1 == "J&J / Janssen" ~ "2dvc_cv",
+       !is.na(fcv1) & is.na(fvc3) & !is.na(fvc2) ~ "2dvc_cv",
+       !is.na(fcv1) & is.na(fvc2) & !is.na(fvc1) ~ "1dvc_cv")))
+      data= data %>% mutate(texp = factor(case_when(
+       is.na(fcv1) & !is.na(fvc3) ~ fecha0-fvc3,
+       is.na(fcv1) &  tvc1 == "J&J / Janssen" ~ fecha0-fvc1,
+       is.na(fcv1) & is.na(fvc3) & !is.na(fvc2) ~ fecha0-fvc2,
+       is.na(fcv1) & is.na(fvc2) & !is.na(fvc1) ~ fecha0-fvc1,
+       !is.na(fcv1) & !is.na(fvc3) ~ fecha0-max(fcv1,fvc3),
+       !is.na(fcv1) &  tvc1 == "J&J / Janssen" ~ fecha0-max(fcv1,fvc1),
+       !is.na(fcv1) & is.na(fvc3) & !is.na(fvc2) ~ fecha0-max(fcv1,fvc2),
+       !is.na(fcv1) & is.na(fvc2) & !is.na(fvc1) ~ fecha0-max(fcv1,fvc1))))
+  }
+
+
+
+```
+
+
+
+
+

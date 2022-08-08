@@ -14,7 +14,7 @@ output:
       smooth_scroll: yes
       toc_depth: 3     
 editor_options: 
-  chunk_output_type: inline
+  chunk_output_type: console
 ---
 
 
@@ -31,11 +31,13 @@ knitr::opts_chunk$set(eval = TRUE,
                       fig.align = "center", 
                       fig.width = 12,
                       fig.height = 12)
+
 ```
 
 ```{r librerias, echo=FALSE, message=FALSE, include = FALSE, warning=FALSE}
 # source("0_a_librerias.R")
 # ya se cargan cuando se carguen las funciones
+
 ```
 
 ```{r}
@@ -46,6 +48,7 @@ source_rmd = function(file, ...) {
   knitr::purl(file, output = tmp_file)
   source(file = tmp_file, ...)
 }
+
 ```
 
 ```{r}
@@ -53,12 +56,14 @@ source_rmd = function(file, ...) {
 if (!exists("se_ha_cargado_f")) {
 suppressMessages(source_rmd("0_b_funciones.rmd"))
 }
+
 ```
 
 ```{r datos}
 # cargar datos----------------------------------------------------------------
 pobana_0 <- readRDS(file = file.path("Datos", "Procesados", "pobana_0.RDS"))
 # 645209 
+
 test220613 <- fread(file.path("Datos", "Brutos",
                                    "poblacion_Pruebas_dtcas_06_2022.csv"),
                         col.names = c(
@@ -73,11 +78,12 @@ test220613 <- fread(file.path("Datos", "Brutos",
                          "tamb",
                          "tprof",
                          "tmot2")) # 1633910
+
 ```
 
 # Agregrar test a pobana_0
 
-***
+
 
 Nos interesa sacar o bien un basal (antes de mayo 2020), o bien hacer algo dinamico, de modo que lo que guardemos sea las pcr realizadas antes de estar infectado o vacunarse, o 28/05/21.
 
@@ -85,11 +91,15 @@ Nos interesa sacar o bien un basal (antes de mayo 2020), o bien hacer algo dinam
 # Escoger pruebas con pcr-antigeno---------------------------------------------
 test220613 %>% count(tori)
 # test220613 <- test220613 
+
+
 test0 <- test220613 %>%
   # quitar algunas variables
-  select(-c(tamb, tmot, tcen, tfval)) %>% 
+  select(-c(tamb,tmot,tcen,tfval)) %>% 
   # seleccionar PCR y antígenos
-  filter(tori %in% c("PCR", "Antigenos"))  # 1627129
+  filter(tori %in% c("PCR","Antigenos"))  # 1627129
+
+
 ```
 
 
@@ -114,6 +124,7 @@ test220613_cleaned <- test1 %>%
   arrange(ftes) %>%
   mutate(n = 1:n()) %>% 
   ungroup()
+
 ```
 
 
@@ -121,5 +132,5 @@ test220613_cleaned <- test1 %>%
 # guardar base test------------------------------------------------------------
 saveRDS(test220613_cleaned, file = file.path("Datos", "Procesados", 
                                              "test220613_cleaned.RDS"))
-```
 
+```
