@@ -1,0 +1,478 @@
+---
+title: "Obtención target trial múltiple"
+output: 
+  html_document:
+    code_folding: show
+    highlight: espresso
+    css: style.css
+    keep_md: yes
+    number_sections: yes
+    theme: readable
+    toc: yes  
+    toc_float:
+      collapsed: yes
+      smooth_scroll: yes
+      toc_depth: 3     
+editor_options: 
+  chunk_output_type: console
+---
+
+
+```{r set-global-options, echo = FALSE}
+knitr::opts_chunk$set(eval = TRUE, 
+                      echo = TRUE, 
+                      cache = FALSE,
+                      include = TRUE,
+                      collapse = FALSE,
+                       dependson = NULL,
+                      engine = "R", # Chunks will always have R code, unless noted
+                      error = TRUE,
+                      fig.path="Figures/",  # Set the figure options
+                      fig.align = "center", 
+                      fig.width = 12,
+                      fig.height = 12)
+```
+
+
+```{r libraries, echo=FALSE, message=FALSE, include = FALSE, warning=FALSE}
+library(readxl)
+library(readr)
+library(data.table)
+library(lubridate)
+
+library(tidyverse)
+library(knitr)
+library(kableExtra)
+library(plyr)
+library(dplyr)
+library(ggpubr)
+library(scales)
+library(stringr)
+
+library(plotly)
+library(Matching)
+#library(MatchIt)
+
+library(plotrix)  # para sacar piramides descriptivas de las tablas_analisis
+
+library(ggpmisc) # para series temporales
+
+library(survminer)
+library(survival)
+
+```
+
+
+
+## f_exclusion: criterios de exclusión tiempo-dependientes
+
+* *parametro*: datos + fecha 0 de arranque -primera cohorte-
+* *entrada*: tabla filtrada por f_tabla0
+* *salida*: tabla de analisis 
+            * filtra y excluye aquellos con:
+            
+                     + con fecha de 3 dosis anterior al t0/
+                     + fallecidos o /
+                     + infectados previamente/
+                                                     
+
+```{r, message=FALSE, include = TRUE, warning=FALSE}
+
+f_exclusion= function(data, fecha0) {
+data= data %>% filter(is.na(fvc3) | fecha0 <= fvc3,
+           is.na(fcv1) | fecha0 < fcv1,
+           is.na(fdef) |  fecha0 < fdef)
+return(data)           
+}
+
+
+```
+
+
+## f_exposicionseguimiento: criterios de exclusión tiempo-dependientes
+
+* *parametro*: datos + fecha 0 de arranque -primera cohorte- **+ duración del seguimiento**
+* *entrada*: tabla filtrada por f_tabla0 y f_exclusion
+* *salida*: tabla de analisis:
+
+            * genera variable `exposicion`/
+            * recoge fecha inicio de la cohorte/
+            * genera fecha fin seguimiento/censura del sujeto/
+                                      
+  
+
+```{r exposicionseguimiento, message=FALSE, include = TRUE, warning=FALSE}
+
+f_exposicionseguimiento= function(data, fecha0, n=60) {
+  data= data %>% mutate(
+    exposicion = if_else(fecha0 == fvc3 & !is.na(fvc3), 1, 0),
+    date_start = fecha0,
+    date_end = fecha0 + n,
+    date_end = ifelse(!is.na(fdef) & fdef < date_end, fdef, date_end),
+    date_end = ifelse(exposicion == 0 & !is.na(fvc3) & fvc3 < date_end,  fvc3, date_end),
+    date_end = as.Date.numeric(date_end, origin ="1970-01-01" )
+  )
+ return(data) 
+}
+```
+
+## f_matching: creacion de parejas
+
+Esta es la función que pretende ser más genérica
+
+* *parametros*: 
+    + datos 
+    + fecha 0 de arranque -primera cohorte- 
+    + vector de variables para el emparejamiento
+    + variable de resultados (por defecto en este caso `fecha primera infección`)
+    + f_exclusion
+    + f_exposicionseguimiento
+ * *entrada*: tabla filtrada por f_tabla0 y f_exclusion
+ * *salida*: tabla de analisis:
+ 
+            + genera variable `exposicion`/
+            + recoge fecha inicio de la cohorte/
+            + genera fecha fin seguimiento/censura del sujeto/
+                                      
+   
+      los motivos de censura **de una pareja** son:
+                + fallece
+                + el miembro no expuesto se vacuna 
+ 
+
+
+
+```{r, message=FALSE, include = TRUE, warning=FALSE}
+
+
+## en algunos de los trabajos sobre eficacia vacunal, ya plantea que el analisis de efectividad se aplicara a partir de cierto umbral sobre el momento 0, ej a partir del dia 7. Esto me lleva a plantearme si aplico esto aqui a la propia definicion de caso.. aqui solo se pregunta si la fecha de la variable resultado es anterior al fin de seguimiento.. (habria que incorporar si tambien es superior a la de inicio + umbral).. pero no creo que este sea el procedimiento, sino mas en el analisis, pues sesgaria
+
+
+f_matching <- function(fecha0, data, vector_match, out="fcv1", f_exclusion, f_exposicionseguimiento) {
+  fecha0=ymd(fecha0)
+  print(fecha0)
+  print(c("out= ",out))
+x= data  %>% f_exclusion(fecha0) %>% f_exposicionseguimiento(fecha0) 
+
+try({
+    greedymatch <- Matching::Match(Tr = x$exposicion, M = 1, X = x[vector_match], exact = TRUE, ties = FALSE)
+    a <- x[unlist(greedymatch[c("index.treated", "index.control")]),]
+    par <- rep(1:(nrow(a)/2), 2)
+  
+    df=bind_cols(par = par, a) %>%
+      group_by(par) %>%
+      mutate(date_end = min(date_end),
+             # creo la variable de resultado y finalizo el seguimiento cuando aparece)
+             caso = ifelse(!!as.name(out) <= date_end & !is.na(!!as.name(out)), 1, 0),
+             date_end = ifelse(caso==1, !!as.name(out), date_end),
+             date_end = as.Date.numeric(date_end, origin ="1970-01-01")) %>%
+      data.frame() 
+    # print(c("n= ",nrow(df)))
+    # print(c("casos= ",df %>% filter(caso==1) %>% nrow()))
+  }
+  )
+}
+
+
+
+```
+
+
+###  Sobre el vector de variables de emparejamiento  ej
+
+> Referido al dia 2022-01-14, y aplicando el vector de cruze:
+
+ * edad ("gedadn"), 
+ * nº de test negativos previos ("n_0"): n=12894 individuos
+  
+>  al emparejar por:
+
+      + tiempo desde la segunda vacuna(tv2)-> 11469, 
+      + genero->10542, 
+      + zbs-> 10542, 
+      + migrante->9804, 
+      + vacunas de grupe(vgp20 + vgp21)-> 8180, 
+      + tipo de segunda vacuna(tvc2)->8020,
+      + numero de convivientes (truncado en 8): ucn8=4364
+
+
+> solo por domicilio, extraigo aquellos domicilios con menos de 3 personas
+
+tab0220103d <- tab0220103 %>% filter(!is.na(domi)) %>% group_by(domi) %>% filter(n_distinct(id)>3) %>% ungroup()  #-42983 personas-
+
+summary(tab0220103$domi)
+
+## construcción de las diversas cohortes
+
+```{r, message=FALSE, include = TRUE, warning=FALSE}
+
+# se define el vector de emparejamiento
+vector_match=c("czbs","genn" ,"gedadn", "n_0", "tvc2n", "tv2", "migran","vgp20","vgp21","ucn8") # 1
+vector_match=c("czbs","genn" ,"gedadn", "n_0", "tvc2n", "tv2", "migran","vgp20","vgp21") # 2
+vector_match=c("domi") # 3
+
+# fecha de inicio y fin: secuencia de fechas
+fecha_inicio=dmy("03/01/2022")
+fecha_fin=dmy("06/02/2022") 
+fechas <- seq.Date(from = fecha_inicio, to = fecha_fin, by = "days")
+
+# se genera una lista con las diversas cohortes diarias 
+lista <- lapply(fechas,
+                f_matching, 
+                data=tab0220103,  # si es domi: tab0220103d
+                vector_match=vector_match, #2
+                out="fcv1",
+                f_exclusion=f_exclusion,
+                f_exposicionseg=f_exposicionseguimiento)
+
+```
+
+
+## f_analisis:
+
+* *parametros*: 
+* *entrada*: lista de cohortes con secuencia de t0-diaria
+* *salida*:  
+        + Kaplan-Meier -grafico
+        + Cox- RR- efectividad: 1-RR
+ 
+
+```{r nueva programacion con purrr}
+# se trata de aplicar https://adv-r.hadley.nz/
+# Functional programming languages, Functionals, Function factories, Function operator
+
+
+## incorporo en la funcion el manejo de exclusiones/ seguimiento -generacion de outcome... habria que resolver si se quiere aplicar como funciones-argumentos de matching.. armonizar los enviroment.., creo que no merece la pena, mejor hacerlo mas compapto para poder usar map sobre las fechas
+
+## quizas deberia meter un map_ para que genere un data.frame, habria que estudiarlo mas
+
+## en pp (parametros): lo que ahora defino es  las fechas (fecha) -sobre la que aplicar la funcion-, y los parametros duracion del seguimiento(n), la variable resultado (out), los datos (data)...
+
+
+# 
+# out="fcv1"
+# n=60
+# vector_match
+# data=tab0220103
+
+f_matching_purr <- function(fecha0, data, vector_match, out="fcv1",n=60 ) {
+
+  fecha0=ymd(fecha0)
+  print(fecha0)
+  print(c("out= ",out))
+ 
+  ## exclusiones
+  data= data %>% filter(is.na(fvc3) | fecha0 <= fvc3,
+           is.na(fcv1) | fecha0 < fcv1,
+           is.na(fdef) |  fecha0 < fdef)
+  ## exposicionseguimiento
+   data= data %>% mutate(
+    exposicion = if_else(fecha0 == fvc3 & !is.na(fvc3), 1, 0),
+    date_start = fecha0,
+    date_end = fecha0 + n,
+    date_end = ifelse(!is.na(fdef) & fdef < date_end, fdef, date_end),
+    date_end = ifelse(exposicion == 0 & !is.na(fvc3) & fvc3 < date_end,  fvc3, date_end),
+    date_end = as.Date.numeric(date_end, origin ="1970-01-01" ))
+
+
+
+try({
+    greedymatch <- Matching::Match(Tr = data$exposicion, M = 1, X = data[vector_match], exact = TRUE, ties = FALSE)
+    a <- data[unlist(greedymatch[c("index.treated", "index.control")]),]
+    par <- rep(1:(nrow(a)/2), 2)
+  
+    df=bind_cols(par = par, a) %>%
+      group_by(par) %>%
+      mutate(date_end = min(date_end),
+             # creo la variable de resultado y finalizo el seguimiento cuando aparece)
+             caso = ifelse(!!as.name(out) <= date_end & !is.na(!!as.name(out)), 1, 0),
+             date_end = ifelse(caso==1, !!as.name(out), date_end),
+             date_end = as.Date.numeric(date_end, origin ="1970-01-01")) %>%
+      data.frame() 
+    return(df)
+    # print(c("n= ",nrow(df)))
+    # print(c("casos= ",df %>% filter(caso==1) %>% nrow()))
+  }
+  )
+}
+
+# fecha de inicio y fin: secuencia de fechas
+fecha_inicio=dmy("03/01/2022")
+fecha_fin=dmy("06/02/2022") 
+fechas <- seq.Date(from = fecha_inicio, to = fecha_fin, by = "days")
+
+fechas
+
+
+
+
+param=tribble(
+  ~fechas, ~vmatch, ~data, ~out, ~n,
+  fechas,   c("czbs","genn" ,"gedadn", "n_0", "tvc2n", "tv2", "migran","vgp20","vgp21"), tab0220103, "fcv1",60,
+  fechas,   c("czbs","genn" ,"gedadn", "n_0", "tvc2n", "tv2", "migran","vgp20","vgp21"), tab0220103, "fih1",120,
+  fechas, "domi",tab0220103d,"fcv1",60,
+  fechas, "domi",tab0220103d,"fih1",120,
+)
+
+
+
+
+
+#multparam <- function(param=param) {
+    out <- vector("list",  nrow(param))
+for (i in 1:nrow(param)) {
+out[[i]] <-map(param$fechas[[i]],
+                f_matching_purr, 
+               vector_match= param$vmatch[[i]],
+                out=param$out[[i]],
+                n=param$n[[i]],
+                data=param$data[[i]]  # si es domi: tab0220103d
+)
+}
+
+  
+# momenclatura fechas-match-out-fu
+names(out)=c("e3f6_m9_ofcv_fu60","e3f6_m9_ofih_fu120","e3f6_m1_ofcv_fu60","e3f6_m1_ofih_fu120")
+
+setwd("~/Dropbox/ju/Asesorias/FranciscoSanchezSaez/targettrial/covidvacunas/Rdata")
+ 
+save(out,file="out4.Rdata")
+# args2 <- list(mean = mu, sd = sigma, n = n)
+# args2 %>% 
+#   pmap(rnorm) %>% 
+#   str()
+# 
+# sim <- tribble(
+#   ~f,      ~params,
+#   "runif", list(min = -1, max = 1),
+#   "rnorm", list(sd = 5),
+#   "rpois", list(lambda = 10)
+# )
+# sim %>% 
+#   mutate(sim = invoke_map(f, params, n = 10))
+#   
+ names(out)[4]
+  f_analisis(out[[2]])
+# 
+#https://r4ds.had.co.nz/model-building.html
+
+```
+
+
+```{r analisis, message=FALSE, include = TRUE, warning=FALSE}
+
+
+
+#subset = time >= 7  (analsisis a partir del 7º dia) 
+
+## una explicación de la diferencia inicial, los primeros dias, entre boosted y no x 3 dosis, esta en el numero de test realizados:
+
+# Supplementary Figure 1. Number of laboratory tests in the booster and control groups by day of follow-up and by calendar date
+
+# sacar este descriptivo!
+
+
+f_analisis <- function(lista) {
+  base_analisis <- bind_rows(lista[sapply(lista, class) == "data.frame"])
+ print(table(base_analisis$caso))
+ 
+  base_analisis <- base_analisis %>% mutate(survtime=date_end-date_start)
+ # analisis a partir del septimo dia
+  
+  
+fit <- survfit(Surv(survtime, caso) ~ exposicion, data=base_analisis) # , subset=survtime>7
+
+
+print(ggsurvplot(fit, data = base_analisis, xlab="days of follow-up",
+           ylab="Survival probability",
+           main="Product-Limit Survival Estimates", ylim=c(0.85,1), risk.table = TRUE, conf.int = TRUE))
+
+## hay que resolver mejor esto de hacer el cox sobre un intervalo.. (a partir del dia 7).. aqui solo indico que se le agrege 7 dias al start (pero no he excludio los casos que aparecen en esos primeros 7 dias!!)
+### cox
+cpp=coxph(formula = Surv(survtime, caso) ~ exposicion, data = base_analisis, subset=survtime>7)
+print("# Estimated effectiveness from day 7 to 34 after a booster was 51·3% (95% CI 50·2–52·4) -toda España-")
+   print(paste0("# Estimated effectiveness in Navarra was :",round((1-exp(coef(cpp)))*100,1), "% (", round((1-exp(confint((cpp)))[2])*100,1),"-", round((1-exp(confint((cpp)))[1])*100,1),")"))
+}
+
+f_analisis(out[[4]])
+
+
+names(out)
+
+```
+
+
+
+```{r difference in diagnostic intensity between groups, tabla 1, 2 y 3 }
+
+## se trata de programar la replicación completa del articulo
+
+
+# Table 1: Baseline characteristics of the matched study population ####
+## grupos de edad, genero, Number of previous SARS-CoV-2 tests, Primary vaccine schedule, Booster dose, Time since completion of primary vaccine schedule [80-150, 151-180, >180]
+
+# Table 2: Estimated effectiveness of an mRNA COVID-19 vaccine booster in individuals* who had completed primary vaccination schedule against COVID-19
+# *Analyses based on 2 083 857 matched pairs who remained under follow-up by day 7 after the booster dose.
+# Overall, Age group (years): [40–59, 60–79, ≥80], Sex, Type of previous vaccination, Time since vaccination completed, Type of booster [mRNA-1273,BNT162b2]
+ # Booster group [Events| Risk per 10 000 individuals] No booster group [Events| Risk per 10 000 individuals]  1–risk ratio (95% CI) | Risk difference per 10 000 individuals (95% CI)
+
+# Table 3: Sensitivity analyses of vaccine effectiveness 7–34 days after an mRNA COVID-19 vaccine booster dose // 1–risk ratio (95% CI) | Risk difference per 10 000 individuals (95% CI)
+#Main analysis | Restricting to people with ≥1 negative lab test at enrolment | with notests in the 7  days before enrolment |Censoring matched pairs 7 days after the control receives a booster rather than 0 days | Using date of PCR test result rather than subtracting 2 days | Selecting matched controls without replacement | Exact matching by age (year by year vs 5-year groups) | Restricting events to PCR test
+
+
+
+
+### difference in diagnostic intensity between groups ####
+
+fecha0=dmy("03/01/2022")
+
+ base_analisis <- bind_rows(lista[sapply(lista, class) == "data.frame"])
+
+## se trata de sacar la distribucion de test diaria en los grupos expuesto y no expuesto y represenarlo como en la pag7 del apendice [lo haremos para aquellos test en no casos?]
+
+
+
+#  no casos
+
+ 
+dint= left_join(test220613, dplyr::select(base_analisis,id,exposicion,caso)) %>% filter(ftes>=ymd(fecha0) & caso==0) %>%  mutate(day=as.numeric(ftes-ymd(fecha0)), sem=cut(day,seq(from = 0, to = 70, by = 7)), exposition=factor(exposicion, labels=c("no booster","booster"))) %>% filter(day<71) %>% group_by(sem, exposition) %>% summarise(n=n()) %>% na.omit() 
+
+pp=ggplot(dint, aes(x = sem, y=n, fill = exposition))+ geom_col(position = "dodge")   
+
+pp + ggtitle("Excluyendo test diagnostico de casos")    
+
+
+dint= left_join(test220613, dplyr::select(base_analisis,id,exposicion,caso)) %>% filter(ftes>=ymd(fecha0)) %>%  mutate(day=as.numeric(ftes-ymd(fecha0)), sem=cut(day,seq(from = 0, to = 70, by = 7)), exposition=factor(exposicion, labels=c("no booster","booster"))) %>% filter(day<71) %>% group_by(sem, exposition) %>% summarise(n=n()) %>% na.omit() 
+
+pp=ggplot(dint, aes(x = sem, y=n, fill = exposition))+ geom_col(position = "dodge")   
+
+pp + ggtitle("test diagnosticos segun exposicion a booster")    
+
+
+## esta aplicando aqui la fecha 0???
+  test220613%>% filter(id %in% tabla_0_pobana$id &tpos==FALSE) %>% group_by(id)%>% summarise(n_0=max(n)) %>% right_join(tabla_0_pobana, by="id") %>% mutate(n_0=ifelse(is.na(n_0),0,ifelse(n_0>3,3,n_0)), tv2=as.numeric(ymd(fecha0)-fvc2))->pobana_n_tabla0
+
+```
+
+```{r test-negative case control design}
+
+#We used a test-negative, case–control design, in which effectiveness estimates were derived by comparing the odds of previous infection or vaccination or both among case participants (persons with a positive PCR test) with that among controls (PCR-negative persons).2,15-18 We also assessed effectiveness against any severe, critical, or fatal case of Covid-19.
+
+#To estimate the effectiveness against symptomatic infection, we exactly matched cases and controls that were identified from December 23, 2021, through February 21, 2022. Case participants and controls were matched in a 1:1 ratio
+according to
+sex, 
+10-year age group, 
+nationality,
+calendar week of PCR test.
+
+#To assess effectiveness against any severe, critical, or fatal case of Covid-19, we used a 1:5 matching ratio to improve the statistical precision of the estimates.
+
+#Only the first PCR-positive test that was identified for an individual participant during the study period was included, but all PCR-negative tests were included. Controls included persons with no record of a PCR-positive test during the study period. Only PCR tests conducted because of clinical symptoms were used in the analyses.
+
+# Retos: en este caso hay que partir de la tabla long de test, como hay varios por persona, ellos escogen para cada perssona su primer test positivos y el conjunto de los negativos (tal como lo tenemos montado -fecha de 1 dosis.. fecha infeccion... es cierto que hay algunas medidas repetidas -o casi- a lo ancho), en el trabajo previo que era propectivo, parte de la fecha de 3dosis; (en este caso será la fecha de test).. para mirar hacia delante (detras), si ha habido un resultado -como infeccion, hospitalizacion..-(una exposicion: infeccion previa, vacunacion).. luego en el analisis, alli se hace un cox (aqui una logistica -con el out: caso/)
+
+
+
+
+```
+

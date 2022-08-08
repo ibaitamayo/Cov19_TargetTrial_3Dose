@@ -1,0 +1,416 @@
+---
+title: "Múltiples tiempos + test"
+output: 
+  html_document:
+    code_folding: show
+    highlight: espresso
+    css:
+    keep_md: yes
+    number_sections: yes
+    theme: readable
+    toc: yes  
+    toc_float:
+      collapsed: yes
+      smooth_scroll: yes
+      toc_depth: 3     
+editor_options: 
+  chunk_output_type: inline
+---
+
+
+```{r set-global-options, echo = FALSE}
+knitr::opts_chunk$set(eval = TRUE, 
+                      echo = TRUE, 
+                      cache = FALSE,
+                      include = TRUE,
+                      collapse = FALSE,
+                       dependson = NULL,
+                      engine = "R", # Chunks will always have R code, unless noted
+                      error = TRUE,
+                      fig.path="Figures/",  # Set the figure options
+                      fig.align = "center", 
+                      fig.width = 12,
+                      fig.height = 12)
+```
+
+```{r}
+# función para cargar un .Rmd como si se hiciese source de un .r---------------
+source_rmd = function(file, ...) {
+  tmp_file = tempfile(fileext = ".R")
+  on.exit(unlink(tmp_file), add = TRUE)
+  knitr::purl(file, output = tmp_file)
+  source(file = tmp_file, ...)
+}
+
+```
+
+```{r}
+# cargar funciones de 0_funciones----------------------------------------------
+if (!exists("se_ha_cargado_f")) {
+suppressMessages(source_rmd("0_b_funciones.rmd"))
+}
+
+```
+
+
+```{r cargar-datos, echo=FALSE, eval=TRUE, message=FALSE, warning=FALSE}
+# cargar datos-----------------------------------------------------------------
+pobana_2 <- readRDS(file = file.path("Resultados", "pobana_2.RDS"))
+test220613_cleaned <- readRDS(file = file.path("Datos", "Procesados", 
+                                             "test220613_cleaned.RDS"))
+
+```
+
+```{r}
+# se crean listas que dependen del proyecto------------------------------------
+lista_exclusion_dep <- list(
+  criterios = list(
+  c1 = "Excluyendo: infección previa antes del tiempo_0...",
+  c2 = "Excluyendo: edad < 40 años en tiempo_0...", 
+  c3 = "Excluyendo: pauta incompleta 90 días antes del tiempo_0...",
+  c4 = "Excluyendo: fallecidos antes del tiempo_0...",
+  c5 = "Excluyendo: boosting antes del tiempo_0..."),
+  variables = list(
+  v1 = "fcv1",
+  v2 = "fnac_40",
+  v3 = "fpauta_90",
+  v4 = "fdef",
+  v5 = "fvc3"),
+  tipo_var = list(
+    "exc",
+    "inc",
+    "inc",
+    "exc",
+    "exc")
+  )
+
+```
+
+```{r}
+# vectores de matching---------------------------------------------------------
+variables_matching = c(
+  "gen",    # 1
+  "gedad",  # 2
+  "czbs",   # 3
+  "tvc1",   # 4
+  "migran", # 5
+  "vgp20",  # 6
+  "vgp21",  # 7
+  "ucn8",   # 8
+  "domi")   # 9
+
+```
+
+# Prueba con una fecha
+
+```{r}
+# matching f_pauta en días
+prueba_matching_days <- f_matching_tt(
+                data = pobana_2,
+                tiempo_0 = "2022-01-03",
+                crit_exc = lista_exclusion_dep,
+                exposure = "fvc3",
+                out = "fcv1", 
+                vector_match = variables_matching[c(1, 3:8)], 
+                base_test = test220613_cleaned,
+                temporal_var = "fpauta_90",
+                temporal_var_unit = "days",
+                birth_date = "fnac",
+                age_first = 40,
+                age_last = 90,
+                age_by = 5,
+                censoring = "fdef",
+                follow_up = 34,
+                verbose = FALSE,
+                seed = 3)
+
+prueba_matching_days
+
+# matching f_pauta en semanas (menos restrictivo)
+prueba_matching_weeks <- f_matching_tt(
+                data = pobana_2,
+                tiempo_0 = "2022-01-03",
+                crit_exc = lista_exclusion_dep,
+                exposure = "fvc3",
+                out = "fcv1", 
+                vector_match = variables_matching[c(1, 3:8)], 
+                base_test = test220613_cleaned,
+                temporal_var = "fpauta_90",
+                temporal_var_unit = "weeks",
+                birth_date = "fnac",
+                age_first = 40,
+                age_last = 90,
+                age_by = 5,
+                censoring = "fdef",
+                follow_up = 34,
+                verbose = FALSE,
+                seed = 3)
+
+prueba_matching_weeks
+
+# comprobar categorías de edad
+prueba_matching_weeks %>% 
+tabyl(p_edad_cat_label, exposicion) %>% 
+  adorn_title()
+
+```
+
+
+```{r}
+# check prueba-----------------------------------------------------------------
+# comprobar todos tiempos positivos
+prueba_matching_weeks %>% 
+  mutate(survtime = date_end - date_start) %>% 
+  arrange(survtime) # ok
+# comprobar follow-up se hace bien
+prueba_matching_weeks %>% 
+  mutate(survtime = date_end - date_start) %>% 
+  arrange(desc(survtime)) #ok
+
+prueba_matching_weeks %>% tabyl(exposicion, caso)
+
+```
+
+# Prueba con más de una fecha
+
+```{r}
+# matching f_pauta en días (menos restrictivo)
+prueba_matching_mult_days <- f_matching_tt_mult(
+                data = pobana_2,
+                f_ini = "2022-01-03",
+                f_fin = "2022-01-05",
+                crit_exc = lista_exclusion_dep,
+                exposure = "fvc3",
+                out = "fcv1", 
+                vector_match = variables_matching[c(1, 3:8)], 
+                base_test = test220613_cleaned,
+                temporal_var = "fpauta_90",
+                temporal_var_unit = "days",
+                birth_date = "fnac",
+                age_first = 40,
+                age_last = 90,
+                age_by = 5,
+                censoring = "fdef",
+                follow_up = 34,
+                verbose = FALSE,
+                seed = 3)
+
+prueba_matching_mult_days
+
+# matching f_pauta en semanas (menos restrictivo)
+prueba_matching_mult_weeks <- f_matching_tt_mult(
+                data = pobana_2,
+                f_ini = "2022-01-03",
+                f_fin = "2022-01-05",
+                crit_exc = lista_exclusion_dep,
+                exposure = "fvc3",
+                out = "fcv1", 
+                vector_match = variables_matching[c(1, 3:8)], 
+                base_test = test220613_cleaned,
+                temporal_var = "fpauta_90",
+                temporal_var_unit = "weeks",
+                birth_date = "fnac",
+                age_first = 40,
+                age_last = 90,
+                age_by = 5,
+                censoring = "fdef",
+                follow_up = 34,
+                verbose = FALSE,
+                seed = 3)
+
+```
+
+```{r}
+# comprobar todos tiempos positivos
+prueba_matching_mult_weeks$tt_tibble %>% 
+  mutate(survtime = date_end - date_start) %>% 
+  arrange(survtime) # ok
+# comprobar follow-up se hace bien
+prueba_matching_mult_weeks$tt_tibble %>% 
+  mutate(survtime = date_end - date_start) %>% 
+  arrange(desc(survtime)) #ok
+
+```
+
+```{r}
+# guardar resultados-----------------------------------------------------------
+saveRDS(prueba_matching_mult_weeks, file.path("Resultados",
+        "prueba_matching_mult_weeks.RDS"))
+
+```
+
+# TT Monge-Hernán
+
+Se replica el análisis realizado en España en el cuál se investiga la efectividad del booster frente a la infección.
+
+## fcv1
+
+Las fechas que ponen en el artículo son del *2022-01-03* al *2022-02-06*.
+
+### Variables de matching como el artículo
+
+Se utilizan las variables de matching y criterios de exclusión del análisis principal.
+
+```{r}
+# hacer ajuste como en el artículo
+matching_fcv1 <- f_matching_tt_mult(
+                data = pobana_2,
+                f_ini = "2022-01-03",
+                f_fin = "2022-02-06",
+                crit_exc = lista_exclusion_dep,
+                exposure = "fvc3",
+                out = "fcv1", 
+                vector_match = variables_matching[c(1, 3:8)], 
+                base_test = test220613_cleaned,
+                temporal_var = "fpauta_90",
+                temporal_var_unit = "weeks",
+                birth_date = "fnac",
+                age_first = 40,
+                age_last = 90,
+                age_by = 5,
+                censoring = "fdef",
+                follow_up = 34,
+                verbose = FALSE,
+                seed = 3)
+
+# guardar resultados-----------------------------------------------------------
+saveRDS(matching_fcv1, file.path("Resultados",
+        "matching_fcv1.RDS"))
+
+```
+
+### Sensibilidad 0
+
+Se exige que al menos tengan un test diagnóstico realizado en el momento del reclutamiento. No es necesario volver a ejecutar la función *f_matching_tt_mult*. Se hace un filtrado sobre los resultados de *matching_fcv1*.
+
+### Sensibilidad 1
+
+Se excluyen a los individuos con una prueba diagnóstica la semana antes del reclutamiento.
+
+```{r}
+# hacer ajuste con el domicilio como matching
+matching_fcv1_sens1 <- f_matching_tt_mult(
+                data = pobana_2,
+                f_ini = "2022-01-03",
+                f_fin = "2022-02-06",
+                crit_exc = lista_exclusion_dep,
+                exposure = "fvc3",
+                out = "fcv1", 
+                vector_match = variables_matching[c(1, 3:8)], 
+                base_test = test220613_cleaned,
+                dias_a_excluir_test_previos = 7,
+                temporal_var = "fpauta_90",
+                temporal_var_unit = "weeks",
+                birth_date = "fnac",
+                age_first = 40,
+                age_last = 90,
+                age_by = 5,
+                censoring = "fdef",
+                follow_up = 34,
+                verbose = FALSE,
+                seed = 3)
+
+# guardar resultados-----------------------------------------------------------
+saveRDS(matching_fcv1_sens1, file.path("Resultados",
+        "matching_fcv1_sens1.RDS"))
+
+```
+### Sensibilidad 2
+
+Se censuran las parejas 7 días después de que el control se vacune (en lugar de el día en el que control se vacuna, como sucede en el análisis principal).
+
+```{r}
+# hacer ajuste con el domicilio como matching
+matching_fcv1_sens2 <- f_matching_tt_mult(
+                data = pobana_2,
+                f_ini = "2022-01-03",
+                f_fin = "2022-02-06",
+                crit_exc = lista_exclusion_dep,
+                exposure = "fvc3",
+                out = "fcv1", 
+                vector_match = variables_matching[c(1, 3:8)], 
+                base_test = test220613_cleaned,
+                dias_a_excluir_test_previos = NULL,
+                temporal_var = "fpauta_90",
+                temporal_var_unit = "weeks",
+                birth_date = "fnac",
+                age_first = 40,
+                age_last = 90,
+                age_by = 5,
+                censoring = "fdef",
+                delayed_exposure_censoring = 7,
+                follow_up = 34,
+                verbose = FALSE,
+                seed = 3)
+
+# guardar resultados-----------------------------------------------------------
+saveRDS(matching_fcv1_sens2, file.path("Resultados",
+        "matching_fcv1_sens2.RDS"))
+
+```
+
+### Sensibilidad 3
+
+Restarle a la fecha *fcv1* dos días.
+
+```{r}
+matching_fcv1_sens3 <- f_matching_tt_mult(
+                data = pobana_2 %>% 
+                  mutate(fcv1 = fcv1 %m-% days(2)),
+                f_ini = "2022-01-03",
+                f_fin = "2022-02-06",
+                crit_exc = lista_exclusion_dep,
+                exposure = "fvc3",
+                out = "fcv1", 
+                vector_match = variables_matching[c(1, 3:8)], 
+                base_test = test220613_cleaned,
+                dias_a_excluir_test_previos = NULL,
+                temporal_var = "fpauta_90",
+                temporal_var_unit = "weeks",
+                birth_date = "fnac",
+                age_first = 40,
+                age_last = 90,
+                age_by = 5,
+                censoring = "fdef",
+                delayed_exposure_censoring = NULL,
+                follow_up = 34,
+                verbose = FALSE,
+                seed = 3)
+
+# guardar resultados-----------------------------------------------------------
+saveRDS(matching_fcv1_sens3, file.path("Resultados",
+        "matching_fcv1_sens3.RDS"))
+
+```
+
+
+### Variables de matching: Domicilio
+
+```{r}
+# hacer ajuste con el domicilio como matching
+matching_fcv1_domi <- f_matching_tt_mult(
+                data = pobana_2,
+                f_ini = "2022-01-03",
+                f_fin = "2022-02-06",
+                crit_exc = lista_exclusion_dep,
+                exposure = "fvc3",
+                out = "fcv1", 
+                vector_match = "domi", 
+                base_test = NULL,
+                temporal_var = NULL,
+                temporal_var_unit = NULL,
+                birth_date = NULL,
+                age_first = NULL,
+                age_last = NULL,
+                age_by = NULL,
+                censoring = "fdef",
+                follow_up = 34,
+                verbose = FALSE,
+                seed = 3)
+
+# guardar resultados-----------------------------------------------------------
+saveRDS(matching_fcv1_domi, file.path("Resultados",
+        "matching_fcv1_domi.RDS"))
+
+```
+

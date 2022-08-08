@@ -1,0 +1,274 @@
+---
+title: "Análisis de supervivencia"
+output: 
+  html_document:
+    code_folding: show
+    highlight: espresso
+    css: 
+    keep_md: yes
+    number_sections: yes
+    theme: readable
+    toc: yes  
+    toc_float:
+      collapsed: yes
+      smooth_scroll: yes
+      toc_depth: 3     
+editor_options: 
+  chunk_output_type: inline
+---
+
+
+```{r set-global-options, echo = FALSE}
+knitr::opts_chunk$set(eval = TRUE, 
+                      echo = TRUE, 
+                      cache = FALSE,
+                      include = TRUE,
+                      collapse = FALSE,
+                       dependson = NULL,
+                      engine = "R", # Chunks will always have R code, unless noted
+                      error = TRUE,
+                      fig.path="Figures/",  # Set the figure options
+                      fig.align = "center", 
+                      fig.width = 12,
+                      fig.height = 12)
+```
+
+```{r librerias, echo=FALSE, message=FALSE, include=FALSE, warning=FALSE}
+# source("0_a_librerias.R")
+# ya se cargan cuando se carguen las funciones
+
+```
+
+```{r}
+# función para cargar un .Rmd como si se hiciese source de un .r---------------
+source_rmd = function(file, ...) {
+  tmp_file = tempfile(fileext = ".R")
+  on.exit(unlink(tmp_file), add = TRUE)
+  knitr::purl(file, output = tmp_file)
+  source(file = tmp_file, ...)
+}
+
+```
+
+```{r}
+# cargar funciones de 0_funciones----------------------------------------------
+if (!exists("se_ha_cargado_f")) {
+suppressMessages(source_rmd("0_b_funciones.rmd"))
+}
+
+```
+
+```{r}
+# cargar datos-----------------------------------------------------------------
+matching_fcv1 <- readRDS(file.path("Resultados",
+        "matching_fcv1.RDS"))
+
+matching_fcv1_domi <- readRDS(file.path("Resultados",
+        "matching_fcv1_domi.RDS"))
+
+```
+
+# Table 2: Estimated effectiveness of an mRNA COVID-19 vaccine booster in individuals* who had completed primary vaccination schedule against COVID-19
+
+***
+
+
+```{r}
+# hacer tabla 2----------------------------------------------------------------
+hacer_tabla_2 <- function(tt_tibble, 
+                          tiempo_efecto = 7) {
+
+# arreglar tibble
+  tt_tibble_after_7_days <- tt_tibble %>% 
+  # filtrar parejas con seguimiento después del día 7
+      mutate(survtime = date_end - date_start) %>% 
+      group_by(target_trial_number, par) %>% 
+      filter(min(survtime) >= tiempo_efecto) %>%
+      ungroup() %>% 
+  # crear tiempo desde pauta completa
+      mutate(
+        t_desde_pauta_completa = 90 + temp_var,
+        t_desde_pauta_completa_cat = case_when(
+          between(t_desde_pauta_completa, 91, 195) ~  "91-195 days",
+          between(t_desde_pauta_completa, 196, 220) ~ "196-220 days",
+        t_desde_pauta_completa > 221 ~  "&ge; 221 days"),
+        t_desde_pauta_completa_cat = factor(t_desde_pauta_completa_cat,
+          levels = c("91-195 days", "196-220 days", "&ge; 221 days")))
+
+  tt_tibble_after_7_days_pairs <- tt_tibble_after_7_days %>% 
+    filter(exposicion == 1) %>% nrow()
+
+# hacer estratos tabla 2
+  table2_overall <- hacer_grupo_tabla_2(
+    tt_tibble = tt_tibble_after_7_days, 
+    group_description = "Overall",
+    number_of_bootstrap = 500)
+
+  table2_grupo_edad_1 <- hacer_grupo_tabla_2(
+    tt_tibble = tt_tibble_after_7_days %>% 
+      filter(p_edad_cat_label %in% c(
+        "[40,45)",	
+        "[45,50)",		
+        "[50,55)")), 
+    group_description = "40-54",
+    number_of_bootstrap = 500)
+
+  table2_grupo_edad_2 <- hacer_grupo_tabla_2(
+    tt_tibble = tt_tibble_after_7_days %>% 
+      filter(min(survtime) >= tiempo_efecto) %>%
+      ungroup() %>% 
+      filter(p_edad_cat_label %nin% c(
+        "[40,45)",	
+        "[45,50)",		
+        "[50,55)")), 
+    group_description = "&ge; 55",
+    number_of_bootstrap = 500)
+
+  table2_hombre <- hacer_grupo_tabla_2(
+    tt_tibble = tt_tibble_after_7_days %>% 
+      filter(gen == 1), 
+    group_description = "Male",
+    number_of_bootstrap = 500)
+
+  table2_mujer <- hacer_grupo_tabla_2(
+    tt_tibble = tt_tibble_after_7_days %>% 
+      filter(gen == 2), 
+    group_description = "Female",
+    number_of_bootstrap = 500)
+
+  table2_vac_pfizer <- hacer_grupo_tabla_2(
+    tt_tibble = tt_tibble_after_7_days %>% 
+      filter(tvc1_label == "BioNTech/Pfizer"), 
+    group_description = "BioNTech/Pfizer",
+    number_of_bootstrap = 500)
+
+  table2_vac_janssen <- hacer_grupo_tabla_2(
+    tt_tibble = tt_tibble_after_7_days %>% 
+      filter(tvc1_label == "J&J / Janssen"), 
+    group_description = "J&J / Janssen",
+    number_of_bootstrap = 500)
+
+  table2_vac_moderna <- hacer_grupo_tabla_2(
+    tt_tibble = tt_tibble_after_7_days %>% 
+      filter(tvc1_label == "Moderna/Lonza"), 
+    group_description = "Moderna/Lonza",
+    number_of_bootstrap = 500)
+
+  table2_vac_az <- hacer_grupo_tabla_2(
+    tt_tibble = tt_tibble_after_7_days %>% 
+      filter(tvc1_label == "Oxford/AstraZeneca"), 
+    group_description = "Oxford/AstraZeneca",
+    number_of_bootstrap = 500)
+  
+  table2_tsv1 <- hacer_grupo_tabla_2(
+    tt_tibble = tt_tibble_after_7_days %>% 
+      filter(t_desde_pauta_completa_cat == "91-195 days"), 
+    group_description = "91-195 days",
+    number_of_bootstrap = 500)
+
+  table2_tsv2 <- hacer_grupo_tabla_2(
+    tt_tibble = tt_tibble_after_7_days %>% 
+      filter(t_desde_pauta_completa_cat == "196-220 days"), 
+    group_description = "196-220 days",
+    number_of_bootstrap = 500)
+
+  table2_tsv3 <- hacer_grupo_tabla_2(
+    tt_tibble = tt_tibble_after_7_days %>% 
+      filter(t_desde_pauta_completa_cat == "&ge; 221 days"), 
+    group_description = "&ge; 221 days",
+    number_of_bootstrap = 500)
+
+# para el booster el filtrado es algo más complicado
+  ids_pfizer <- tt_tibble_after_7_days %>% 
+  # seleccionar booster pfizer
+    filter(exposicion == 1,
+         tvc3 == "BioNTech/Pfizer") %>% 
+    select(target_trial_number, par)
+# seleccionar todas las parejas de booster pfizer
+  tt_tibble_after_7_days_pfizer <- tt_tibble_after_7_days %>% 
+    semi_join(ids_pfizer)
+
+  ids_moderna <- tt_tibble_after_7_days %>% 
+  # seleccionar booster pfizer
+    filter(exposicion == 1,
+         tvc3 == "Moderna/Lonza") %>% 
+    select(target_trial_number, par)
+# seleccionar todas las parejas de booster pfizer
+  tt_tibble_after_7_days_moderna <- tt_tibble_after_7_days %>% 
+    semi_join(ids_moderna)
+
+  table2_tvc3_pfizer <- hacer_grupo_tabla_2(
+    tt_tibble = tt_tibble_after_7_days_pfizer, 
+    group_description = "BioNTech/Pfizer",
+    number_of_bootstrap = 500)
+
+  table2_tvc3_moderna <- hacer_grupo_tabla_2(
+    tt_tibble = tt_tibble_after_7_days_moderna, 
+    group_description = "Moderna/Lonza",
+    number_of_bootstrap = 500)
+
+  # ensamblar tabla 2
+  table2_ensambled <- bind_rows(
+    table2_overall,
+    table2_grupo_edad_1,
+    table2_grupo_edad_2,
+    table2_hombre,
+    table2_mujer,
+    table2_vac_pfizer,
+    table2_vac_janssen,
+    table2_vac_moderna,
+    table2_vac_az,
+    table2_tsv1,
+    table2_tsv2,
+    table2_tsv3,
+    table2_tvc3_pfizer,
+    table2_tvc3_moderna)
+  
+ # kable table 2  
+ kable(table2_ensambled, align = c("c"), escape = FALSE,
+      col.names = c(" ",
+                    "Events",
+                    "Risk per 10 000 individuals",
+                    "Events",
+                    "Risk per 10 000 individuals",
+                    " ",
+                    " "),
+      table.attr = "style = \"color: black;\"",
+      caption = "Estimated effectiveness of an mRNA COVID-19 vaccine booster in individuals* who had completed primary vaccination schedule against COVID-19") %>%
+   add_header_above(c(" ",
+                      "No booster group" = 2, 
+                      "Booster group" = 2, 
+                      "1–risk ratio (95% CI)", 
+                      "Risk difference per 10 000 individuals (95% CI)"),
+                    bold = T, color = "white", background = "dodgerblue",
+           extra_css = "vertical-align:middle") %>% 
+  kable_styling(bootstrap_options = c("striped", 
+                                      "hover", 
+                                      "condensed"),
+                full_width = FALSE, fixed_thead = T) %>%
+  row_spec(0, bold = T, color = "white", background = "dodgerblue",
+           extra_css = "vertical-align:middle") %>% 
+  pack_rows("Age group (years)", 2, 3) %>%
+  pack_rows("Sex", 4, 5) %>%
+  pack_rows("Type of previous vaccination", 6, 9) %>%
+  pack_rows("Time since vaccination completed", 10, 12) %>%  
+  pack_rows("Type of booster", 13, 14) %>%
+  footnote(footnote_as_chunk = TRUE, 
+           general = glue("Analyses based on {tt_tibble_after_7_days_pairs} matched pairs who remained under follow-up by day 7 after the booster dose"))
+}
+
+
+```
+
+```{r}
+# ejecutar la función para hacer la tabla--------------------------------------
+tabla_2_matching_fcv1 <- hacer_tabla_2(tt_tibble = matching_fcv1$tt_tibble)
+
+tabla_2_matching_fcv1
+
+```
+
+
+## Table 3: Sensitivity analyses of vaccine effectiveness 7–34 days after an mRNA COVID-19 vaccine booster dose // 1–risk ratio (95% CI) | Risk difference per 10 000 individuals (95% CI)
+
+Main analysis | Restricting to people with ≥1 negative lab test at enrolment | with no tests in the 7  days before enrollment |Censoring matched pairs 7 days after the control receives a booster rather than 0 days | Using date of PCR test result rather than subtracting 2 days | Selecting matched controls without replacement | Exact matching by age (year by year vs 5-year groups) | Restricting events to PCR test.

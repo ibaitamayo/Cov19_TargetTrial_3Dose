@@ -1,0 +1,198 @@
+---
+title: "Análisis de supervivencia"
+output: 
+  html_document:
+    code_folding: show
+    highlight: espresso
+    css: 
+    keep_md: yes
+    number_sections: yes
+    theme: readable
+    toc: yes  
+    toc_float:
+      collapsed: yes
+      smooth_scroll: yes
+      toc_depth: 3     
+editor_options: 
+  chunk_output_type: inline
+---
+
+
+```{r set-global-options, echo = FALSE}
+knitr::opts_chunk$set(eval = TRUE, 
+                      echo = TRUE, 
+                      cache = FALSE,
+                      include = TRUE,
+                      collapse = FALSE,
+                       dependson = NULL,
+                      engine = "R", # Chunks will always have R code, unless noted
+                      error = TRUE,
+                      fig.path="Figures/",  # Set the figure options
+                      fig.align = "center", 
+                      fig.width = 12,
+                      fig.height = 12)
+```
+
+```{r librerias, echo=FALSE, message=FALSE, include=FALSE, warning=FALSE}
+# source("0_a_librerias.R")
+# ya se cargan cuando se carguen las funciones
+
+```
+
+```{r}
+# función para cargar un .Rmd como si se hiciese source de un .r---------------
+source_rmd = function(file, ...) {
+  tmp_file = tempfile(fileext = ".R")
+  on.exit(unlink(tmp_file), add = TRUE)
+  knitr::purl(file, output = tmp_file)
+  source(file = tmp_file, ...)
+}
+
+```
+
+```{r}
+# cargar funciones de 0_funciones----------------------------------------------
+if (!exists("se_ha_cargado_f")) {
+suppressMessages(source_rmd("0_b_funciones.rmd"))
+}
+
+```
+
+
+```{r}
+# cargar datos-----------------------------------------------------------------
+matching_fcv1 <- readRDS(file.path("Resultados",
+        "matching_fcv1.RDS"))
+
+matching_fcv1_domi <- readRDS(file.path("Resultados",
+        "matching_fcv1_domi.RDS"))
+
+```
+
+
+# Table 1: Baseline characteristics of the matched study population
+
+***
+
+<br>
+
+```{r}
+hacer_tabla_1 <- function(tt_tibble) {
+
+  tabla_basal_edad <- hacer_basal_discreta(base = tt_tibble,
+                                         variable = p_edad_cat_label,
+                                         relabel = c(
+                                      "0-39",
+                                     "40-44", 
+                                     "45-49",
+                                     "50-54",
+                                     "55-59",
+                                     "60-64",
+                                     "65-69",
+                                     "70-74",
+                                     "75-79",
+                                     "80-84",
+                                     "85-89",
+                                     "&ge; 90")
+                                     ) %>% 
+    filter(Variable != "0-39")
+
+  tabla_basal_sexo <- hacer_basal_discreta(base = tt_tibble,
+                                         variable = gen,
+                                         relabel = c(
+                                           "Men",
+                                           "Women")
+                                         )
+                                         
+  tabla_basal_n_test <- hacer_basal_discreta(base = tt_tibble,
+                                         variable = n_0,
+                                         relabel = c(
+                                           "0",
+                                           "1",
+                                           "2",
+                                           "&ge; 3")
+                                         )
+
+  tabla_basal_vaccine_type <- hacer_basal_discreta(base = tt_tibble,
+                                         variable = tvc1_label,
+                                         relabel = NULL
+                                         )
+
+  
+  tabla_basal_booster_type <- hacer_basal_discreta(base = tt_tibble,
+                                         variable = tvc3,
+                                         relabel = NULL
+                                         ) %>% 
+    mutate(`0` = NA) %>% 
+    filter(Variable != "<NA>")
+
+  tabla_basal_t_pauta_comp <- hacer_basal_discreta(tt_tibble %>% 
+    mutate(
+      t_desde_pauta_completa = 90 + temp_var,
+      t_desde_pauta_completa_cat = case_when(
+        between(t_desde_pauta_completa, 91, 150) ~  "91-150 days",
+        between(t_desde_pauta_completa, 151, 180) ~ "151-180 days",
+        t_desde_pauta_completa > 180 ~  "&ge; 181 days"),
+      t_desde_pauta_completa_cat = factor(t_desde_pauta_completa_cat,
+        levels = c("91-150 days", "151-180 days", "&ge; 181 days"))),
+    variable = t_desde_pauta_completa_cat)
+
+  tabla_basal <- bind_rows(
+                           tabla_basal_edad,
+                           tabla_basal_sexo,
+                           tabla_basal_n_test,
+                           tabla_basal_vaccine_type,
+                           tabla_basal_t_pauta_comp,
+                           tabla_basal_booster_type) %>% 
+    select(-Total)
+  
+  
+  n_unexposed <- tt_tibble %>% 
+    filter(exposicion == 0) %>%
+    nrow()
+    
+  n_exposed <- tt_tibble %>% 
+    filter(exposicion == 1) %>%
+    nrow()
+  
+  id_uniques <- tt_tibble %>% 
+    filter(exposicion == 0) %>%
+    distinct(id) %>%
+    nrow()
+  
+  
+  kable(tabla_basal, align = c("c"), escape = FALSE,
+      col.names = c("Variable",
+                    glue("No booster group (n = {n_unexposed}*)"),
+                    glue("Booster group (n = {n_exposed})")),
+      table.attr = "style = \"color: black;\"",
+      caption = "Baseline characteristics of the matched study population") %>%
+  kable_styling(bootstrap_options = c("striped", 
+                                      "hover", 
+                                      "condensed"),
+                full_width = FALSE, fixed_thead = T) %>%
+  row_spec(0, bold = T, color = "white", background = "dodgerblue",
+           extra_css = "vertical-align:middle") %>% 
+  pack_rows("Age group (years), n (%)", 1, 11) %>%
+  pack_rows("Sex, n (%)", 12, 13) %>%
+  pack_rows("Number of previous SARS-CoV-2 tests, n (%)", 14, 17) %>%
+  pack_rows("Type of previous vaccination, n (%)", 18, 21) %>%
+  pack_rows("Time since primary vaccine schedule, n (%)", 22, 24) %>%
+  pack_rows("Type of booster, n (%)", 25, 26) %>%
+  footnote(footnote_as_chunk = TRUE, 
+           general = glue("NA = not applicable, *{id_uniques} unique individuals in the no booster group."))
+
+  }
+
+```
+
+<br>
+
+```{r}
+# ejecutar la función para hacer la tabla--------------------------------------
+tabla_1_matching_fcv1 <- hacer_tabla_1(tt_tibble = matching_fcv1$tt_tibble)
+
+tabla_1_matching_fcv1
+
+```
+
