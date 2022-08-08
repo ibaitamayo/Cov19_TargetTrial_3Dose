@@ -87,9 +87,9 @@ test220613 %>% count(tori)
 # test220613 <- test220613 
 test0 <- test220613 %>%
   # quitar algunas variables
-  select(-c(tamb,tmot,tcen,tfval)) %>% 
+  select(-c(tamb, tmot, tcen, tfval)) %>% 
   # seleccionar PCR y antígenos
-  filter(tori %in% c("PCR","Antigenos"))  # 1627129
+  filter(tori %in% c("PCR", "Antigenos"))  # 1627129
 ```
 
 
@@ -104,6 +104,7 @@ test1 <- test0 %>%
   select(-tfreg) %>% 
   # seleccionar como mucho un test por persona y día
   tidylog::distinct(id, ftes, .keep_all = TRUE)   # 1581855
+
 ```
 
 ```{r}
