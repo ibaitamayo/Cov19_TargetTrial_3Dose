@@ -64,7 +64,6 @@ suppressMessages(source_rmd("0_b_funciones.rmd"))
 pobana_0 <- readRDS(file = file.path("Datos", "Procesados", "pobana_0.RDS"))
 # 645209 
 
-
 test220613 <- fread(file.path("Datos", "Brutos",
                                    "poblacion_Pruebas_dtcas_06_2022.csv"),
                         col.names = c(
@@ -84,7 +83,7 @@ test220613 <- fread(file.path("Datos", "Brutos",
 
 # Agregrar test a pobana_0
 
-***
+
 
 Nos interesa sacar o bien un basal (antes de mayo 2020), o bien hacer algo dinamico, de modo que lo que guardemos sea las pcr realizadas antes de estar infectado o vacunarse, o 28/05/21.
 
@@ -93,11 +92,13 @@ Nos interesa sacar o bien un basal (antes de mayo 2020), o bien hacer algo dinam
 test220613 %>% count(tori)
 # test220613 <- test220613 
 
+
 test0 <- test220613 %>%
   # quitar algunas variables
   select(-c(tamb,tmot,tcen,tfval)) %>% 
   # seleccionar PCR y antígenos
   filter(tori %in% c("PCR","Antigenos"))  # 1627129
+
 
 ```
 
