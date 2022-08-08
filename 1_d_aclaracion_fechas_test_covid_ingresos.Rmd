@@ -1,0 +1,125 @@
+---
+title: "test, fcv1 y fih1"
+output: 
+  html_document:
+    code_folding: show
+    highlight: espresso
+    css: 
+    keep_md: yes
+    number_sections: yes
+    theme: readable
+    toc: yes  
+    toc_float:
+      collapsed: yes
+      smooth_scroll: yes
+      toc_depth: 3     
+editor_options: 
+  chunk_output_type: inline
+---
+
+
+```{r set-global-options, echo = FALSE}
+knitr::opts_chunk$set(eval = TRUE, 
+                      echo = TRUE, 
+                      cache = FALSE,
+                      include = TRUE,
+                      collapse = FALSE,
+                       dependson = NULL,
+                      engine = "R", # Chunks will always have R code, unless noted
+                      error = TRUE,
+                      fig.path="Figures/",  # Set the figure options
+                      fig.align = "center", 
+                      fig.width = 12,
+                      fig.height = 12)
+```
+
+```{r librerias, echo=FALSE, message=FALSE, include=FALSE, warning=FALSE}
+# source("0_a_librerias.R")
+# ya se cargan cuando se carguen las funciones
+
+```
+
+```{r}
+# función para cargar un .Rmd como si se hiciese source de un .r---------------
+source_rmd = function(file, ...) {
+  tmp_file = tempfile(fileext = ".R")
+  on.exit(unlink(tmp_file), add = TRUE)
+  knitr::purl(file, output = tmp_file)
+  source(file = tmp_file, ...)
+}
+
+```
+
+```{r}
+# cargar funciones de 0_funciones----------------------------------------------
+if (!exists("se_ha_cargado_f")) {
+suppressMessages(source_rmd("0_b_funciones.rmd"))
+}
+
+```
+
+# Cargar bases
+
+***
+
+Se cargan las bases: 
+
+- pobana_2, donde se han aplicado algunos criterio de exclusión (sociosanitarios, residentes y trabajadores en educación).
+
+- test220613_cleaned, donde para cada persona está como máximo un test por día, con la fecha, el tipo de test y el resultado del mismo.
+
+```{r cargar-datos, echo=FALSE, eval=TRUE, message=FALSE, warning=FALSE}
+# cargar datos-----------------------------------------------------------------
+pobana_2 <- readRDS(file = file.path("Resultados", "pobana_2.RDS"))
+test220613_cleaned <- readRDS(file = file.path("Datos", "Procesados", 
+                                             "test220613_cleaned.RDS"))
+
+```
+
+Se define el tiempo a partir del cual se quiere revisar las fechas (el 3 de enero de 2022, por ser el momento en el que omicron paso a ser dominante en España).
+
+```{r}
+# inicio omicron navarra
+tiempo_0 <- ymd("2022-01-03")
+
+```
+
+
+```{r}
+# descriptivo test, fcv1 y fih1
+test220613_cleaned2 <- test220613_cleaned %>% 
+  filter(tpos == TRUE) %>% 
+  select(id, ftes) %>%
+  group_by(id) %>% 
+  mutate(n = 1:n()) %>% 
+  ungroup()
+
+# pasamos los test positivos a formato ancho
+test220613_cleaned3 <- test220613_cleaned2 %>%   
+pivot_wider(id_cols = id,
+            names_from = n,
+            names_prefix = "f_test_positivo_",
+            values_from = ftes)
+
+# unir pobana_2 con test
+pobana_con_test <- pobana_2  %>% 
+  select(id, fcv1, fcv2, fih1) %>%
+  left_join(test220613_cleaned3) %>% 
+  # que al menos tengan o f_test o fcv1 o fih1
+  tidylog::filter(!is.na(f_test_positivo_1) | 
+         !is.na(fcv1) |
+         !is.na(fih1))
+
+# comprobar que sí sea na fcv1 pero no f_test
+pobana_con_test %>% filter(is.na(fcv1), !is.na(f_test_positivo_1)) # OK
+# comprobar que no sea na fcv1 pero sí f_test
+pobana_con_test %>% filter(!is.na(fcv1), is.na(f_test_positivo_1))
+# 455 individuos que tienen fcv1 pero ningún f_test_positivo
+
+pobana_con_test %>% 
+  mutate(diferencia_fcv1_f_test_1 = fcv1 - f_test_positivo_1) %>%
+  skim(diferencia_fcv1_f_test_1)
+
+```
+
+

@@ -22,5 +22,6 @@ library(conflicted)
 library(glue)
 library(janitor)
 library(Hmisc)
+library(skimr)
 # usar fuciones de tidyverse antes que las de otros paquetes-------------------
 conflict_prefer_all("dplyr")

@@ -68,6 +68,35 @@ test220613_cleaned <- readRDS(file = file.path("Datos", "Procesados",
 ```
 
 ```{r}
+# inicio omicron navarra
+tiempo_0 <- ymd("2022-01-03")
+# descriptivo test, fcv1 y fih1
+
+test220613_cleaned2 <- test220613_cleaned %>% 
+  filter(tpos == TRUE) %>% 
+  filter(ftes >= tiempo_0) %>% 
+  select(id, ftes) %>%
+  group_by(id) %>% 
+  mutate(n = 1:n()) %>% 
+  ungroup()
+
+test220613_cleaned3 <- test220613_cleaned2 %>%   
+pivot_wider(id_cols = id,
+            names_from = n,
+            names_prefix = "f_test_positivo_",
+            values_from = ftes)
+
+pobana_con_test <- pobana_2  %>% 
+  select(id, fcv1, fcv2, fih1) %>%
+  left_join(test220613_cleaned3)
+
+pobana_con_test %>% filter(!is.na(fcv1), is.na(f_test_positivo_1))
+
+```
+
+
+
+```{r}
 tiempo_0 <- ymd("2022-01-03")
 base_test <- test220613_cleaned
 
@@ -80,7 +109,20 @@ data_0 %>%
   filter(fih1 >= ymd("2022-01-03")) %>% 
   count(fih1, fcv1, fcv2)
 
-  # exclusión covid positivo en los 90 días previos al test
+data_0 %>%
+  filter(fih1 >= ymd("2022-01-03")) %>% 
+  filter(fih1 < fcv1) %>% 
+  select(id, fih1, fcv1) %>% 
+  mutate(d = fcv1 - fih1) %>% 
+  arrange(d)
+
+
+
+```
+
+
+```{r}
+# exclusión covid positivo en los 90 días previos al test
   data1 <- data_0 %>%
     filter(
       is.na(fcv1) |
