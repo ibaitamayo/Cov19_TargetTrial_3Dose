@@ -83,7 +83,7 @@ test220613 <- fread(file.path("Datos", "Brutos",
 
 # Agregrar test a pobana_0
 
-
+***
 
 Nos interesa sacar o bien un basal (antes de mayo 2020), o bien hacer algo dinamico, de modo que lo que guardemos sea las pcr realizadas antes de estar infectado o vacunarse, o 28/05/21.
 
