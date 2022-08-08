@@ -68,7 +68,33 @@ test220613_cleaned <- readRDS(file = file.path("Datos", "Procesados",
 ```
 
 ```{r}
-fecha_0 <- ymd("2022-01-03")
+tiempo_0 <- ymd("2022-01-03")
+base_test <- test220613_cleaned
+data <- pobana_2 
+
+# obtención número de test negativos previos al primer positivo
+  if (!is.null(base_test)) {
+  data <- base_test %>% filter(id %in% data$id,
+                               tpos == FALSE,
+                               ftes < tiempo_0) %>% 
+    group_by(id) %>% 
+    summarise(n_0 = max(n)) %>% 
+    right_join(data, by = "id") %>% 
+    mutate(n_0 = case_when(is.na(n_0) ~ 0L, 
+                 n_0 > 3 ~ 3L,
+                 T ~ n_0)) 
+  vector_match <- c(vector_match, "n_0")
+  }
+  
+  if (!is.null(dias_a_excluir_test_previos)) {
+    ids_a_excluir <- base_test %>% 
+      filter(id %in% data$id,
+             ftes > tiempo_0 %m-% days(dias_a_excluir_test_previos),
+             ftes <= tiempo_0 ) %>%
+      distinct(id) %>% pull()
+    data <- data %>% 
+      filter(id %nin% ids_a_excluir)
+        
 
 
 ```
