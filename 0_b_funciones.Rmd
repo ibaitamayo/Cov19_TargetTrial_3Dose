@@ -256,7 +256,6 @@ f_matching_tt <- function(data,
       filter(id %nin% ids_a_excluir)
   }   
         
-  
   # creación de variable temporal respecto a tiempo_0
   if (!is.null(temporal_var)) {
   data <- data %>% 
