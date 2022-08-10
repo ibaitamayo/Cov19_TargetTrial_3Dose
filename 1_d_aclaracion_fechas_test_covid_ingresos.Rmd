@@ -74,7 +74,7 @@ poblacion_Vacunas_Infecc_06_2022 <- fread(file = file.path("Datos", "Brutos",
 ```
 
 ```{r}
-# inicio omicron navarra
+# inicio omicron navarra-------------------------------------------------------
 tiempo_0 <- ymd("2022-01-03")
 
 ```
@@ -84,14 +84,45 @@ poblacion <- poblacion_Vacunas_Infecc_06_2022 %>%
   clean_names("snake") %>% 
   mutate(across(starts_with("fecha"), fymd))
 
-poblacion %>% 
-  filter(fecha_ingreso_1 >= tiempo_0) %>%
-  filter(fecha_ini_covid_1 > fecha_ingreso_1) %>% 
-  mutate(d = fecha_ini_covid_1 - fecha_ingreso_1) %>% 
-  filter(d > 1) %>% 
-  arrange(d)
+fechas_ingreso_discrepantes_con_fecha_covid <- poblacion %>% 
+  filter(fecha_ini_covid_1 > fecha_alta_1 | is.na(fecha_ini_covid_1) & !is.na(fecha_ingreso_1)) %>% 
+  select(pac_number_unif_cod, fecha_ini_covid_1, fecha_ini_covid_2, 
+         fecha_ingreso_1, fecha_alta_1) %>% arrange(fecha_ingreso_1) %>%
+  relocate(
+    pac_number_unif_cod,
+           fecha_ingreso_1,
+           fecha_alta_1,
+    fecha_ini_covid_1,
+           fecha_ini_covid_2)
+
+fwrite(fechas_ingreso_discrepantes_con_fecha_covid, file.path("Resultados", 
+       "fechas_ingreso_discrepantes_con_fecha_covid.csv"))
 
 ```
+
+```{r}
+fechas_ingreso_con_fecha_covid_tardia <- poblacion %>% 
+  filter(fecha_ini_covid_1 > fecha_ingreso_1,
+         fecha_ini_covid_1 <= fecha_alta_1) %>% 
+  select(pac_number_unif_cod, fecha_ini_covid_1, fecha_ini_covid_2, 
+         fecha_ingreso_1, fecha_alta_1) %>% arrange(fecha_ingreso_1) %>%
+  relocate(
+    pac_number_unif_cod,
+           fecha_ingreso_1,
+           fecha_alta_1,
+    fecha_ini_covid_1,
+           fecha_ini_covid_2) %>% 
+  mutate(dias_desde_ingreso_hasta_fecha_covid = fecha_ini_covid_1 - fecha_ingreso_1) %>% 
+  arrange(desc(dias_desde_ingreso_hasta_fecha_covid))
+
+
+
+fwrite(fechas_ingreso_con_fecha_covid_tardia, file.path("Resultados", 
+       "fechas_ingreso_con_fecha_covid_tardia.csv"))
+
+```
+
+
 
 
 Se define el tiempo a partir del cual se quiere revisar las fechas (el 3 de enero de 2022, por ser el momento en el que omicron paso a ser dominante en España).
