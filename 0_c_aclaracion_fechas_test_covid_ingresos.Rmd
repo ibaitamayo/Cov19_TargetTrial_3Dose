@@ -83,7 +83,11 @@ tiempo_0 <- ymd("2022-01-03")
 poblacion <- poblacion_Vacunas_Infecc_06_2022 %>% 
   clean_names("snake") %>% 
   mutate(across(starts_with("fecha"), fymd))
+```
 
+
+```{r}
+# fcv1 > falta ó fcv1 es NA
 fechas_ingreso_discrepantes_con_fecha_covid <- poblacion %>% 
   filter(fecha_ini_covid_1 > fecha_alta_1 | is.na(fecha_ini_covid_1) & !is.na(fecha_ingreso_1)) %>% 
   select(pac_number_unif_cod, fecha_ini_covid_1, fecha_ini_covid_2, 
@@ -101,6 +105,7 @@ fwrite(fechas_ingreso_discrepantes_con_fecha_covid, file.path("Resultados",
 ```
 
 ```{r}
+# fcv1 > fingreso
 fechas_ingreso_con_fecha_covid_tardia <- poblacion %>% 
   filter(fecha_ini_covid_1 > fecha_ingreso_1,
          fecha_ini_covid_1 <= fecha_alta_1) %>% 
@@ -115,92 +120,49 @@ fechas_ingreso_con_fecha_covid_tardia <- poblacion %>%
   mutate(dias_desde_ingreso_hasta_fecha_covid = fecha_ini_covid_1 - fecha_ingreso_1) %>% 
   arrange(desc(dias_desde_ingreso_hasta_fecha_covid))
 
-
+fechas_ingreso_con_fecha_covid_tardia %>% 
+  tidylog::filter(dias_desde_ingreso_hasta_fecha_covid <= 5)
 
 fwrite(fechas_ingreso_con_fecha_covid_tardia, file.path("Resultados", 
        "fechas_ingreso_con_fecha_covid_tardia.csv"))
 
 ```
 
+```{r}
+poblacion2 <- poblacion %>% 
+  tidylog::mutate(fih1_new = if_else(fecha_ini_covid_1 > fecha_ingreso_1 %m+% days(5) |
+                              is.na(fecha_ini_covid_1), NA_Date_, fecha_ingreso_1)) %>% 
+  tidylog::mutate(fcv1_new = if_else(!is.na(fih1_new), fih1_new, fecha_ini_covid_1))
 
-
-
-Se define el tiempo a partir del cual se quiere revisar las fechas (el 3 de enero de 2022, por ser el momento en el que omicron paso a ser dominante en España).
-
-
+```
 
 
 ```{r}
-# descriptivo test, fcv1 y fih1
-test220613_cleaned2 <- test220613_cleaned %>% 
-  filter(tpos == TRUE) %>% 
-  select(id, ftes) %>%
-  group_by(id) %>% 
-  mutate(n = 1:n()) %>% 
-  ungroup()
+# check------------------------------------------------------------------------
+# fcv1 > falta ó fcv1 es NA
+poblacion2 %>% 
+  filter(fecha_ini_covid_1 > fecha_alta_1 | is.na(fcv1_new) & !is.na(fih1_new)) %>% 
+  select(pac_number_unif_cod, fcv1_new, fecha_ini_covid_2, 
+         fih1_new, fecha_alta_1) %>% arrange(fih1_new) %>%
+  relocate(
+    pac_number_unif_cod,
+           fih1_new,
+           fecha_alta_1,
+    fcv1_new,
+           fecha_ini_covid_2)
 
-# pasamos los test positivos a formato ancho
-test220613_cleaned3 <- test220613_cleaned2 %>%   
-pivot_wider(id_cols = id,
-            names_from = n,
-            names_prefix = "f_test_positivo_",
-            values_from = ftes)
-
-# unir pobana_2 con test
-pobana_con_test <- pobana_2  %>% 
-  select(id, fcv1, fcv2, fih1) %>%
-  left_join(test220613_cleaned3) %>% 
-  # que al menos tengan o f_test o fcv1 o fih1
-  tidylog::filter(!is.na(f_test_positivo_1) | 
-         !is.na(fcv1) |
-         !is.na(fih1))
-
-# comprobar na fcv1 y f_test
-pobana_con_test %>% filter(is.na(fcv1), is.na(f_test_positivo_1))
-# 67 individuos sólo tienen fecha de ingreso hospitalario
-
-# comprobar que sí sea na fcv1 pero no f_test
-pobana_con_test %>% filter(is.na(fcv1), !is.na(f_test_positivo_1)) # OK
-# Todos los individuos que tienen una f_test_positivo tienen fcv1
-
-# comprobar que no sea na fcv1 pero sí f_test
-pobana_con_test %>% filter(!is.na(fcv1), is.na(f_test_positivo_1))
-# 455 individuos que tienen fcv1 pero ningún f_test_positivo
-
-pobana_con_test %>% count(fcv1 - f_test_positivo_1, sort = TRUE)
-
-id_un_dia <- pobana_con_test %>% 
-  mutate(diferencia_fcv1_f_test_1 = fcv1 - f_test_positivo_1) %>%
-  arrange(diferencia_fcv1_f_test_1) %>% 
-  filter(diferencia_fcv1_f_test_1 == 1) %>% 
-  pull(id)
-
- test220613_cleaned %>% 
-  filter(tpos == TRUE) %>% 
-   filter(id %in% id_un_dia) %>% 
-   count(tori, tprof)
-
- test220613_cleaned %>% 
-  filter(tpos == TRUE) %>% 
-   # filter(id %in% id_un_dia) %>% 
-   count(tori, tprof)
- 
-test220613 <- fread(file.path("Datos", "Brutos",
-                                   "poblacion_Pruebas_dtcas_06_2022.csv"),
-                        col.names = c(
-                         "tori",
-                         "id",
-                         "tfreg",
-                         "tfval",
-                         "ct",
-                         "tmot",
-                         "tres",
-                         "tcen",
-                         "tamb",
-                         "tprof",
-                         "tmot2"))
-  
-test220613 %>% mutate(d = round(as.numeric(tfreg-tfval)/(3600*24))) %>% count(d)
+# fcv1 > fingreso
+poblacion2 %>% 
+  filter(fcv1_new > fih1_new,
+         fcv1_new <= fecha_alta_1) %>% 
+  select(pac_number_unif_cod, fcv1_new, fecha_ini_covid_2, 
+         fih1_new, fecha_alta_1) %>% arrange(fih1_new) %>%
+  relocate(
+    pac_number_unif_cod,
+           fih1_new,
+           fecha_alta_1,
+    fcv1_new,
+           fecha_ini_covid_2) 
 
 ```
 

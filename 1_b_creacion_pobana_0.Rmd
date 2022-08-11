@@ -377,10 +377,28 @@ pob13 <- pob12 %>%
 
 ```
 
+# Arreglo outcomes
+
+Se excluyen los ingresos donde han pasado más de 5 días desde la fecha del ingreso hasta fcv1.
+
+Se actualiza la fcv1 con la fih1 correspondiente. Las infecciones nosocomiales se tendrán en cuenta como infección, pero no como ingreso.
+
+```{r}
+# arreglar fih1 y fcv1---------------------------------------------------------
+pob14 <- pob13 %>%
+  rename(fih1_legacy = fih1,
+         fcv1_legacy = fcv1) %>% 
+  mutate(fih1 = if_else(fcv1_legacy > fih1_legacy %m+% days(5) |
+                      is.na(fcv1_legacy), NA_Date_, fih1_legacy)) %>% 
+  mutate(fcv1 = if_else(!is.na(fih1), fih1, fcv1_legacy))
+
+```
+
+
 
 ```{r pobana_0}
 # guardar base de pobana antes de hacer las exclusiones------------------------
-pobana_0 <- pob13
+pobana_0 <- pob14
 saveRDS(pobana_0, file = file.path("Datos", "Procesados", "pobana_0.RDS"))
 
 ```
