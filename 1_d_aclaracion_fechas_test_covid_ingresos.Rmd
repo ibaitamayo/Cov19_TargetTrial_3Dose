@@ -79,6 +79,9 @@ tiempo_0 <- ymd("2022-01-03")
 
 ```
 
+# Comprobar fechas
+
+
 ```{r}
 poblacion <- poblacion_Vacunas_Infecc_06_2022 %>% 
   clean_names("snake") %>% 
@@ -166,4 +169,48 @@ poblacion2 %>%
 
 ```
 
+# Crear pobana_0b
+
+```{r cargar-datos, echo=FALSE, eval=TRUE, message=FALSE, warning=FALSE}
+# cargar datos-----------------------------------------------------------------
+pobana_0 <- readRDS(file = file.path("Datos", "Procesados", "pobana_0.RDS"))
+
+```
+
+
+```{r}
+# fecha covid por test---------------------------------------------------------
+pobana_0b <- pobana_0 %>%
+  rename(fih1_legacy = fih1,
+         fcv1_legacy = fcv1) %>% 
+# crear fcv1_test
+  left_join(
+  test220613_cleaned %>% 
+  filter(tpos == TRUE) %>% 
+  group_by(id) %>% 
+  summarise(fcv1_test = min(freg))) %>%  
+  # arreglar base
+  mutate(fih1 = if_else(fcv1_legacy > fih1_legacy %m+% days(5) |
+                      is.na(fcv1_legacy), NA_Date_, fih1_legacy)) %>% 
+  mutate(fcv1 = if_else(!is.na(fih1), fih1, fcv1_test)) %>% 
+  mutate(fcv1_legacy2 = if_else(!is.na(fih1), fih1, fcv1_legacy))
+
+```
+
+
+```{r}
+# check pobana_0b
+pobana_0b %>% filter(!is.na(fcv1_test))
+pobana_0b %>% filter(!is.na(fcv1_legacy))
+pobana_0b %>% filter(!is.na(fih1), is.na(fcv1))
+
+```
+
+
+
+```{r pobana_0}
+# guardar base de pobana antes de hacer las exclusiones------------------------
+saveRDS(pobana_0b, file = file.path("Datos", "Procesados", "pobana_0b.RDS"))
+
+```
 

@@ -107,8 +107,9 @@ test1 <- test0 %>%
          tpos = tres == "Positivo", 
          profr = tprof == "Profesional") %>%
   select( -c(tres)) %>% 
+  mutate(freg = as.Date(tfreg)) %>% 
   mutate(ftes = as.Date(tfval)) %>% 
-  select(-tfreg) %>% 
+  select(-tfreg, -tfval) %>% 
   # seleccionar como mucho un test por persona y día
   tidylog::distinct(id, ftes, .keep_all = TRUE)   # 1581855
 

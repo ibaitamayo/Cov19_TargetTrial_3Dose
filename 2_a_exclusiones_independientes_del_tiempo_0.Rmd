@@ -61,7 +61,7 @@ suppressMessages(source_rmd("0_b_funciones.rmd"))
 
 ```{r cargar-datos, echo=FALSE, eval=TRUE, message=FALSE, warning=FALSE}
 # cargar datos-----------------------------------------------------------------
-pobana_0 <- readRDS(file = file.path("Datos", "Procesados", "pobana_0.RDS"))
+pobana_0b <- readRDS(file = file.path("Datos", "Procesados", "pobana_0b.RDS"))
 
 ```
 
@@ -99,7 +99,7 @@ variables = list(
 
 ```{r}
 # aplicar exclusiones independientes del tiempo_0------------------------------
-pobana_1 <- hacer_flujo(data = pobana_0, 
+pobana_1 <- hacer_flujo(data = pobana_0b, 
             exc = lista_exclusion)
 
 ```
