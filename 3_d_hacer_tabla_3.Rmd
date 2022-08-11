@@ -85,5 +85,6 @@ tabla_3 <- hacer_tabla_3()
 
 saveRDS(tabla_3, file.path("Resultados", "tabla_3.RDS"))
 
+tabla_3
 ```
 

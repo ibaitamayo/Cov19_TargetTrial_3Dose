@@ -212,6 +212,6 @@ matching_fih1_longer <- readRDS(file.path("Resultados",
 f_analisis(lista = matching_fih1_longer,
            tiempo_efecto = 7,
            lim_1 = 0.997,
-           lim_zoom = 0.998)
+           lim_zoom = 0.997)
 
 ```
