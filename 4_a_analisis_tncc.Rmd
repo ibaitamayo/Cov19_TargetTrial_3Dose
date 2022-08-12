@@ -68,13 +68,9 @@ test220613_cleaned <- readRDS(file = file.path("Datos", "Procesados",
 ```
 
 ```{r}
-# inicio omicron navarra
-tiempo_0 <- ymd("2022-01-03")
 # descriptivo test, fcv1 y fih1
-
 test220613_cleaned2 <- test220613_cleaned %>% 
   filter(tpos == TRUE) %>% 
-  filter(ftes >= tiempo_0) %>% 
   select(id, ftes) %>%
   group_by(id) %>% 
   mutate(n = 1:n()) %>% 
@@ -90,7 +86,10 @@ pobana_con_test <- pobana_2  %>%
   select(id, fcv1, fcv2, fih1) %>%
   left_join(test220613_cleaned3)
 
+# comprobar que las fechas están bien------------------------------------------
 pobana_con_test %>% filter(!is.na(fcv1), is.na(f_test_positivo_1))
+pobana_con_test %>% filter(is.na(fcv1), !is.na(f_test_positivo_1))
+# OK
 
 ```
 
@@ -116,8 +115,6 @@ data_0 %>%
   mutate(d = fcv1 - fih1) %>% 
   arrange(d)
 
-
-
 ```
 
 
@@ -138,7 +135,6 @@ data_0 %>%
     mutate(fcv1_prev = if_else((as.numeric(tiempo_0 - fcv1) >= 90) == TRUE,
                                fcv1, NA_Date_))
   
-  data2 %>% count(fcv1, fcv1_prev)
   
   # obtención número de test negativos previos al primer positivo
   data3 <- base_test %>% filter(id %in% data2$id,
@@ -164,16 +160,16 @@ data_0 %>%
                                   as.numeric(as.factor(.x)),
                                   as.numeric(.x)))))      
   
-  data <- data5 %>% 
+  data6 <- data5 %>% 
     mutate(exposicion = if_else(tpos == TRUE, 1, 0),
            date_start = tiempo_0)
     
   # hacer matching (investigar distintas opciones)
   data_out <- try({
-    greedymatch <- Matching::Match(Tr = data$exposicion, M = 1, 
-                   X = data[vector_match], exact = TRUE, ties = FALSE,
+    greedymatch <- Matching::Match(Tr = data6$exposicion, M = 1, 
+                   X = data6[vector_match], exact = TRUE, ties = FALSE,
                    replace = TRUE)
-    a <- data[unlist(greedymatch[c("index.treated", "index.control")]),]
+    a <- data6[unlist(greedymatch[c("index.treated", "index.control")]),]
     par <- rep(1:(nrow(a)/2), 2)
     bind_cols(par = par, a) %>%
       group_by(par) %>% 
@@ -187,7 +183,8 @@ data_out %>% count(fcv1 == ymd("2022-01-03"))
 data_out %>% count(fcv2 == ymd("2022-01-03"))
 
 data_out %>% filter(exposicion == 1, 
-                    fcv1 != ymd("2022-01-03") | fcv2 != ymd("2022-01-03"))
+                    fcv1 != ymd("2022-01-03"),
+                    fcv2 != ymd("2022-01-03"))
 
 ```
 

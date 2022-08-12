@@ -101,18 +101,24 @@ test0 <- test220613 %>%
 
 
 ```{r repetidos}
-# Quitar repetidos-------------------------------------------------------------
+# un test día por persona------------------------------------------------------ 
 test1 <- test0 %>% 
   mutate(id = as.character(id), 
          tpos = tres == "Positivo", 
          profr = tprof == "Profesional") %>%
   select( -c(tres)) %>% 
   mutate(freg = as.Date(tfreg)) %>% 
-  mutate(ftes = as.Date(tfval)) %>% 
+  mutate(fval = as.Date(tfval)) %>% 
+  # seleccionar fecha de regsitro como fecha del test
+  mutate(ftes = freg) %>% 
   select(-tfreg, -tfval) %>% 
   # seleccionar como mucho un test por persona y día
-  tidylog::distinct(id, ftes, .keep_all = TRUE)   # 1581855
-
+  group_by(id, ftes) %>%
+  # primar si hay un test positivo el mismo día que un negativo
+  slice(which.max(tpos))  %>% 
+  ungroup() %>%
+  tidylog::distinct(id, ftes, .keep_all = TRUE) 
+  
 ```
 
 ```{r}
