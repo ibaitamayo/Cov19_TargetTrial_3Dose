@@ -351,12 +351,12 @@ saveRDS(matching_fcv1_sens2, file.path("Resultados",
 
 ### Sensibilidad 3
 
-Restarle a la fecha *fcv1* dos días.
+Sumarle a la fecha *fcv1* dos días.
 
 ```{r}
 matching_fcv1_sens3 <- f_matching_tt_mult(
                 data = pobana_2 %>% 
-                  mutate(fcv1 = fcv1 %m-% days(2)),
+                  mutate(fcv1 = fcv1 %m+% days(2)),
                 f_ini = "2022-01-03",
                 f_fin = "2022-02-06",
                 crit_exc = lista_exclusion_dep,

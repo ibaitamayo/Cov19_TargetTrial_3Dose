@@ -977,8 +977,8 @@ t3_sens2 <- hacer_fila_tabla_3(matching_fcv1_sens2$tt_tibble,
                       after the control receives a booster rather than 0 days")
 
 t3_sens3 <- hacer_fila_tabla_3(matching_fcv1_sens3$tt_tibble,
-                      description = "subtracting 2 days to the PCR test result
-                      rather than the day of the PCR test result")
+                      description = "Adding 2 days to the PCR test date
+                      rather than the PCR collection date")
 
 t3_sens4 <- hacer_fila_tabla_3(matching_fcv1_sens4$tt_tibble,
                       description = "Selecting matched controls without
