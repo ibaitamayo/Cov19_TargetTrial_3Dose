@@ -417,6 +417,173 @@ f_matching_tt_mult <- function(
 
 ```
 
+## f_matching_tncc
+
+En esta función se realiza un diseño de caso-control negativo desde la realización de un test (positivo = caso / negativo = control).
+
+```{r}
+# función de matching tncc
+f_matching_tncc <- function(
+                          data, 
+                          tiempo_0,
+                          caso_control_var,
+                          caso_control_date,
+                          vector_match,
+                          crit_exc = NULL,
+                          match_with_replacement = TRUE,
+                          base_test = NULL,
+                          dias_a_excluir_test_previos = NULL,
+                          temporal_var = NULL,
+                          temporal_var_unit = "days",
+                          birth_date = NULL,
+                          age_first = NULL,
+                          age_last = NULL,
+                          age_by = NULL,
+                          verbose = TRUE,
+                          seed = 1) {
+  
+  set.seed(seed)
+  tiempo_0 <- ymd(tiempo_0)
+  print(glue("tiempo_0 = {tiempo_0}"))
+  # exclusiones dependientes del tiempo
+  if (!missing(crit_exc)){
+  for(i in seq_along(crit_exc$criterios)) {
+  data <- excluir_dep(
+                       pob = data,
+                       crit = crit_exc$criterios[[i]],
+                       var = crit_exc$variables[[i]],
+                       t_var = crit_exc$tipo_var[[i]],
+                       t0 = tiempo_0,
+                       vb = verbose)
+  } 
+    }
+  
+    data <- data %>%
+    # exclusión covid positivo en los 90 días previos al test
+    filter(
+      is.na(fcv1) |
+      as.numeric(tiempo_0 - fcv1) >= 90 | 
+      as.numeric(tiempo_0 - fcv1) <= 0,
+      is.na(fcv2) |
+      as.numeric(tiempo_0 - fcv2) >= 90 | 
+      as.numeric(tiempo_0 - fcv2) <= 0) %>% 
+    # obtención variable de covid previo
+    mutate(fcv1_prev = if_else((as.numeric(tiempo_0 - fcv1) >= 90) == TRUE,
+                               fcv1, NA_Date_))
+  
+    data <- base_test %>% filter(id %in% data1$id,
+                               get(caso_control_date) == tiempo_0) %>%
+     inner_join(data, by = "id")
+  
+  # introducir edad como variable de matching respecto a tiempo_0
+  if (!missing(birth_date)) {
+    if(is.null(age_first) || is.null(age_last) || is.null(age_by)) {
+      stop(strwrap(prefix = " ", initial = "", 
+           "Have you introduced 'age_first', 'age_last',
+           and, 'age_by' arguments properly?"))
+    }
+    data <- data %>% 
+      mutate(p_edad_cat = cut(as.numeric(difftime(tiempo_0, get(birth_date), 
+                                              unit = "days"))/365.25,
+                          right = FALSE, 
+                          breaks = c(0,
+                                     seq(age_first, age_last,
+                                         by = age_by),
+                                     200))) %>% 
+    mutate(p_edad_cat_label = p_edad_cat)
+  # actualizar variables matching  
+  vector_match <- c(vector_match, "p_edad_cat")
+  }
+  
+  # exposicion-seguimiento
+  data <- data %>%
+    mutate(across(.cols = all_of(vector_match), 
+                  .fns = ~if_else(is.na(as.numeric(.x)) == TRUE, 
+                                  as.numeric(as.factor(.x)),
+                                  as.numeric(.x))))  %>%     
+    mutate(caso_control = if_else(get(caso_control_var) == TRUE, 1, 0),
+           date_start = tiempo_0)
+    
+  # hacer matching (investigar distintas opciones)
+  try({
+    greedymatch <- Matching::Match(Tr = data$caso_control, M = 1, 
+                   X = data[vector_match], exact = TRUE, ties = FALSE,
+                   replace = match_with_replacement)
+    a <- data[unlist(greedymatch[c("index.treated", "index.control")]),]
+    par <- rep(1:(nrow(a)/2), 2)
+    bind_cols(par = par, a) %>%
+      group_by(par) %>% 
+      as_tibble() 
+    }
+  )
+}
+
+```
+
+## f_matching_tncc_mult 
+
+Extensión de la función f_matching_tncc, en la cuál se obtiene un ensayo clínico emulado para cada tiempo_0 y se unen en un único *tibble*.
+
+```{r}
+# función de matching para múltiples fechas------------------------------------
+f_matching_tncc_mult <- function(
+                             data, 
+                             f_ini,
+                             f_fin,
+                             caso_control_var,
+                             caso_control_date,
+                             vector_match,
+                             crit_exc = NULL,
+                             match_with_replacement = TRUE,
+                             base_test = NULL,
+                             dias_a_excluir_test_previos = NULL,
+                             temporal_var = NULL,
+                             temporal_var_unit = "days",
+                             birth_date = NULL,
+                             age_first = NULL,
+                             age_last = NULL,
+                             age_by = NULL,
+                             verbose = TRUE,
+                             seed = 1){
+  
+  fechas <- seq.Date(from = ymd(f_ini), to = ymd(f_fin), by = "days")
+  
+  tt_tibble =  map(fechas, 
+      f_matching_tncc,
+      data = data,
+      crit_exc = crit_exc,
+      caso_control_var = caso_control_var,
+      caso_control_date = caso_control_date,
+      vector_match = vector_match,
+      match_with_replacement = match_with_replacement,
+      base_test = base_test,
+      birth_date = birth_date,
+      age_first = age_first,
+      age_last = age_last,
+      age_by = age_by,
+      verbose = verbose,
+      seed = seed) %>% 
+    # descartar los días en los que no se encuentra matching
+    keep(~is_tibble(.x)) %>%  
+    # unir todos los tibbles de la lista en uno único
+    enframe() %>%
+    rename(target_trial_number = name) %>% 
+    unnest(value) 
+    # para evitar errores en el matcheo
+    # filter(!is.na(caso_control))    # filter(!is.na(caso_control))
+
+  if (!missing(birth_date)) {
+  vector_match  <- c(vector_match, 
+                     glue("age (in {age_by}-years groups)"))
+  }  
+  
+  return(lst(tt_tibble = tt_tibble,
+       vector_match = vector_match))  
+}
+
+
+```
+
 ## f_analisis
 
 En esta función se analizan los resultados obtenidos en la función *f_matching_tt_mult*. En la lista que se genera en la función anterior, se incluye el *outcome* y *las variables de matching*, las cuales se muestran por pantalla en la función de análisis. Además, se puede introducir el tiempo necesario para que la exposición surta efecto (*tiempo_efecto*). En el caso de que haya un *tiempo_efecto*, se muestra un aumento de la figura de Kaplan-Meier para ese intervalo de tiempo, en el que idealmente, las curvas se deberían superponer. Asimismo, se puede configurar el límite inferior del eje y (*lim_1* y *lim_zoom*) de la gráfica de Kaplan-Meier.

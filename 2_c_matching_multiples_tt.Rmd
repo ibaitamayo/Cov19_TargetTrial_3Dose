@@ -512,8 +512,6 @@ saveRDS(matching_fcv1_domi, file.path("Resultados",
 
 ```
 
-
-
 # fih1 más tiempo
 
 ```{r}

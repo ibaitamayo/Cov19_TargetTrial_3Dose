@@ -68,6 +68,14 @@ test220613_cleaned <- readRDS(file = file.path("Datos", "Procesados",
 ```
 
 ```{r}
+# check fecha test
+test220613_cleaned %>% arrange(freg)
+# hay 2 test con fecha 2012, pero son negativos. No problem
+
+```
+
+
+```{r}
 # descriptivo test, fcv1 y fih1
 test220613_cleaned2 <- test220613_cleaned %>% 
   filter(tpos == TRUE) %>% 
@@ -93,105 +101,48 @@ pobana_con_test %>% filter(is.na(fcv1), !is.na(f_test_positivo_1))
 
 ```
 
-
+# Análisis población general
 
 ```{r}
-tiempo_0 <- ymd("2022-01-03")
-base_test <- test220613_cleaned
+data_out <- f_matching_tncc(
+  data = pobana_2,
+  tiempo_0 = ymd("2022-01-03"),
+  caso_control_var = "tpos",
+  caso_control_date = "ftes",
+  base_test = test220613_cleaned,
+  vector_match = c("gen", "migran", "p_edad_cat"),
+  birth_date = "fnac",
+  age_first = 40,
+  age_last = 90,
+  age_by = 5)
 
-# arreglar fcv1 con respecto a los ingresos hospitalarios
-data_0 <- pobana_2 %>% 
-  tidylog::mutate(fcv1 = if_else(!is.na(fih1) & is.na(fcv1),
-                                 fih1, fcv1))
+data_out %>% count(caso_control)
 
-data_0 %>% 
-  filter(fih1 >= ymd("2022-01-03")) %>% 
-  count(fih1, fcv1, fcv2)
+```
 
-data_0 %>%
-  filter(fih1 >= ymd("2022-01-03")) %>% 
-  filter(fih1 < fcv1) %>% 
-  select(id, fih1, fcv1) %>% 
-  mutate(d = fcv1 - fih1) %>% 
-  arrange(d)
+```{r}
+lista_out <- f_matching_tncc_mult(
+  data = pobana_2,
+  f_ini = ymd("2022-01-03"),
+  f_fin = ymd("2022-06-13"),
+  caso_control_var = "tpos",
+  caso_control_date = "ftes",
+  base_test = test220613_cleaned,
+  vector_match = c("gen", "migran", "p_edad_cat"),
+  birth_date = "fnac",
+  age_first = 40,
+  age_last = 90,
+  age_by = 5)
+
+lista_out$tt_tibble %>% count(caso_control)
 
 ```
 
 
-```{r}
-# exclusión covid positivo en los 90 días previos al test
-  data1 <- data_0 %>%
-    filter(
-      is.na(fcv1) |
-      as.numeric(tiempo_0 - fcv1) >= 90 | 
-      as.numeric(tiempo_0 - fcv1) <= 0,
-      is.na(fcv2) |
-      as.numeric(tiempo_0 - fcv2) >= 90 | 
-      as.numeric(tiempo_0 - fcv2) <= 0)
-  
-  data1 %>% count(fcv1, fcv2)
-  
-  data2 <- data1 %>% 
-    mutate(fcv1_prev = if_else((as.numeric(tiempo_0 - fcv1) >= 90) == TRUE,
-                               fcv1, NA_Date_))
-  
-  
-  # obtención número de test negativos previos al primer positivo
-  data3 <- base_test %>% filter(id %in% data2$id,
-                               ftes == tiempo_0) %>%
-     inner_join(data2, by = "id")
-  
-  # introducir edad como variable de matching respecto a tiempo_0
-  data4 <- data3 %>% 
-    mutate(p_edad_cat = cut(as.numeric(difftime(tiempo_0, fnac, 
-                                              unit = "days"))/365.25,
-                          right = FALSE, 
-                          breaks = c(0,
-                                     seq(20, 70, by = 10),
-                                     200))) %>% 
-    mutate(p_edad_cat_label = p_edad_cat)
-  
-  # exposicion-seguimiento
-  vector_match <- c("gen", "migran", "p_edad_cat")
-  
-  suppressWarnings(data5 <- data4 %>%
-    mutate(across(.cols = all_of(vector_match), 
-                  .fns = ~if_else(is.na(as.numeric(.x)) == TRUE, 
-                                  as.numeric(as.factor(.x)),
-                                  as.numeric(.x)))))      
-  
-  data6 <- data5 %>% 
-    mutate(exposicion = if_else(tpos == TRUE, 1, 0),
-           date_start = tiempo_0)
-    
-  # hacer matching (investigar distintas opciones)
-  data_out <- try({
-    greedymatch <- Matching::Match(Tr = data6$exposicion, M = 1, 
-                   X = data6[vector_match], exact = TRUE, ties = FALSE,
-                   replace = TRUE)
-    a <- data6[unlist(greedymatch[c("index.treated", "index.control")]),]
-    par <- rep(1:(nrow(a)/2), 2)
-    bind_cols(par = par, a) %>%
-      group_by(par) %>% 
-      as_tibble() 
-    }
-  )
-
-data_out %>% count(exposicion)  
-
-data_out %>% count(fcv1 == ymd("2022-01-03"))
-data_out %>% count(fcv2 == ymd("2022-01-03"))
-
-data_out %>% filter(exposicion == 1, 
-                    fcv1 != ymd("2022-01-03"),
-                    fcv2 != ymd("2022-01-03"))
-
-```
 
 ```{r}
 # logística condicional
-data_out2 <- data_out %>% 
-  rename(caso = exposicion) %>% 
+data_out2 <- lista_out$tt_tibble %>% 
   mutate(tratamiento = case_when(
     is.na(fvc2) & is.na(fcv1_prev) ~ 1,
     is.na(fvc2) & !is.na(fcv1_prev) ~ 2,
@@ -206,7 +157,97 @@ data_out2 %>% skimr::skim(fcv1_prev)
 
 data_out2 %>% count(tratamiento)
 
-clogit(caso ~ tratamiento + strata(par), data = data_out2)
+pob_general <- clogit(caso_control ~ tratamiento + strata(par), data = data_out2)
 
 ```
 
+```{r}
+summary(pob_general)
+
+```
+
+# Análisis mayores de 40. Análisis de booster.
+
+```{r}
+# se crean listas que dependen del proyecto------------------------------------
+lista_exclusion_dep_tncc <- list(
+  criterios = list(
+  c1 = "Excluyendo: edad < 40 años en tiempo_0...", 
+  c2 = "Excluyendo: pauta incompleta 90 días antes del tiempo_0..."
+  ),
+  variables = list(
+  v2 = "fnac_40",
+  v3 = "fpauta_90"
+  ),
+  tipo_var = list(
+    "inc",
+    "inc"
+    )
+  )
+
+```
+
+
+```{r}
+data_out <- f_matching_tncc(
+  data = pobana_2,
+  tiempo_0 = "2022-01-03",
+  caso_control_var = "tpos",
+  caso_control_date = "ftes",
+  base_test = test220613_cleaned,
+  vector_match = c("gen", "migran", "p_edad_cat"),
+  crit_exc = lista_exclusion_dep_tncc,
+  birth_date = "fnac",
+  age_first = 40,
+  age_last = 90,
+  age_by = 5)
+
+data_out %>% count(caso_control)
+
+```
+
+```{r}
+lista_out <- f_matching_tncc_mult(
+  data = pobana_2,
+  crit_exc = lista_exclusion_dep_tncc,
+  f_ini = "2022-01-03",
+  f_fin = "2022-06-13",
+  caso_control_var = "tpos",
+  caso_control_date = "ftes",
+  base_test = test220613_cleaned,
+  vector_match = c("gen", "migran", "p_edad_cat"),
+  birth_date = "fnac",
+  age_first = 40,
+  age_last = 90,
+  age_by = 5,
+  verbose = FALSE)
+
+lista_out$tt_tibble %>% count(caso_control)
+
+```
+
+
+
+```{r}
+# logística condicional
+data_out2 <- lista_out$tt_tibble %>% 
+  mutate(tratamiento = case_when(
+     is.na(fvc3) & is.na(fcv1_prev) ~  1,
+     is.na(fvc3) & !is.na(fcv1_prev) ~ 2,
+    !is.na(fvc3) & is.na(fcv1_prev) ~  3,
+    !is.na(fvc3) & !is.na(fcv1_prev) ~ 4
+  )) %>% 
+  mutate(tratamiento = as_factor(tratamiento))
+
+data_out2 %>% skimr::skim(fcv1_prev)
+
+data_out2 %>% count(tratamiento)
+
+booster_analysis <- clogit(caso_control ~ tratamiento + strata(par), data = data_out2)
+
+```
+
+```{r}
+summary(booster_analysis)
+
+```
