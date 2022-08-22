@@ -250,4 +250,87 @@ booster_analysis <- clogit(caso_control ~ tratamiento + strata(par), data = data
 ```{r}
 summary(booster_analysis)
 
+
+
+```
+
+# Análisis mayores de 40. Análisis de booster. Sin COVID previa
+
+```{r}
+# se crean listas que dependen del proyecto------------------------------------
+lista_exclusion_dep_tncc <- list(
+  criterios = list(
+  c1 = "Excluyendo: edad < 40 años en tiempo_0...", 
+  c2 = "Excluyendo: pauta incompleta 90 días antes del tiempo_0..."
+  ),
+  variables = list(
+  v2 = "fnac_40",
+  v3 = "fpauta_90"
+  ),
+  tipo_var = list(
+    "inc",
+    "inc"
+    )
+  )
+
+```
+
+
+```{r}
+data_out <- f_matching_tncc(
+  data = pobana_2,
+  tiempo_0 = "2022-01-03",
+  caso_control_var = "tpos",
+  caso_control_date = "ftes",
+  base_test = test220613_cleaned,
+  vector_match = c("gen", "migran", "p_edad_cat"),
+  crit_exc = lista_exclusion_dep_tncc,
+  birth_date = "fnac",
+  age_first = 40,
+  age_last = 90,
+  age_by = 5)
+
+data_out %>% count(caso_control)
+
+```
+
+```{r}
+lista_out <- f_matching_tncc_mult(
+  data = pobana_2,
+  crit_exc = lista_exclusion_dep_tncc,
+  f_ini = "2022-01-03",
+  f_fin = "2022-06-13",
+  caso_control_var = "tpos",
+  caso_control_date = "ftes",
+  base_test = test220613_cleaned,
+  vector_match = c("gen", "migran", "p_edad_cat"),
+  birth_date = "fnac",
+  age_first = 40,
+  age_last = 90,
+  age_by = 5,
+  verbose = FALSE)
+
+lista_out$tt_tibble %>% count(caso_control)
+
+```
+
+
+
+```{r}
+# logística condicional
+data_out2 <- lista_out$tt_tibble %>% 
+  mutate(tratamiento = case_when(
+     is.na(fvc3) & is.na(fcv1_prev) ~  1,
+     is.na(fvc3) & !is.na(fcv1_prev) ~ 2,
+    !is.na(fvc3) & is.na(fcv1_prev) ~  3,
+    !is.na(fvc3) & !is.na(fcv1_prev) ~ 4
+  )) %>% 
+  mutate(tratamiento = as_factor(tratamiento))
+
+data_out2 %>% skimr::skim(fcv1_prev)
+
+data_out2 %>% count(tratamiento)
+
+booster_analysis <- clogit(caso_control ~ tratamiento + strata(par), data = data_out2)
+
 ```

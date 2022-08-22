@@ -471,7 +471,7 @@ f_matching_tncc <- function(
     mutate(fcv1_prev = if_else((as.numeric(tiempo_0 - fcv1) >= 90) == TRUE,
                                fcv1, NA_Date_))
   
-    data <- base_test %>% filter(id %in% data1$id,
+    data <- base_test %>% filter(id %in% data$id,
                                get(caso_control_date) == tiempo_0) %>%
      inner_join(data, by = "id")
   
