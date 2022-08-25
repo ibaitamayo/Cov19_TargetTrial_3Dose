@@ -221,9 +221,9 @@ t2_fcv1_longer
 
 <br>
 
-## Long-term infection (fih1)
+## Long-term hospitalisation (fih1)
 
-Now, the period has been extended from January 3 to April 13 and 60 days of follow-up has been selected. The results are shown in Tables \@ref(tab:t1-fih1-longer) and \@ref(tab:t2-fih1-longer)
+Now, the admission in hospital due to covid in the period from January 3 to April 13 and 60 days of follow-up has been selected. The results are shown in Tables \@ref(tab:t1-fih1-longer) and \@ref(tab:t2-fih1-longer)
 
 ```{r}
 # guardar resultados-----------------------------------------------------------
