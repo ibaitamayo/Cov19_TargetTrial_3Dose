@@ -1,5 +1,5 @@
 ---
-title: "Análisis caso control negativo en el tiempo desde prueba"
+title: "Análisis caso control negativo en el tiempo desde prueba diagnóstica"
 output: 
   html_document:
     code_folding: show
@@ -33,7 +33,7 @@ knitr::opts_chunk$set(eval = TRUE,
                       fig.height = 12)
 ```
 
-```{r librerias, echo=FALSE, message=FALSE, include=FALSE, warning=FALSE}
+```{r, echo=FALSE, message=FALSE, include=FALSE, warning=FALSE}
 # source("0_a_librerias.R")
 # ya se cargan cuando se carguen las funciones
 
@@ -68,7 +68,7 @@ test220613_cleaned <- readRDS(file = file.path("Datos", "Procesados",
 ```
 
 ```{r}
-# check fecha test
+# check fecha test-------------------------------------------------------------
 test220613_cleaned %>% arrange(freg)
 # hay 2 test con fecha 2012, pero son negativos. No problem
 
@@ -76,7 +76,7 @@ test220613_cleaned %>% arrange(freg)
 
 
 ```{r}
-# descriptivo test, fcv1 y fih1
+# descriptivo test, fcv1 y fih1------------------------------------------------
 test220613_cleaned2 <- test220613_cleaned %>% 
   filter(tpos == TRUE) %>% 
   select(id, ftes) %>%
@@ -101,10 +101,33 @@ pobana_con_test %>% filter(is.na(fcv1), !is.na(f_test_positivo_1))
 
 ```
 
-# Análisis población general
+# Introducción
+
+***
+
+Para comprobar el funcionamiento del diseño **tncc** se realizan tres análisis:
+
+1) Un análisis donde se estudia a la población general sin aplicar criterios de exclusión dependientes del tiempo (los criterios de exclusión independientes del tiempo sí que se han aplicado: no trabajadores sanitarios ni de educación, no residentes, etc.).
+
+2) Se excluyen a los individuos que no tengan la pauta *primaria* de vacunación (2 dosis de Pfizer, AZ y Moderna, o al menos 1 dosis de Janssen) con una antigüedad de 90 o más días en el *tiempo_0*.
+
+3) Se excluyen a los individuos que **no tengan la pauta *primaria*** de vacunación (2 dosis de Pfizer, AZ y Moderna, o al menos 1 dosis de Janssen) con una antigüedad de 90 o más días en el *tiempo_0*, y, además, se excluyena los individuos que **hayan tenido infección por COVID-19 previa** al *tiempo_0*.
+
+# Análisis 1 
+
+***
+
+Se estudia a la población general filtrada por criterios de exclusión independientes del tiempo (*Pobana_2*: población sin criterios de exclusión dependientes del tiempo). En esta población, existen 6 categorías posibles de tratamiento:
+
+1) Sin pauta de vacunación previa completa (sin booster), y sin registro de COVID-19 previa.
+2) Sin pauta de vacunación previa completa (sin booster), y con registro de COVID-19 previa.
+3) Con pauta de vacunación previa completa, sin booster, y sin registro de COVID-19 previa.
+4) Con pauta de vacunación previa completa, sin booster, y con registro de COVID-19 previa.
+5) Con pauta de vacunación previa completa, con booster, y sin registro de COVID-19 previa.
+6) Con pauta de vacunación previa completa, con booster, y con registro de COVID-19 previa.
 
 ```{r}
-data_out <- f_matching_tncc(
+data_out_1 <- f_matching_tncc(
   data = pobana_2,
   tiempo_0 = ymd("2022-01-03"),
   caso_control_var = "tpos",
@@ -116,12 +139,12 @@ data_out <- f_matching_tncc(
   age_last = 90,
   age_by = 5)
 
-data_out %>% count(caso_control)
+data_out_1 %>% count(caso_control)
 
 ```
 
 ```{r}
-lista_out <- f_matching_tncc_mult(
+lista_out_1 <- f_matching_tncc_mult(
   data = pobana_2,
   f_ini = ymd("2022-01-03"),
   f_fin = ymd("2022-06-13"),
@@ -134,7 +157,7 @@ lista_out <- f_matching_tncc_mult(
   age_last = 90,
   age_by = 5)
 
-lista_out$tt_tibble %>% count(caso_control)
+lista_out_1$tt_tibble %>% count(caso_control)
 
 ```
 
@@ -142,7 +165,7 @@ lista_out$tt_tibble %>% count(caso_control)
 
 ```{r}
 # logística condicional
-data_out2 <- lista_out$tt_tibble %>% 
+analisis_1 <- lista_out_1$tt_tibble %>% 
   mutate(tratamiento = case_when(
     is.na(fvc2) & is.na(fcv1_prev) ~ 1,
     is.na(fvc2) & !is.na(fcv1_prev) ~ 2,
@@ -153,31 +176,41 @@ data_out2 <- lista_out$tt_tibble %>%
   )) %>% 
   mutate(tratamiento = as_factor(tratamiento))
 
-data_out2 %>% skimr::skim(fcv1_prev)
+analisis_1 %>% skimr::skim(fcv1_prev)
 
-data_out2 %>% count(tratamiento)
+analisis_1 %>% count(tratamiento)
 
-pob_general <- clogit(caso_control ~ tratamiento + strata(par), data = data_out2)
+res_analisis_1 <- clogit(caso_control ~ tratamiento + strata(par), data = analisis_1)
 
 ```
 
 ```{r}
-summary(pob_general)
+# resultados del análisis 1
+summary(res_analisis_1)
 
 ```
 
-# Análisis mayores de 40. Análisis de booster.
+# Análisis 2
+
+***
+
+Se estudia a mayores de 40 con pauta previa completa. Por lo tanto, van a existir 4 categorías posibles de tratamiento:
+
+1) Sin booster y sin registro de COVID-19 previa.
+2) Sin booster y con registro de COVID-19 previa.
+3) Con booster y sin registro de COVID-19 previa.
+4) Con booster y con registro de COVID-19 previa.
 
 ```{r}
 # se crean listas que dependen del proyecto------------------------------------
-lista_exclusion_dep_tncc <- list(
+lista_exclusion_dep_analisis2 <- list(
   criterios = list(
   c1 = "Excluyendo: edad < 40 años en tiempo_0...", 
   c2 = "Excluyendo: pauta incompleta 90 días antes del tiempo_0..."
   ),
   variables = list(
-  v2 = "fnac_40",
-  v3 = "fpauta_90"
+  v1 = "fnac_40",
+  v2 = "fpauta_90"
   ),
   tipo_var = list(
     "inc",
@@ -189,27 +222,27 @@ lista_exclusion_dep_tncc <- list(
 
 
 ```{r}
-data_out <- f_matching_tncc(
+data_out_2 <- f_matching_tncc(
   data = pobana_2,
   tiempo_0 = "2022-01-03",
   caso_control_var = "tpos",
   caso_control_date = "ftes",
   base_test = test220613_cleaned,
   vector_match = c("gen", "migran", "p_edad_cat"),
-  crit_exc = lista_exclusion_dep_tncc,
+  crit_exc = lista_exclusion_dep_analisis2,
   birth_date = "fnac",
   age_first = 40,
   age_last = 90,
   age_by = 5)
 
-data_out %>% count(caso_control)
+data_out_2 %>% count(caso_control)
 
 ```
 
 ```{r}
-lista_out <- f_matching_tncc_mult(
+lista_out_2 <- f_matching_tncc_mult(
   data = pobana_2,
-  crit_exc = lista_exclusion_dep_tncc,
+  crit_exc = lista_exclusion_dep_analisis2,
   f_ini = "2022-01-03",
   f_fin = "2022-06-13",
   caso_control_var = "tpos",
@@ -222,7 +255,7 @@ lista_out <- f_matching_tncc_mult(
   age_by = 5,
   verbose = FALSE)
 
-lista_out$tt_tibble %>% count(caso_control)
+lista_out_2$tt_tibble %>% count(caso_control)
 
 ```
 
@@ -230,7 +263,7 @@ lista_out$tt_tibble %>% count(caso_control)
 
 ```{r}
 # logística condicional
-data_out2 <- lista_out$tt_tibble %>% 
+analisis_2 <- lista_out_2$tt_tibble %>% 
   mutate(tratamiento = case_when(
      is.na(fvc3) & is.na(fcv1_prev) ~  1,
      is.na(fvc3) & !is.na(fcv1_prev) ~ 2,
@@ -239,35 +272,44 @@ data_out2 <- lista_out$tt_tibble %>%
   )) %>% 
   mutate(tratamiento = as_factor(tratamiento))
 
-data_out2 %>% skimr::skim(fcv1_prev)
+analisis_2 %>% skimr::skim(fcv1_prev)
 
-data_out2 %>% count(tratamiento)
+analisis_2 %>% count(tratamiento)
 
-booster_analysis <- clogit(caso_control ~ tratamiento + strata(par), data = data_out2)
+res_analisis_2 <- clogit(caso_control ~ tratamiento + strata(par), data = analisis_2)
 
 ```
 
 ```{r}
-summary(booster_analysis)
-
-
+# resultados del análisis 2
+summary(res_analisis_2)
 
 ```
 
-# Análisis mayores de 40. Análisis de booster. Sin COVID previa
+# Análisis 3
+
+***
+
+Se estudia a los mayores de 40, con pauta previa y sin COVID previa. Por lo tanto, únicamente se tienen 2 categorías de tratamiento:
+
+1) Sin booster.
+2) Con booster.
 
 ```{r}
 # se crean listas que dependen del proyecto------------------------------------
-lista_exclusion_dep_tncc <- list(
+lista_exclusion_dep_analisis3 <- list(
   criterios = list(
-  c1 = "Excluyendo: edad < 40 años en tiempo_0...", 
-  c2 = "Excluyendo: pauta incompleta 90 días antes del tiempo_0..."
+  c1 = "Excluyendo: infección previa antes del tiempo_0...",
+  c2 = "Excluyendo: edad < 40 años en tiempo_0...", 
+  c3 = "Excluyendo: pauta incompleta 90 días antes del tiempo_0..."
   ),
   variables = list(
+  v1 = "fcv1",
   v2 = "fnac_40",
   v3 = "fpauta_90"
   ),
   tipo_var = list(
+    "exc",
     "inc",
     "inc"
     )
@@ -277,27 +319,27 @@ lista_exclusion_dep_tncc <- list(
 
 
 ```{r}
-data_out <- f_matching_tncc(
+data_out_3 <- f_matching_tncc(
   data = pobana_2,
   tiempo_0 = "2022-01-03",
   caso_control_var = "tpos",
   caso_control_date = "ftes",
   base_test = test220613_cleaned,
   vector_match = c("gen", "migran", "p_edad_cat"),
-  crit_exc = lista_exclusion_dep_tncc,
+  crit_exc = lista_exclusion_dep_analisis3,
   birth_date = "fnac",
   age_first = 40,
   age_last = 90,
   age_by = 5)
 
-data_out %>% count(caso_control)
+data_out_3 %>% count(caso_control)
 
 ```
 
 ```{r}
-lista_out <- f_matching_tncc_mult(
+lista_out_3 <- f_matching_tncc_mult(
   data = pobana_2,
-  crit_exc = lista_exclusion_dep_tncc,
+  crit_exc = lista_exclusion_dep_analisis3,
   f_ini = "2022-01-03",
   f_fin = "2022-06-13",
   caso_control_var = "tpos",
@@ -310,7 +352,7 @@ lista_out <- f_matching_tncc_mult(
   age_by = 5,
   verbose = FALSE)
 
-lista_out$tt_tibble %>% count(caso_control)
+lista_out_3$tt_tibble %>% count(caso_control)
 
 ```
 
@@ -318,19 +360,23 @@ lista_out$tt_tibble %>% count(caso_control)
 
 ```{r}
 # logística condicional
-data_out2 <- lista_out$tt_tibble %>% 
+analisis_3 <- lista_out_3$tt_tibble %>% 
   mutate(tratamiento = case_when(
-     is.na(fvc3) & is.na(fcv1_prev) ~  1,
-     is.na(fvc3) & !is.na(fcv1_prev) ~ 2,
-    !is.na(fvc3) & is.na(fcv1_prev) ~  3,
-    !is.na(fvc3) & !is.na(fcv1_prev) ~ 4
+     is.na(fvc3)  ~  1,
+    !is.na(fvc3)  ~  2
   )) %>% 
   mutate(tratamiento = as_factor(tratamiento))
 
-data_out2 %>% skimr::skim(fcv1_prev)
+analisis_3 %>% skimr::skim(fcv1_prev)
 
-data_out2 %>% count(tratamiento)
+analisis_3 %>% count(tratamiento)
 
-booster_analysis <- clogit(caso_control ~ tratamiento + strata(par), data = data_out2)
+res_analisis_3 <- clogit(caso_control ~ tratamiento + strata(par), data = analisis_3)
+
+```
+
+```{r}
+# resultados del análisis 3
+summary(res_analisis_3)
 
 ```
