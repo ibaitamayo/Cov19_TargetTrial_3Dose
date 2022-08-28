@@ -182,6 +182,8 @@ analisis_1 %>% count(tratamiento)
 
 res_analisis_1 <- clogit(caso_control ~ tratamiento + strata(par), data = analisis_1)
 
+saveRDS(res_analisis_1, file.path("Resultados", "res_analisis_1.RDS"))
+
 ```
 
 ```{r}
@@ -278,6 +280,8 @@ analisis_2 %>% count(tratamiento)
 
 res_analisis_2 <- clogit(caso_control ~ tratamiento + strata(par), data = analisis_2)
 
+saveRDS(res_analisis_2, file.path("Resultados", "res_analisis_2.RDS"))
+
 ```
 
 ```{r}
@@ -372,6 +376,8 @@ analisis_3 %>% skimr::skim(fcv1_prev)
 analisis_3 %>% count(tratamiento)
 
 res_analisis_3 <- clogit(caso_control ~ tratamiento + strata(par), data = analisis_3)
+
+saveRDS(res_analisis_3, file.path("Resultados", "res_analisis_3.RDS"))
 
 ```
 

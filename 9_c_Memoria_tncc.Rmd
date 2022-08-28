@@ -1,5 +1,5 @@
 ---
-title: "Target Trial: Booster Long-term effectivity against infection and severe cases on Omicron-dominant period in Navarra"
+title: "Target Trial: Test negative case control"
 author: "Francisco Sánchez Sáez"
 date: "`r format(Sys.Date())`"
 output: 
@@ -52,217 +52,142 @@ suppressMessages(source_rmd("0_b_funciones.rmd"))
 
 ```
 
-#  Introduction
+```{r definir_plot, echo=FALSE, warning=FALSE, message=FALSE}
+# definir el estilo de los gráficos--------------------------------------------
+theme_set(theme_bw())
+tema_azul <- theme_update(
+  plot.background = element_rect(fill = "aliceblue", colour = "black"),
+  strip.background = element_rect(colour = "black", fill = "white"))
+
+```
+
+
+# Introducción
 
 ***
 
-The omicron (B.1.1.529) variant of SARS-CoV-2 has increased capacity to elude immunity and cause breakthrough infections. The long-term effectivity against infection and severe cases of the booster vaccination is assessed on Omicron-dominant period in Navarra. This has been done following the **Target trial emulation** methodology [@Danaei2013]. The results of infections from January 3 to February 6 are compared with [@Monge2022] and then the period of the study is enlarged in order to assess the long-term effects.
+En este documento se muestra la utilización de un diseño de Análisis caso control negativo en el tiempo desde prueba diagnóstica (*test negative case control*). En particular, se realiza la emulación del ensayo clínico partiendo del caso (individuo con test positivo) y emparejando con un control que se haya realizado una prueba diagnóstica ese mismo día (individuo con test negativo).
 
-# Methods
 
-***
+Para comprobar el funcionamiento del diseño **tncc** se realizan tres análisis:
 
-In this population cohort study, we linked data from three population registries in Navarra (Vaccination Registry, Laboratory Results Registry, and BARDENA-Population registry) to select:
+1) Un análisis donde se estudia a la población general sin aplicar criterios de exclusión dependientes del tiempo (los criterios de exclusión independientes del tiempo sí que se han aplicado: no trabajadores sanitarios ni de educación, no residentes, etc.).
 
-  - Non-residents.
-  
-  - Non-educational workers.
-  
-  - Non health-care workers.
+2) Se excluyen a los individuos que no tengan la pauta *primaria* de vacunación (2 dosis de Pfizer, AZ y Moderna, o al menos 1 dosis de Janssen) con una antigüedad de 90 o más días en el *tiempo_0*.
 
-  - Community-dwelling individuals aged 40 years or older. 
-  
-  - Who completed their primary vaccine schedule at least 3 months before the start of follow-up.
-  
-  - Had not tested positive for SARS-CoV-2 since the start of the pandemic. 
-  
-On each day between Jan 3, and Feb 6, 2022, we matched individuals who received a booster mRNA vaccine and controls of the same: 
+3) Se excluyen a los individuos que **no tengan la pauta *primaria*** de vacunación (2 dosis de Pfizer, AZ y Moderna, o al menos 1 dosis de Janssen) con una antigüedad de 90 o más días en el *tiempo_0*, y, además, se excluyena los individuos que **hayan tenido infección por COVID-19 previa** al *tiempo_0*.
 
-- Age (5-years group).
-
-- Sex.
-
-- Number of previous negative test (0,1,2,3+).
-
-- Type of primary vaccine (homologous or Janssen).
-
-- Time since complete vaccination.
-
-- Type of booster.
-
-- Basic zone.
-
-- Migrant.
-
-- Flu vaccine (2020).
-
-- Flu vaccine (2021).
-
-- Number of people at home.
-      
-We estimated risk of laboratory-confirmed SARS-CoV-2 infection using the Kaplan-Meier method and compared groups using risk ratios (RR) and risk differences. **Vaccine effectiveness was calculated as one minus RR**.
-  
-# Results
+# Análisis 1 
 
 ***
 
-## Comparison
+Se estudia a la población general filtrada por criterios de exclusión independientes del tiempo (*Pobana_2*: población sin criterios de exclusión dependientes del tiempo). En esta población, existen 6 categorías posibles de tratamiento:
 
-In the study of Omicron in Spain [@Monge2022], the estimated effectiveness from day 7 to 34 after a booster was 51·3% (95% CI 50·2–52·4).
-
-In Navarra, we have the following results shown in Tables \@ref(tab:tabla1), \@ref(tab:tabla2) and \@ref(tab:tabla3). 
-
-<br>
-
-```{r}
-# cargar datos-----------------------------------------------------------------
-matching_fcv1 <- readRDS(file.path("Resultados",
-        "matching_fcv1.RDS"))
-matching_fcv1_sens0 <- readRDS(file.path("Resultados",
-        "matching_fcv1_sens0.RDS"))
-matching_fcv1_sens1 <- readRDS(file.path("Resultados",
-        "matching_fcv1_sens1.RDS"))
-matching_fcv1_sens2 <- readRDS(file.path("Resultados",
-        "matching_fcv1_sens2.RDS"))
-matching_fcv1_sens3 <- readRDS(file.path("Resultados",
-        "matching_fcv1_sens3.RDS"))
-matching_fcv1_sens4 <- readRDS(file.path("Resultados",
-        "matching_fcv1_sens4.RDS"))
-matching_fcv1_sens5 <- readRDS(file.path("Resultados",
-        "matching_fcv1_sens5.RDS"))
-
-```
-
-
-```{r tabla1, include=FALSE, eval=TRUE}
-tabla1 <- hacer_tabla_1(matching_fcv1$tt_tibble)
-
-```
-
-```{r}
-tabla1
-
-```
+1) Sin pauta de vacunación previa completa (sin booster), y sin registro de COVID-19 previa.
+2) Sin pauta de vacunación previa completa (sin booster), y con registro de COVID-19 previa.
+3) Con pauta de vacunación previa completa, sin booster, y sin registro de COVID-19 previa.
+4) Con pauta de vacunación previa completa, sin booster, y con registro de COVID-19 previa.
+5) Con pauta de vacunación previa completa, con booster, y sin registro de COVID-19 previa.
+6) Con pauta de vacunación previa completa, con booster, y con registro de COVID-19 previa.
 
 <br>
 
-```{r tabla2, include=FALSE, eval=TRUE}
-set.seed(1)
-tabla2 <- hacer_tabla_2(matching_fcv1$tt_tibble, 
-                        tiempo_efecto = 7)
-```
-
-
 ```{r}
-tabla2
+res_analisis_1 <- readRDS(file.path("Resultados", "res_analisis_1.RDS"))
 
-```
-
-<br>
-
-```{r tabla3, include=FALSE, eval=TRUE}
-set.seed(1)
-tabla3 <- hacer_tabla_3()
-
-```
-
-
-```{r}
-
-tabla3
+ci_res_1 <- (1 - exp(confint(res_analisis_1))) %>% 
+  as_tibble(rownames = "treatment") %>% 
+  mutate(estimate = 1 - exp(coef(res_analisis_1))) %>% 
+  rename(lw_ci = `2.5 %`,
+         up_ci = `97.5 %`) %>% 
+  mutate(description =
+           c("Booster: no.  Vaccination: no.  Previous infection: yes",
+             "Booster: no.  Vaccination: yes. Previous infection:  no",
+             "Booster: no.  Vaccination: yes. Previous infection: yes",
+             "Booster: yes. Vaccination: yes. Previous infection:  no",
+             "Booster: yes. Vaccination: yes. Previous infection: yes")) %>% 
+  mutate(prev_inf = c("yes",
+                      "no",
+                      "yes",
+                      "no",
+                      "yes"))
+             
+ggplot(ci_res_1) +
+  geom_errorbar(aes(x = description, ymin = lw_ci, ymax = up_ci, 
+                    colour = prev_inf),
+                width=.2,) +
+  geom_point(aes(x = description, y = estimate, colour = prev_inf)) +
+  scale_x_discrete(name = "Treatment", labels = label_wrap(25)) +
+  labs(caption = "Reference treatment is: Booster: no.  Vaccination: no.  Previous infection: no") +
+  scale_colour_manual(values = c("green", "red"), guide = NULL) +
+  scale_y_continuous(name = "Effectivity", breaks = seq(-1, 1, 0.2),
+                     labels = label_percent()) 
   
 ```
 
 <br>
 
-## Long-term infection (fcv1)
+# Análisis 2
 
-Now, the period has been extended from January 3 to April 13 and 60 days of follow-up has been selected. The results are shown in Tables \@ref(tab:t1-fcv1-longer) and \@ref(tab:t2-fcv1-longer)
+***
 
-```{r}
-# guardar resultados-----------------------------------------------------------
-matching_fcv1_longer <- readRDS(file.path("Resultados",
-        "matching_fcv1_longer.RDS"))
+Se estudia a mayores de 40 con pauta previa completa. Por lo tanto, van a existir 4 categorías posibles de tratamiento:
 
-```
-
-<br>
-
-```{r}
-# análisis---------------------------------------------------------------------
-f_analisis(lista = matching_fcv1_longer,
-           tiempo_efecto = 7,
-           lim_1 = 0.80,
-           lim_zoom = 0.9)
-
-```
-
-<br>
-
-```{r t1-fcv1-longer}
-t1_fcv1_longer <- hacer_tabla_1(matching_fcv1_longer$tt_tibble)
-
-t1_fcv1_longer
-
-```
-
-<br>
-
-```{r t2-fcv1-longer, include=FALSE, eval=TRUE}
-set.seed(1)
-t2_fcv1_longer <- hacer_tabla_2(matching_fcv1_longer$tt_tibble)
-
-```
-
-```{r}
-t2_fcv1_longer
-
-```
-
-<br>
-
-## Long-term infection (fih1)
-
-Now, the period has been extended from January 3 to April 13 and 60 days of follow-up has been selected. The results are shown in Tables \@ref(tab:t1-fih1-longer) and \@ref(tab:t2-fih1-longer)
-
-```{r}
-# guardar resultados-----------------------------------------------------------
-matching_fih1_longer <- readRDS(file.path("Resultados",
-        "matching_fih1_longer.RDS"))
-
-```
+1) Sin booster y sin registro de COVID-19 previa.
+2) Sin booster y con registro de COVID-19 previa.
+3) Con booster y sin registro de COVID-19 previa.
+4) Con booster y con registro de COVID-19 previa.
 
 <br>
 
 ```{r}
-# análisis---------------------------------------------------------------------
-f_analisis(lista = matching_fih1_longer,
-           tiempo_efecto = 7,
-           lim_1 = 0.997,
-           lim_zoom = 0.998)
+res_analisis_2 <- readRDS(file.path("Resultados", "res_analisis_2.RDS"))
 
+ci_res_1 <- (1 - exp(confint(res_analisis_1))) %>% 
+  as_tibble(rownames = "treatment") %>% 
+  mutate(estimate = 1 - exp(coef(res_analisis_1))) %>% 
+  rename(lw_ci = `2.5 %`,
+         up_ci = `97.5 %`) %>% 
+  mutate(description =
+           c("Booster: no.  Vaccination: no.  Previous infection: yes",
+             "Booster: no.  Vaccination: yes. Previous infection:  no",
+             "Booster: no.  Vaccination: yes. Previous infection: yes",
+             "Booster: yes. Vaccination: yes. Previous infection:  no",
+             "Booster: yes. Vaccination: yes. Previous infection: yes")) %>% 
+  mutate(prev_inf = c("yes",
+                      "no",
+                      "yes",
+                      "no",
+                      "yes"))
+             
+ggplot(ci_res_1) +
+  geom_errorbar(aes(x = description, ymin = lw_ci, ymax = up_ci, 
+                    colour = prev_inf),
+                width=.2,) +
+  geom_point(aes(x = description, y = estimate, colour = prev_inf)) +
+  scale_x_discrete(name = "Treatment", labels = label_wrap(25)) +
+  labs(caption = "Reference treatment is: Booster: no.  Vaccination: no.  Previous infection: no") +
+  scale_colour_manual(values = c("green", "red"), guide = NULL) +
+  scale_y_continuous(name = "Effectivity", breaks = seq(-1, 1, 0.2),
+                     labels = label_percent()) 
+  
 ```
 
 <br>
 
-```{r t1-fih1-longer}
-t1_fih1_longer <- hacer_tabla_1(matching_fih1_longer$tt_tibble)
 
-t1_fih1_longer
+# Análisis 3
 
-```
+***
+
+Se estudia a los mayores de 40, con pauta previa y sin COVID previa. Por lo tanto, únicamente se tienen 2 categorías de tratamiento:
+
+1) Sin booster.
+2) Con booster.
 
 <br>
 
-```{r t2-fih1-longer, include=FALSE, eval=TRUE}
-set.seed(1)
-t2_fih1_longer <- hacer_tabla_2(matching_fih1_longer$tt_tibble)
-
-```
-
-
-```{r }
-t2_fih1_longer
+```{r}
 
 ```
 
