@@ -113,6 +113,21 @@ Para comprobar el funcionamiento del diseño **tncc** se realizan tres análisis
 
 3) Se excluyen a los individuos que **no tengan la pauta *primaria*** de vacunación (2 dosis de Pfizer, AZ y Moderna, o al menos 1 dosis de Janssen) con una antigüedad de 90 o más días en el *tiempo_0*, y, además, se excluyena los individuos que **hayan tenido infección por COVID-19 previa** al *tiempo_0*.
 
+```{r}
+# vectores de matching---------------------------------------------------------
+variables_matching = c(
+  "gen",    # 1
+  "gedad",  # 2
+  "czbs",   # 3
+  "tvc1",   # 4
+  "migran", # 5
+  "vgp20",  # 6
+  "vgp21",  # 7
+  "ucn8",   # 8
+  "domi")   # 9
+
+```
+
 # Análisis 1 
 
 ***
@@ -386,3 +401,102 @@ saveRDS(res_analisis_3, file.path("Resultados", "res_analisis_3.RDS"))
 summary(res_analisis_3)
 
 ```
+
+
+# Análisis 4
+
+***
+
+Se estudia a los mayores de 40, con pauta previa y sin COVID previa. Por lo tanto, únicamente se tienen 2 categorías de tratamiento:
+
+1) Sin booster.
+2) Con booster.
+
+```{r}
+# se crean listas que dependen del proyecto------------------------------------
+lista_exclusion_dep_analisis3 <- list(
+  criterios = list(
+  c1 = "Excluyendo: infección previa antes del tiempo_0...",
+  c2 = "Excluyendo: edad < 40 años en tiempo_0...", 
+  c3 = "Excluyendo: pauta incompleta 90 días antes del tiempo_0..."
+  ),
+  variables = list(
+  v1 = "fcv1",
+  v2 = "fnac_40",
+  v3 = "fpauta_90"
+  ),
+  tipo_var = list(
+    "exc",
+    "inc",
+    "inc"
+    )
+  )
+
+```
+
+
+```{r}
+data_out_4 <- f_matching_tncc(
+  data = pobana_2,
+  tiempo_0 = "2022-01-03",
+  caso_control_var = "tpos",
+  caso_control_date = "ftes",
+  base_test = test220613_cleaned,
+  vector_match = variables_matching[c(1, 3:8)],
+  crit_exc = lista_exclusion_dep_analisis3,
+  birth_date = "fnac",
+  age_first = 40,
+  age_last = 90,
+  age_by = 5)
+
+data_out_4 %>% count(caso_control)
+
+```
+
+```{r}
+lista_out_4 <- f_matching_tncc_mult(
+  data = pobana_2,
+  crit_exc = lista_exclusion_dep_analisis3,
+  f_ini = "2022-01-10",
+  f_fin = "2022-03-10",
+  caso_control_var = "tpos",
+  caso_control_date = "ftes",
+  base_test = test220613_cleaned,
+  vector_match = variables_matching[c(1, 3:8)],
+  birth_date = "fnac",
+  age_first = 40,
+  age_last = 90,
+  age_by = 5,
+  verbose = FALSE)
+
+lista_out_4$tt_tibble %>% count(caso_control)
+
+```
+
+
+
+```{r}
+# logística condicional
+analisis_4 <- lista_out_4$tt_tibble %>% 
+  mutate(tratamiento = case_when(
+     is.na(fvc3)  ~  1,
+    !is.na(fvc3)  ~  2
+  )) %>% 
+  mutate(tratamiento = as_factor(tratamiento))
+
+analisis_4 %>% skimr::skim(fcv1_prev)
+
+analisis_4 %>% count(tratamiento)
+
+res_analisis_4 <- clogit(caso_control ~ tratamiento + strata(par), data = analisis_4)
+
+saveRDS(res_analisis_4, file.path("Resultados", "res_analisis_4.RDS"))
+
+```
+
+```{r}
+# resultados del análisis 4
+summary(res_analisis_4)
+
+```
+

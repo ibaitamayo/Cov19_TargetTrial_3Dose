@@ -4,6 +4,7 @@ author: "Francisco Sánchez Sáez"
 date: "`r format(Sys.Date())`"
 output: 
   bookdown::html_document2:
+    number_sections: false
     keep_md: false 
     theme: cerulean
     highlight: breezedark
@@ -77,11 +78,21 @@ Para comprobar el funcionamiento del diseño **tncc** se realizan tres análisis
 
 3) Se excluyen a los individuos que **no tengan la pauta *primaria*** de vacunación (2 dosis de Pfizer, AZ y Moderna, o al menos 1 dosis de Janssen) con una antigüedad de 90 o más días en el *tiempo_0*, y, además, se excluyena los individuos que **hayan tenido infección por COVID-19 previa** al *tiempo_0*.
 
+Para los tres análisis: 
+
+- Se estudia el periodo: **2022-01-03 a 2022-06-13**.
+
+- Se empareja por: **sexo**, **migrante** y grupos de **edad** (5 años).
+
+Por último, se realiza un último análisis:
+
+4) Análisis similar al 3, pero con el periodo: **2022-01-10 a 2022-03-10** y emparejando por: **sexo**, **migrante**, grupos de **edad** (5 años), **tipo de vacuna** en la vacunación primaria, **zona básica**, **vacuna de la gripe (2020)**, **vacuna de la gripe (2021)** y **número de convivientes** (truncado en 8).
+
 # Análisis 1 
 
 ***
 
-Se estudia a la población general filtrada por criterios de exclusión independientes del tiempo (*Pobana_2*: población sin criterios de exclusión dependientes del tiempo). En esta población, existen 6 categorías posibles de tratamiento:
+Se estudia a la población general filtrada por criterios de exclusión independientes del tiempo (*Pobana_2*: población sin criterios de exclusión dependientes del tiempo). En esta población, existen 6 categorías posibles de tratamiento, del mismo modo que en [@Altarawneh2022]:
 
 1) Sin pauta de vacunación previa completa (sin booster), y sin registro de COVID-19 previa.
 2) Sin pauta de vacunación previa completa (sin booster), y con registro de COVID-19 previa.
@@ -89,6 +100,8 @@ Se estudia a la población general filtrada por criterios de exclusión independ
 4) Con pauta de vacunación previa completa, sin booster, y con registro de COVID-19 previa.
 5) Con pauta de vacunación previa completa, con booster, y sin registro de COVID-19 previa.
 6) Con pauta de vacunación previa completa, con booster, y con registro de COVID-19 previa.
+
+En la Figura \@ref(fig:gg1) se muestra el resultado de la efectividad estimada de los distintos tratamientos posibles del análisis.
 
 <br>
 
@@ -110,8 +123,16 @@ ci_res_1 <- (1 - exp(confint(res_analisis_1))) %>%
                       "no",
                       "yes",
                       "no",
-                      "yes"))
-             
+                      "yes")) %>% 
+  mutate(ci = glue("{round(100 * estimate, 1)}% \\
+                   ({round(100 * up_ci, 1)}%, \\
+                    {round(100 * lw_ci, 1)}%)"))
+
+```
+
+
+```{r gg1, fig.cap="Resultados del Análisis 1"}
+
 ggplot(ci_res_1) +
   geom_errorbar(aes(x = description, ymin = lw_ci, ymax = up_ci, 
                     colour = prev_inf),
@@ -120,8 +141,17 @@ ggplot(ci_res_1) +
   scale_x_discrete(name = "Treatment", labels = label_wrap(25)) +
   labs(caption = "Reference treatment is: Booster: no.  Vaccination: no.  Previous infection: no") +
   scale_colour_manual(values = c("green", "red"), guide = NULL) +
-  scale_y_continuous(name = "Effectivity", breaks = seq(-1, 1, 0.2),
-                     labels = label_percent()) 
+  scale_y_continuous(name = "Effectivity", breaks = seq(-1, 1, 0.2), limits = c(-1, 1),
+                     labels = label_percent()) +
+   geom_text_repel(aes(label = ci, x = description, y = lw_ci),
+                  size = 3, min.segment.length = 0,
+                  point.padding = unit(8, "points"),
+                  segment.color = NA,
+                  nudge_x = 0,
+                  nudge_y = 0.1, 
+                  show.legend = FALSE)
+
+
   
 ```
 
@@ -138,38 +168,50 @@ Se estudia a mayores de 40 con pauta previa completa. Por lo tanto, van a existi
 3) Con booster y sin registro de COVID-19 previa.
 4) Con booster y con registro de COVID-19 previa.
 
+En la Figura \@ref(fig:gg3) se muestra el resultado de la efectividad estimada de los distintos tratamientos posibles del análisis.
+
 <br>
 
 ```{r}
 res_analisis_2 <- readRDS(file.path("Resultados", "res_analisis_2.RDS"))
 
-ci_res_1 <- (1 - exp(confint(res_analisis_1))) %>% 
+ci_res_2 <- (1 - exp(confint(res_analisis_2))) %>% 
   as_tibble(rownames = "treatment") %>% 
-  mutate(estimate = 1 - exp(coef(res_analisis_1))) %>% 
+  mutate(estimate = 1 - exp(coef(res_analisis_2))) %>% 
   rename(lw_ci = `2.5 %`,
          up_ci = `97.5 %`) %>% 
   mutate(description =
-           c("Booster: no.  Vaccination: no.  Previous infection: yes",
-             "Booster: no.  Vaccination: yes. Previous infection:  no",
-             "Booster: no.  Vaccination: yes. Previous infection: yes",
-             "Booster: yes. Vaccination: yes. Previous infection:  no",
-             "Booster: yes. Vaccination: yes. Previous infection: yes")) %>% 
+           c("Booster: no.  Previous infection: yes",
+             "Booster: yes. Previous infection:  no",
+             "Booster: yes. Previous infection: yes")) %>% 
   mutate(prev_inf = c("yes",
                       "no",
-                      "yes",
-                      "no",
-                      "yes"))
-             
-ggplot(ci_res_1) +
+                      "yes")) %>% 
+  mutate(ci = glue("{round(100 * estimate, 1)}% \\
+                   ({round(100 * up_ci, 1)}%, \\
+                    {round(100 * lw_ci, 1)}%)"))
+
+```
+
+
+```{r gg2, fig.cap="Resultados del Análisis 2"}
+ggplot(ci_res_2) +
   geom_errorbar(aes(x = description, ymin = lw_ci, ymax = up_ci, 
                     colour = prev_inf),
                 width=.2,) +
   geom_point(aes(x = description, y = estimate, colour = prev_inf)) +
   scale_x_discrete(name = "Treatment", labels = label_wrap(25)) +
-  labs(caption = "Reference treatment is: Booster: no.  Vaccination: no.  Previous infection: no") +
+  labs(caption = "Reference treatment is: Booster: no. Previous infection: no") +
   scale_colour_manual(values = c("green", "red"), guide = NULL) +
-  scale_y_continuous(name = "Effectivity", breaks = seq(-1, 1, 0.2),
-                     labels = label_percent()) 
+  scale_y_continuous(name = "Effectivity", breaks = seq(0, 1, 0.2), limits = c(0, 1),
+                     labels = label_percent()) +
+   geom_text_repel(aes(label = ci, x = description, y = lw_ci),
+                  size = 3, min.segment.length = 0,
+                  point.padding = unit(8, "points"),
+                  segment.color = NA,
+                  nudge_x = 0,
+                  nudge_y = 0.1, 
+                  show.legend = FALSE)
   
 ```
 
@@ -185,14 +227,274 @@ Se estudia a los mayores de 40, con pauta previa y sin COVID previa. Por lo tant
 1) Sin booster.
 2) Con booster.
 
+En la Figura \@ref(fig:gg3) se muestra el resultado de la efectividad estimada del Booster frente a No-Booster.
+
 <br>
 
 ```{r}
+res_analisis_3 <- readRDS(file.path("Resultados", "res_analisis_3.RDS"))
+
+ci_res_3 <- (1 - exp(confint(res_analisis_3))) %>% 
+  as_tibble(rownames = "treatment") %>% 
+  mutate(estimate = 1 - exp(coef(res_analisis_3))) %>% 
+  rename(lw_ci = `2.5 %`,
+         up_ci = `97.5 %`) %>% 
+  mutate(description =
+           c("Booster: yes")) %>% 
+  mutate(ci = glue("{round(100 * estimate, 1)}% \\
+                   ({round(100 * up_ci, 1)}%, \\
+                    {round(100 * lw_ci, 1)}%)"))
+```
+
+
+```{r gg3, fig.cap="Resultados del Análisis 3"}
+ggplot(ci_res_3) +
+  geom_errorbar(aes(x = description, ymin = lw_ci, ymax = up_ci),
+                width=.05,) +
+  geom_point(aes(x = description, y = estimate), colour = "blue") +
+  scale_x_discrete(name = "Treatment", labels = label_wrap(25)) +
+  labs(caption = "Reference treatment is: Booster: no") +
+  scale_y_continuous(name = "Effectivity", breaks = seq(0, 1, 0.2), limits = c(0, 1),
+                     labels = label_percent()) +
+   geom_text_repel(aes(label = ci, x = description, y = lw_ci),
+                  size = 3, min.segment.length = 0,
+                  point.padding = unit(8, "points"),
+                  segment.color = NA,
+                  nudge_x = 0,
+                  nudge_y = 0.1, 
+                  show.legend = FALSE)
 
 ```
 
 <br>
 
-# References
+# Análisis 4
+
+***
+
+Se estudia a los mayores de 40, con pauta previa y sin COVID previa. Por lo tanto, únicamente se tienen 2 categorías de tratamiento:
+
+1) Sin booster.
+2) Con booster.
+
+En la Figura \@ref(fig:gg4) se muestra el resultado de la efectividad estimada del Booster frente a No-Booster.
+
+<br>
+
+```{r}
+res_analisis_4 <- readRDS(file.path("Resultados", "res_analisis_4.RDS"))
+
+ci_res_4 <- (1 - exp(confint(res_analisis_4))) %>% 
+  as_tibble(rownames = "treatment") %>% 
+  mutate(estimate = 1 - exp(coef(res_analisis_4))) %>% 
+  rename(lw_ci = `2.5 %`,
+         up_ci = `97.5 %`) %>% 
+  mutate(description =
+           c("Booster: yes")) %>% 
+  mutate(ci = glue("{round(100 * estimate, 1)}% \\
+                   ({round(100 * up_ci, 1)}%, \\
+                    {round(100 * lw_ci, 1)}%)"))
+```
+
+
+```{r gg4, fig.cap="Resultados del Análisis 4"}
+ggplot(ci_res_4) +
+  geom_errorbar(aes(x = description, ymin = lw_ci, ymax = up_ci),
+                width=.05,) +
+  geom_point(aes(x = description, y = estimate), colour = "blue") +
+  scale_x_discrete(name = "Treatment", labels = label_wrap(25)) +
+  labs(caption = "Reference treatment is: Booster: no") +
+  scale_y_continuous(name = "Effectivity", breaks = seq(0, 1, 0.2), limits = c(0, 1),
+                     labels = label_percent()) +
+   geom_text_repel(aes(label = ci, x = description, y = lw_ci),
+                  size = 3, min.segment.length = 0,
+                  point.padding = unit(8, "points"),
+                  segment.color = NA,
+                  nudge_x = 0,
+                  nudge_y = 0.1, 
+                  show.legend = FALSE)
+
+```
+
+<br>
+
+El resultado es todavía más similar al que se obtenía con el target trial prospectivo. El inconveniente es que al reducir el periodo de estudio y al exigir emparejar por más variables (además del emparejamiento por el test), el tamaño de la muestra se reduce de n = 101&hairsp;018 del **Análisis 3** a n = 2030 del **Análisis 4**. 
+
+<br>
+
+# La función
+
+***
+
+## f_matching_tncc
+
+En esta función se realiza un diseño de caso-control negativo desde la realización de un test (positivo = caso / negativo = control).
+
+```{r, echo = TRUE}
+# función de matching tncc
+f_matching_tncc <- function(
+                          data, 
+                          tiempo_0,
+                          caso_control_var,
+                          caso_control_date,
+                          vector_match,
+                          crit_exc = NULL,
+                          match_with_replacement = TRUE,
+                          base_test = NULL,
+                          dias_a_excluir_test_previos = NULL,
+                          temporal_var = NULL,
+                          temporal_var_unit = "days",
+                          birth_date = NULL,
+                          age_first = NULL,
+                          age_last = NULL,
+                          age_by = NULL,
+                          verbose = TRUE,
+                          seed = 1) {
+  
+  set.seed(seed)
+  tiempo_0 <- ymd(tiempo_0)
+  print(glue("tiempo_0 = {tiempo_0}"))
+  # exclusiones dependientes del tiempo
+  if (!missing(crit_exc)){
+  for(i in seq_along(crit_exc$criterios)) {
+  data <- excluir_dep(
+                       pob = data,
+                       crit = crit_exc$criterios[[i]],
+                       var = crit_exc$variables[[i]],
+                       t_var = crit_exc$tipo_var[[i]],
+                       t0 = tiempo_0,
+                       vb = verbose)
+  } 
+    }
+  
+    data <- data %>%
+    # exclusión covid positivo en los 90 días previos al test
+    filter(
+      is.na(fcv1) |
+      as.numeric(tiempo_0 - fcv1) >= 90 | 
+      as.numeric(tiempo_0 - fcv1) <= 0,
+      is.na(fcv2) |
+      as.numeric(tiempo_0 - fcv2) >= 90 | 
+      as.numeric(tiempo_0 - fcv2) <= 0) %>% 
+    # obtención variable de covid previo
+    mutate(fcv1_prev = if_else((as.numeric(tiempo_0 - fcv1) >= 90) == TRUE,
+                               fcv1, NA_Date_))
+  
+    data <- base_test %>% filter(id %in% data$id,
+                               get(caso_control_date) == tiempo_0) %>%
+     inner_join(data, by = "id")
+  
+  # introducir edad como variable de matching respecto a tiempo_0
+  if (!missing(birth_date)) {
+    if(is.null(age_first) || is.null(age_last) || is.null(age_by)) {
+      stop(strwrap(prefix = " ", initial = "", 
+           "Have you introduced 'age_first', 'age_last',
+           and, 'age_by' arguments properly?"))
+    }
+    data <- data %>% 
+      mutate(p_edad_cat = cut(as.numeric(difftime(tiempo_0, get(birth_date), 
+                                              unit = "days"))/365.25,
+                          right = FALSE, 
+                          breaks = c(0,
+                                     seq(age_first, age_last,
+                                         by = age_by),
+                                     200))) %>% 
+    mutate(p_edad_cat_label = p_edad_cat)
+  # actualizar variables matching  
+  vector_match <- c(vector_match, "p_edad_cat")
+  }
+  
+  # exposicion-seguimiento
+  data <- data %>%
+    mutate(across(.cols = all_of(vector_match), 
+                  .fns = ~if_else(is.na(as.numeric(.x)) == TRUE, 
+                                  as.numeric(as.factor(.x)),
+                                  as.numeric(.x))))  %>%     
+    mutate(caso_control = if_else(get(caso_control_var) == TRUE, 1, 0),
+           date_start = tiempo_0)
+    
+  # hacer matching (investigar distintas opciones)
+  try({
+    greedymatch <- Matching::Match(Tr = data$caso_control, M = 1, 
+                   X = data[vector_match], exact = TRUE, ties = FALSE,
+                   replace = match_with_replacement)
+    a <- data[unlist(greedymatch[c("index.treated", "index.control")]),]
+    par <- rep(1:(nrow(a)/2), 2)
+    bind_cols(par = par, a) %>%
+      group_by(par) %>% 
+      as_tibble() 
+    }
+  )
+}
+
+```
+
+## f_matching_tncc_mult 
+
+Extensión de la función f_matching_tncc, en la cuál se obtiene un ensayo clínico emulado para cada tiempo_0 y se unen en un único *tibble*.
+
+```{r, echo = TRUE}
+# función de matching para múltiples fechas------------------------------------
+f_matching_tncc_mult <- function(
+                             data, 
+                             f_ini,
+                             f_fin,
+                             caso_control_var,
+                             caso_control_date,
+                             vector_match,
+                             crit_exc = NULL,
+                             match_with_replacement = TRUE,
+                             base_test = NULL,
+                             dias_a_excluir_test_previos = NULL,
+                             temporal_var = NULL,
+                             temporal_var_unit = "days",
+                             birth_date = NULL,
+                             age_first = NULL,
+                             age_last = NULL,
+                             age_by = NULL,
+                             verbose = TRUE,
+                             seed = 1){
+  
+  fechas <- seq.Date(from = ymd(f_ini), to = ymd(f_fin), by = "days")
+  
+  tt_tibble =  map(fechas, 
+      f_matching_tncc,
+      data = data,
+      crit_exc = crit_exc,
+      caso_control_var = caso_control_var,
+      caso_control_date = caso_control_date,
+      vector_match = vector_match,
+      match_with_replacement = match_with_replacement,
+      base_test = base_test,
+      birth_date = birth_date,
+      age_first = age_first,
+      age_last = age_last,
+      age_by = age_by,
+      verbose = verbose,
+      seed = seed) %>% 
+    # descartar los días en los que no se encuentra matching
+    keep(~is_tibble(.x)) %>%  
+    # unir todos los tibbles de la lista en uno único
+    enframe() %>%
+    rename(target_trial_number = name) %>% 
+    unnest(value) 
+    # para evitar errores en el matcheo
+    # filter(!is.na(caso_control))    # filter(!is.na(caso_control))
+
+  if (!missing(birth_date)) {
+  vector_match  <- c(vector_match, 
+                     glue("age (in {age_by}-years groups)"))
+  }  
+  
+  return(lst(tt_tibble = tt_tibble,
+       vector_match = vector_match))  
+}
+
+
+```
+
+
+
+# References{-}
 
 ***

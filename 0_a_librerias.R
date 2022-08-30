@@ -23,5 +23,6 @@ library(glue)
 library(janitor)
 library(Hmisc)
 library(skimr)
+library(ggrepel)
 # usar fuciones de tidyverse antes que las de otros paquetes-------------------
 conflict_prefer_all("dplyr")

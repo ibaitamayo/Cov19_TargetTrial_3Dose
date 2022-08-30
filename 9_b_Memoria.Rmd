@@ -82,13 +82,11 @@ On each day between Jan 3, and Feb 6, 2022, we matched individuals who received 
 
 - Sex.
 
-- Number of previous negative test (0,1,2,3+).
+- Number of previous negative test (0, 1, 2, 3+).
 
 - Type of primary vaccine (homologous or Janssen).
 
 - Time since complete vaccination.
-
-- Type of booster.
 
 - Basic zone.
 
@@ -106,7 +104,7 @@ We estimated risk of laboratory-confirmed SARS-CoV-2 infection using the Kaplan-
 
 ***
 
-## Comparison
+## Comparison with the study of Omicron in Spain
 
 In the study of Omicron in Spain [@Monge2022], the estimated effectiveness from day 7 to 34 after a booster was 51·3% (95% CI 50·2–52·4).
 
