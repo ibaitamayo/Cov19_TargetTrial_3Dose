@@ -1,0 +1,271 @@
+---
+title: "Target Trial: Booster Long-term effectivity against infection and severe cases on Omicron-dominant period in Navarra"
+author: "Francisco Sánchez Sáez"
+date: "`r format(Sys.Date())`"
+output: 
+  bookdown::html_document2:
+    keep_md: false 
+    theme: cerulean
+    highlight: breezedark
+    css: style.css
+    anchor_sections: false
+    toc: yes
+    toc_float:
+      collapsed: yes
+      smooth_scroll: yes
+      code_folding: show
+    toc_depth: 3
+bibliography: References.bib
+csl: tl.csl
+editor_options: 
+  chunk_output_type: inline
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+
+```
+
+```{r echo=FALSE, message=FALSE, include=FALSE, warning=FALSE}
+# source("0_a_librerias.R")
+# ya se cargan cuando se carguen las funciones
+
+```
+
+```{r echo=FALSE, message=FALSE, include=FALSE, warning=FALSE}
+# función para cargar un .Rmd como si se hiciese source de un .r---------------
+source_rmd = function(file, ...) {
+  tmp_file = tempfile(fileext = ".R")
+  on.exit(unlink(tmp_file), add = TRUE)
+  knitr::purl(file, output = tmp_file)
+  source(file = tmp_file, ...)
+}
+
+```
+
+```{r echo=FALSE, message=FALSE, include=FALSE, warning=FALSE}
+# cargar funciones de 0_funciones----------------------------------------------
+if (!exists("se_ha_cargado_f")) {
+suppressMessages(source_rmd("0_b_funciones.rmd"))
+}
+
+```
+
+#  Introduction
+
+***
+
+The omicron (B.1.1.529) variant of SARS-CoV-2 has increased capacity to elude immunity and cause breakthrough infections. The long-term effectivity against infection and severe cases of the booster vaccination is assessed on Omicron-dominant period in Navarra. This has been done following the **Target trial emulation** methodology [@Danaei2013]. The results of infections from January 3 to February 6 are compared with [@Monge2022] and then the period of the study is enlarged in order to assess the long-term effects.
+
+# Methods
+
+***
+
+In this population cohort study, we linked data from three population registries in Navarra (Vaccination Registry, Laboratory Results Registry, and BARDENA-Population registry) to select:
+
+  - Non-residents.
+  
+  - Non-educational workers.
+  
+  - Non health-care workers.
+
+  - Community-dwelling individuals aged 40 years or older. 
+  
+  - Who completed their primary vaccine schedule at least 3 months before the start of follow-up.
+  
+  - Had not tested positive for SARS-CoV-2 since the start of the pandemic. 
+  
+On each day between Jan 3, and Feb 6, 2022, we matched individuals who received a booster mRNA vaccine and controls of the same: 
+
+- Age (5-years group).
+
+- Sex.
+
+- Number of previous negative test (0, 1, 2, 3+).
+
+- Type of primary vaccine (homologous or Janssen).
+
+- Time since complete vaccination.
+
+- Basic zone.
+
+- Migrant.
+
+- Flu vaccine (2020).
+
+- Flu vaccine (2021).
+
+- Number of people at home.
+      
+We estimated risk of laboratory-confirmed SARS-CoV-2 infection using the Kaplan-Meier method and compared groups using risk ratios (RR) and risk differences. **Vaccine effectiveness was calculated as one minus RR**.
+  
+# Results
+
+***
+
+## Comparison with the study of Omicron in Spain
+
+In the study of Omicron in Spain [@Monge2022], the estimated effectiveness from day 7 to 34 after a booster was 51·3% (95% CI 50·2–52·4).
+
+In Navarra, we have the following results shown in Tables \@ref(tab:tabla1), \@ref(tab:tabla2) and \@ref(tab:tabla3). 
+
+<br>
+
+```{r}
+# cargar datos-----------------------------------------------------------------
+matching_fcv1 <- readRDS(file.path("Resultados",
+        "matching_fcv1.RDS"))
+matching_fcv1_sens0 <- readRDS(file.path("Resultados",
+        "matching_fcv1_sens0.RDS"))
+matching_fcv1_sens1 <- readRDS(file.path("Resultados",
+        "matching_fcv1_sens1.RDS"))
+matching_fcv1_sens2 <- readRDS(file.path("Resultados",
+        "matching_fcv1_sens2.RDS"))
+matching_fcv1_sens3 <- readRDS(file.path("Resultados",
+        "matching_fcv1_sens3.RDS"))
+matching_fcv1_sens4 <- readRDS(file.path("Resultados",
+        "matching_fcv1_sens4.RDS"))
+matching_fcv1_sens5 <- readRDS(file.path("Resultados",
+        "matching_fcv1_sens5.RDS"))
+
+```
+
+
+```{r tabla1, include=FALSE, eval=TRUE}
+tabla1 <- hacer_tabla_1(matching_fcv1$tt_tibble)
+
+```
+
+```{r}
+tabla1
+
+```
+
+<br>
+
+```{r tabla2, include=FALSE, eval=TRUE}
+set.seed(1)
+tabla2 <- hacer_tabla_2(matching_fcv1$tt_tibble, 
+                        tiempo_efecto = 7)
+```
+
+
+```{r}
+tabla2
+
+```
+
+<br>
+
+```{r tabla3, include=FALSE, eval=TRUE}
+set.seed(1)
+tabla3 <- hacer_tabla_3()
+
+```
+
+
+```{r}
+
+tabla3
+  
+```
+
+<br>
+
+## Long-term infection (fcv1)
+
+Now, the period has been extended from January 3 to April 13 and 60 days of follow-up has been selected. The results are shown in Tables \@ref(tab:t1-fcv1-longer) and \@ref(tab:t2-fcv1-longer)
+
+```{r}
+# guardar resultados-----------------------------------------------------------
+matching_fcv1_longer <- readRDS(file.path("Resultados",
+        "matching_fcv1_longer.RDS"))
+
+```
+
+<br>
+
+```{r}
+# análisis---------------------------------------------------------------------
+f_analisis(lista = matching_fcv1_longer,
+           tiempo_efecto = 7,
+           lim_1 = 0.80,
+           lim_zoom = 0.9)
+
+```
+
+<br>
+
+```{r t1-fcv1-longer}
+t1_fcv1_longer <- hacer_tabla_1(matching_fcv1_longer$tt_tibble)
+
+t1_fcv1_longer
+
+```
+
+<br>
+
+```{r t2-fcv1-longer, include=FALSE, eval=TRUE}
+set.seed(1)
+t2_fcv1_longer <- hacer_tabla_2(matching_fcv1_longer$tt_tibble)
+
+```
+
+```{r}
+t2_fcv1_longer
+
+```
+
+<br>
+
+## Long-term hospitalisation (fih1)
+
+Now, the admission in hospital due to covid in the period from January 3 to April 13 and 60 days of follow-up has been selected. The results are shown in Tables \@ref(tab:t1-fih1-longer) and \@ref(tab:t2-fih1-longer)
+
+```{r}
+# guardar resultados-----------------------------------------------------------
+matching_fih1_longer <- readRDS(file.path("Resultados",
+        "matching_fih1_longer.RDS"))
+
+```
+
+<br>
+
+```{r}
+# análisis---------------------------------------------------------------------
+f_analisis(lista = matching_fih1_longer,
+           tiempo_efecto = 7,
+           lim_1 = 0.997,
+           lim_zoom = 0.998)
+
+```
+
+<br>
+
+```{r t1-fih1-longer}
+t1_fih1_longer <- hacer_tabla_1(matching_fih1_longer$tt_tibble)
+
+t1_fih1_longer
+
+```
+
+<br>
+
+```{r t2-fih1-longer, include=FALSE, eval=TRUE}
+set.seed(1)
+t2_fih1_longer <- hacer_tabla_2(matching_fih1_longer$tt_tibble)
+
+```
+
+
+```{r }
+t2_fih1_longer
+
+```
+
+<br>
+
+# References
+
+***
