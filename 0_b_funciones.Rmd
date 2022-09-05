@@ -594,7 +594,9 @@ f_analisis <- function(
                 lista,
                 tiempo_efecto = 0,
                 lim_1 = 0.8,
-                lim_zoom = 0.95
+                lim_zoom = 0.95,
+                tipo = NULL,
+                breaks = 7
                        ) {
   
   base_analisis <- lista$tt_tibble %>% 
@@ -617,12 +619,23 @@ f_analisis <- function(
              adorn_title())
 
   fit <- survfit(Surv(survtime, caso) ~ exposicion, data = base_analisis) 
-
-  print(ggsurvplot(fit, data = base_analisis, xlab = "days of follow-up",
+  
+  if (missing(tipo)){
+      print(ggsurvplot(fit, data = base_analisis, xlab = "days of follow-up",
            ylab = "Survival probability",
            main = "Product-Limit Survival Estimates", 
-           ylim = c(lim_1, 1), 
+           ylim = c(lim_1, 1),
+           risk.table = TRUE, conf.int = TRUE))}else{
+      print(ggsurvplot(fit, data = base_analisis, xlab = "days of follow-up",
+           ylab = "Survival probability",
+           main = "Product-Limit Survival Estimates", 
+           ylim = c(0, 1-lim_1),
+           fun = tipo,
+           break.x.by = breaks,
            risk.table = TRUE, conf.int = TRUE))
+        }
+
+    
   
   cpp0 = coxph(formula = Surv(survtime, caso) ~ exposicion, 
               data = base_analisis)
@@ -641,14 +654,23 @@ f_analisis <- function(
   group_by(target_trial_number, par) %>% 
     filter(min(survtime) >= tiempo_efecto) %>%
   ungroup() 
-  
-  print(ggsurvplot(fit, data = base_analisis, 
+    
+  if (missing(tipo)){
+      print(ggsurvplot(fit, data = base_analisis, 
            xlab = "days of follow-up",
            ylab = "Survival probability",
            main = "Product-Limit Survival Estimates: Zoom at tiempo-efecto", 
            xlim = c(0, tiempo_efecto),
-           ylim = c(lim_zoom, 1), 
-           risk.table = TRUE, conf.int = TRUE))
+           ylim = c(lim_zoom, 1),
+           risk.table = TRUE, conf.int = TRUE))}else{
+      print(ggsurvplot(fit, data = base_analisis, 
+           xlab = "days of follow-up",
+           ylab = "Survival probability",
+           main = "Product-Limit Survival Estimates: Zoom at tiempo-efecto", 
+           xlim = c(0, tiempo_efecto),
+           ylim = c(0, 1-lim_zoom),
+           fun = tipo,
+           risk.table = TRUE, conf.int = TRUE))}
    
    print(glue("
               
@@ -677,6 +699,103 @@ f_analisis <- function(
 }
 
 ```
+
+## f_analisis2
+
+Igual que f_analisis, pero con curva de incidencia
+
+```{r}
+# función que realiza el análisis de supervivencia-----------------------------
+f_analisis2 <- function(
+                lista,
+                tiempo_efecto = 0,
+                lim_1 = 0.8,
+                lim_zoom = 0.95
+                       ) {
+  
+  base_analisis <- lista$tt_tibble %>% 
+    mutate(survtime = date_end - date_start)
+  
+  max_survtime <- base_analisis %>% 
+    summarise(max_survtime = as.numeric(max(survtime))) %>% pull()
+  
+  print(glue("Se está analizando el outcome: {lista$out} \\
+             mediante la emulación de un ensayo clínico  \\
+             con múltiples inicios de tiempo. Se ha utilizado matching por: \\
+             {str_c(lista$vector_match, collapse = ', ')}.
+             
+             "))
+  
+  print(glue("Análisis de supervivencia días 0-{max_survtime}"))  
+  print(base_analisis %>% 
+             tabyl(exposicion, caso) %>%
+             adorn_totals(where = c('row', 'col')) %>%
+             adorn_title())
+
+  fit <- survfit(Surv(survtime, caso) ~ exposicion, data = base_analisis) 
+
+  print(ggsurvplot(fit, data = base_analisis, xlab = "days of follow-up",
+           ylab = "Survival probability",
+           main = "Product-Limit Survival Estimates", 
+           ylim = c(0, 1-lim_1), 
+            fun = "event",
+           risk.table = TRUE, conf.int = TRUE))
+  
+  cpp0 = coxph(formula = Surv(survtime, caso) ~ exposicion, 
+              data = base_analisis)
+  
+  # imprimir resultado
+  print(glue("
+  
+             # Estimated effectiveness in Navarra for {lista$out} is : \\
+             {round((1 - exp(coef(cpp0))) * 100, 1)} % \\
+             ({round((1 - exp(confint(cpp0))[2]) * 100, 1)} - \\
+             {round((1 - exp(confint((cpp0)))[1]) * 100, 1)} %)"))
+  
+  # El tiempo_efecto se introduce como un argumento
+  if (tiempo_efecto != 0) {
+  base_analisis_2 <- base_analisis %>% 
+  group_by(target_trial_number, par) %>% 
+    filter(min(survtime) >= tiempo_efecto) %>%
+  ungroup() 
+  
+  print(ggsurvplot(fit, data = base_analisis, 
+           xlab = "days of follow-up",
+           ylab = "Survival probability",
+           main = "Product-Limit Survival Estimates: Zoom at tiempo-efecto", 
+           xlim = c(0, tiempo_efecto),
+           ylim = c(0, 1-lim_zoom), 
+            fun = "event",
+ risk.table = TRUE, conf.int = TRUE))
+   
+   print(glue("
+              
+               ####################################\\
+              ####################################
+              
+              Análisis de supervivencia días \\
+              {tiempo_efecto}-{max_survtime}"))  
+   
+   print(base_analisis_2 %>% 
+             tabyl(exposicion, caso) %>%
+             adorn_totals(where = c('row', 'col')) %>%
+             adorn_title())  
+    
+  cpp = coxph(formula = Surv(survtime, caso) ~ exposicion, 
+              data = base_analisis_2)
+  
+  # imprimir resultado
+  print(glue("
+  
+             # Estimated effectiveness in Navarra for {lista$out} is : \\
+             {round((1 - exp(coef(cpp))) * 100, 1)} % \\
+             ({round((1 - exp(confint(cpp))[2]) * 100, 1)} - \\
+             {round((1 - exp(confint((cpp)))[1]) * 100, 1)} %)"))
+  }
+}
+
+```
+
 
 ## f_tabla_1
 

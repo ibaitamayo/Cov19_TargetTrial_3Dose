@@ -120,7 +120,7 @@ prueba_matching_days <- f_matching_tt(
                 age_last = 90,
                 age_by = 5,
                 censoring = "fdef",
-                follow_up = 34,
+                follow_up = 35,
                 verbose = FALSE,
                 seed = 3)
 
@@ -142,7 +142,7 @@ prueba_matching_weeks <- f_matching_tt(
                 age_last = 90,
                 age_by = 5,
                 censoring = "fdef",
-                follow_up = 34,
+                follow_up = 35,
                 verbose = FALSE,
                 seed = 3)
 
@@ -191,7 +191,7 @@ prueba_matching_mult_days <- f_matching_tt_mult(
                 age_last = 90,
                 age_by = 5,
                 censoring = "fdef",
-                follow_up = 34,
+                follow_up = 35,
                 verbose = FALSE,
                 seed = 3)
 
@@ -214,7 +214,7 @@ prueba_matching_mult_weeks <- f_matching_tt_mult(
                 age_last = 90,
                 age_by = 5,
                 censoring = "fdef",
-                follow_up = 34,
+                follow_up = 35,
                 verbose = FALSE,
                 seed = 3)
 
@@ -269,7 +269,7 @@ matching_fcv1 <- f_matching_tt_mult(
                 age_last = 90,
                 age_by = 5,
                 censoring = "fdef",
-                follow_up = 34,
+                follow_up = 35,
                 verbose = FALSE,
                 seed = 3)
 
@@ -306,7 +306,7 @@ matching_fcv1_sens1 <- f_matching_tt_mult(
                 age_last = 90,
                 age_by = 5,
                 censoring = "fdef",
-                follow_up = 34,
+                follow_up = 35,
                 verbose = FALSE,
                 seed = 3)
 
@@ -339,7 +339,7 @@ matching_fcv1_sens2 <- f_matching_tt_mult(
                 age_by = 5,
                 censoring = "fdef",
                 delayed_exposure_censoring = 7,
-                follow_up = 34,
+                follow_up = 35,
                 verbose = FALSE,
                 seed = 3)
 
@@ -373,7 +373,7 @@ matching_fcv1_sens3 <- f_matching_tt_mult(
                 age_by = 5,
                 censoring = "fdef",
                 delayed_exposure_censoring = NULL,
-                follow_up = 34,
+                follow_up = 35,
                 verbose = FALSE,
                 seed = 3)
 
@@ -407,7 +407,7 @@ matching_fcv1_sens4 <- f_matching_tt_mult(
                 age_by = 5,
                 censoring = "fdef",
                 delayed_exposure_censoring = NULL,
-                follow_up = 34,
+                follow_up = 35,
                 verbose = FALSE,
                 seed = 3)
 
@@ -441,7 +441,7 @@ matching_fcv1_sens5 <- f_matching_tt_mult(
                 age_by = 1,
                 censoring = "fdef",
                 delayed_exposure_censoring = NULL,
-                follow_up = 34,
+                follow_up = 35,
                 verbose = FALSE,
                 seed = 3)
 
@@ -451,6 +451,148 @@ saveRDS(matching_fcv1_sens5, file.path("Resultados",
 
 ```
 
+### fcv1 Matching 1: Domicilio
+
+Domicilios con 3 o más convivientes.
+
+```{r}
+pobana_2 %>% count(ucn8)
+pobana_2 %>% add_count(domi, name = "ucn") 
+
+```
+
+
+```{r}
+# hacer ajuste con el domicilio como matching----------------------------------
+matching_fcv1_domi_1 <- f_matching_tt_mult(
+                data = pobana_2 %>% filter(ucn8 >= 3) ,
+                f_ini = "2022-01-03",
+                f_fin = "2022-02-06",
+                crit_exc = lista_exclusion_dep,
+                exposure = "fvc3",
+                out = "fcv1", 
+                vector_match = "domi", 
+                base_test = NULL,
+                temporal_var = NULL,
+                temporal_var_unit = NULL,
+                birth_date = NULL,
+                age_first = NULL,
+                age_last = NULL,
+                age_by = NULL,
+                censoring = "fdef",
+                follow_up = 35,
+                verbose = FALSE,
+                seed = 3)
+
+# guardar resultados-----------------------------------------------------------
+saveRDS(matching_fcv1_domi_1, file.path("Resultados",
+        "matching_fcv1_domi_1.RDS"))
+
+```
+
+
+### fcv1 Matching 2: Domicilio
+
+Domicilio con 2 o más convivientes
+
+```{r}
+# hacer ajuste con el domicilio como matching----------------------------------
+matching_fcv1_domi_2 <- f_matching_tt_mult(
+                data = pobana_2 %>% 
+                  filter(ucn8 >= 2) ,
+                f_ini = "2022-01-03",
+                f_fin = "2022-02-06",
+                crit_exc = lista_exclusion_dep,
+                exposure = "fvc3",
+                out = "fcv1", 
+                vector_match = "domi", 
+                base_test = NULL,
+                temporal_var = NULL,
+                temporal_var_unit = NULL,
+                birth_date = NULL,
+                age_first = NULL,
+                age_last = NULL,
+                age_by = NULL,
+                censoring = "fdef",
+                follow_up = 35,
+                verbose = FALSE,
+                seed = 3)
+
+# guardar resultados-----------------------------------------------------------
+saveRDS(matching_fcv1_domi_2, file.path("Resultados",
+        "matching_fcv1_domi_2.RDS"))
+
+```
+
+### fcv1 Matching 3: Domicilio
+
+Domicilio con 2 o más convivientes y excluímos a los que aparecen como 30 o más convivientes.
+
+```{r}
+# hacer ajuste con el domicilio como matching----------------------------------
+matching_fcv1_domi_3 <- f_matching_tt_mult(
+                data = pobana_2 %>% 
+                  add_count(domi, name = "ucn") %>% 
+                  filter(ucn8 >= 2) %>%
+                  filter(ucn < 30),
+                f_ini = "2022-01-03",
+                f_fin = "2022-02-06",
+                crit_exc = lista_exclusion_dep,
+                exposure = "fvc3",
+                out = "fcv1", 
+                vector_match = "domi", 
+                base_test = NULL,
+                temporal_var = NULL,
+                temporal_var_unit = NULL,
+                birth_date = NULL,
+                age_first = NULL,
+                age_last = NULL,
+                age_by = NULL,
+                censoring = "fdef",
+                follow_up = 35,
+                verbose = FALSE,
+                seed = 3)
+
+# guardar resultados-----------------------------------------------------------
+saveRDS(matching_fcv1_domi_3, file.path("Resultados",
+        "matching_fcv1_domi_3.RDS"))
+
+```
+
+### fcv1 Matching 4: Domicilio
+
+Domicilio con 3 o más convivientes y excluímos a los que aparecen como 30 o más convivientes.
+
+```{r}
+# hacer ajuste con el domicilio como matching----------------------------------
+matching_fcv1_domi_4 <- f_matching_tt_mult(
+                data = pobana_2 %>% 
+                  add_count(domi, name = "ucn") %>% 
+                  filter(ucn8 >= 3) %>%
+                  filter(ucn < 30),
+                f_ini = "2022-01-03",
+                f_fin = "2022-02-06",
+                crit_exc = lista_exclusion_dep,
+                exposure = "fvc3",
+                out = "fcv1", 
+                vector_match = "domi", 
+                base_test = NULL,
+                temporal_var = NULL,
+                temporal_var_unit = NULL,
+                birth_date = NULL,
+                age_first = NULL,
+                age_last = NULL,
+                age_by = NULL,
+                censoring = "fdef",
+                follow_up = 35,
+                verbose = FALSE,
+                seed = 3)
+
+# guardar resultados-----------------------------------------------------------
+saveRDS(matching_fcv1_domi_4, file.path("Resultados",
+        "matching_fcv1_domi_4.RDS"))
+
+```
 
 # fcv1 más tiempo. Matching: Variables como en el artículo
 
