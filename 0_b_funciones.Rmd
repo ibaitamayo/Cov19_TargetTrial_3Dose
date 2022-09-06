@@ -208,7 +208,8 @@ f_matching_tt <- function(data,
                           delayed_exposure_censoring = NULL,
                           follow_up = 60,
                           verbose = TRUE,
-                          seed = 1) {
+                          seed = 1,
+                          fecha_fin_estudio = ymd("2100-01-01")) {
   
   set.seed(seed)
   tiempo_0 <- ymd(tiempo_0)
@@ -288,7 +289,8 @@ f_matching_tt <- function(data,
     mutate(exposicion = if_else(tiempo_0 == get(exposure) & 
                          !is.na(get(exposure)), 1, 0),
            date_start = tiempo_0,
-           date_end = tiempo_0 %m+% days(follow_up))
+           date_end = pmin(tiempo_0 %m+% days(follow_up), fecha_fin_estudio))
+  
     if (is.null(delayed_exposure_censoring)){
     data <- data %>%
       mutate(date_end = if_else(exposicion == 0 & 
@@ -361,7 +363,8 @@ f_matching_tt_mult <- function(
                              delayed_exposure_censoring = NULL,               
                              follow_up = 60,
                              verbose = TRUE,
-                             seed = 1){
+                             seed = 1,
+                             fecha_fin_estudio = ymd("2100-01-01")){
   
   fechas <- seq.Date(from = ymd(f_ini), to = ymd(f_fin), by = "days")
   
@@ -385,7 +388,8 @@ f_matching_tt_mult <- function(
       delayed_exposure_censoring = delayed_exposure_censoring,
       follow_up = follow_up,
       verbose = verbose,
-      seed = seed) %>% 
+      seed = seed,
+      fecha_fin_estudio = fecha_fin_estudio) %>% 
     # descartar los días en los que no se encuentra matching
     keep(~is_tibble(.x)) %>%  
     # unir todos los tibbles de la lista en uno único
@@ -711,11 +715,9 @@ Hacer el análisis para la carta: el rr.
 f_analisis_lancet_rr <- function(
                 lista,
                 tiempo_efecto = 0,
-                title = "Put a fancy title",
-                fecha_censura = "2030-12-31") {
+                title = "Put a fancy title") {
   
   base_analisis <- lista$tt_tibble %>%
-    mutate(date_end = pmin(ymd(fecha_censura), date_end)) %>% 
     mutate(survtime = date_end - date_start)
   
   max_survtime <- base_analisis %>% 
@@ -746,10 +748,14 @@ print("Cálculo del RR")
       filter(min(survtime) >= tiempo_efecto) %>% 
       ungroup()
 
-hacer_grupo_tabla_2(
+tibble_eff <- hacer_grupo_tabla_2(
          tt_tibble = tt_tibble_eff, 
          group_description = title,
          number_of_bootstrap = 500)
+
+rr_eff <- tibble_eff %>% pull(rr_eff) %>% str_replace_all("\\.", "·")
+
+lst(tibble_eff, rr_eff)
 }
 
 ```

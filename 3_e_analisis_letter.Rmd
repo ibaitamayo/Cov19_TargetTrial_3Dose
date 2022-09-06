@@ -1,0 +1,383 @@
+---
+title: "Análisis de supervivencia"
+output: 
+  html_document:
+    code_folding: show
+    highlight: espresso
+    css: style.css
+    keep_md: yes
+    number_sections: yes
+    theme: readable
+    toc: yes  
+    toc_float:
+      collapsed: yes
+      smooth_scroll: yes
+      toc_depth: 3     
+editor_options: 
+  chunk_output_type: inline
+---
+
+
+```{r set-global-options, echo = FALSE}
+knitr::opts_chunk$set(eval = TRUE, 
+                      echo = TRUE, 
+                      cache = FALSE,
+                      include = TRUE,
+                      collapse = FALSE,
+                       dependson = NULL,
+                      engine = "R", # Chunks will always have R code, unless noted
+                      error = TRUE,
+                      fig.path="Figures/",  # Set the figure options
+                      fig.align = "center", 
+                      fig.width = 12,
+                      fig.height = 12)
+```
+
+```{r echo=FALSE, message=FALSE, include=FALSE, warning=FALSE}
+# source("0_a_librerias.R")
+# ya se cargan cuando se carguen las funciones
+
+```
+
+```{r}
+# función para cargar un .Rmd como si se hiciese source de un .r---------------
+source_rmd = function(file, ...) {
+  tmp_file = tempfile(fileext = ".R")
+  on.exit(unlink(tmp_file), add = TRUE)
+  knitr::purl(file, output = tmp_file)
+  source(file = tmp_file, ...)
+}
+
+```
+
+```{r}
+# cargar funciones de 0_funciones----------------------------------------------
+if (!exists("se_ha_cargado_f")) {
+suppressMessages(source_rmd("0_b_funciones.rmd"))
+}
+
+```
+
+# Cargar bases
+
+***
+
+Cargar datos
+
+```{r}
+# cargar datos-----------------------------------------------------------------
+
+# modelo 1. infección por características
+matching_fcv1_longer_34 <- readRDS(file.path("Resultados",
+        "matching_fcv1_longer_34.RDS"))
+matching_fcv1_longer_70 <- readRDS(file.path("Resultados",
+        "matching_fcv1_longer_70.RDS"))
+
+# modelo 1. infección por domicilio
+matching_fcv1_domi_34 <- readRDS(file.path("Resultados",
+        "matching_fcv1_domi_34.RDS"))
+matching_fcv1_domi_70 <- readRDS(file.path("Resultados",
+        "matching_fcv1_domi_70.RDS"))
+
+# modelo 3. hospitalización por edad y sexo
+matching_fih1_longer_34 <- readRDS(file.path("Resultados",
+        "matching_fih1_longer_34.RDS"))
+matching_fih1_longer_70 <- readRDS(file.path("Resultados",
+        "matching_fih1_longer_70.RDS"))
+
+```
+
+
+# Análisis RR
+
+```{r}
+# análisis RR------------------------------------------------------------------
+# modelo 1. infección por características
+rr_m1_34 <- f_analisis_lancet_rr(matching_fcv1_longer_34,
+                     tiempo_efecto = 7)
+
+rr_m1_70 <- f_analisis_lancet_rr(matching_fcv1_longer_70,
+                     tiempo_efecto = 7)
+
+# modelo 2. infección por domicilio
+rr_m2_34 <- f_analisis_lancet_rr(matching_fcv1_domi_34,
+                     tiempo_efecto = 7)
+
+rr_m2_70 <- f_analisis_lancet_rr(matching_fcv1_domi_70,
+                     tiempo_efecto = 7)
+
+# modelo 3. hospitalización por edad y sexo
+rr_m3_34 <- f_analisis_lancet_rr(matching_fih1_longer_34,
+                     tiempo_efecto = 7)
+
+rr_m3_70 <- f_analisis_lancet_rr(matching_fih1_longer_70,
+                     tiempo_efecto = 7)
+
+# guardar resultados-----------------------------------------------------------
+saveRDS(rr_m1_34, file.path("Resultados", "rr_m1_34.RDS"))
+saveRDS(rr_m1_70, file.path("Resultados", "rr_m1_70.RDS"))
+saveRDS(rr_m2_34, file.path("Resultados", "rr_m2_34.RDS"))
+saveRDS(rr_m2_70, file.path("Resultados", "rr_m2_70.RDS"))
+saveRDS(rr_m3_34, file.path("Resultados", "rr_m3_34.RDS"))
+saveRDS(rr_m3_70, file.path("Resultados", "rr_m3_70.RDS"))
+
+```
+
+# Hacer figura para la carta
+
+## Figura 1a
+
+```{r, fig.height = 4, fig.width = 13}
+# Hacer Figura para el modelo 1------------------------------------------------
+base_analisis_m1 <- matching_fcv1_longer_70$tt_tibble %>%
+    mutate(survtime = date_end - date_start)
+
+max_survtime_m1 <- base_analisis_m1 %>% 
+    summarise(max_survtime = as.numeric(max(survtime))) %>% pull()
+  
+print(base_analisis_m1 %>% 
+             tabyl(exposicion, caso) %>%
+             adorn_totals(where = c('row', 'col')) %>%
+             adorn_title())
+
+fit <- survfit(Surv(survtime, caso) ~ exposicion, data = base_analisis_m1) 
+  
+gg1 <- ggsurvplot(fit, data = base_analisis_m1,
+           fun = "event",
+           surv.plot.height	= 0.8,
+           risk.table.height	= 0.2,
+           palette = "lancet",
+           xlab = "Time since start of follow-up (days)",
+           break.x.by = 7,
+           break.y.by = 0.02,
+           font.x = 2,
+           ylab = "Cumulative Incidence",
+           xlim = c(0, 70),
+           ylim = c(0, 0.2),
+           risk.table = "nrisk_cumevents",
+           fontsize = 3.8,
+           order.legend = TRUE,
+           legend = "top",
+           legend.labs = c("No booster", "Booster"),
+           legend.title = " ",
+           title = "A) Infections from 2022-01-04 to 2022-03-31. Matching each boostering day (from 2022-01-03 to 2022-03-30) for age, sex, previous negative test,
+           primary vaccine type and date, health basic zone, migrant status, flu vaccinated in 2020 and in 2021, and the number of people at home",
+           font.title = 16,
+           conf.int = FALSE) 
+  
+gg1$plot <- gg1$plot + 
+      geom_vline(xintercept = 7, 
+                          linetype = "dashed", 
+                          size = 0.7,
+                          colour = "dimgrey") +
+      geom_vline(xintercept = 34, 
+                          linetype = "dashed", 
+                          size = 0.7,
+                          colour = "dimgrey") +
+      # short term effectiveness
+      geom_segment(y = 0.18, yend = 0.18,
+                   x = 7, xend = 34, size = 1,
+      arrow = arrow(length = unit(0.1, "inches"))) +
+      geom_text(x = 21, y = 0.2, 
+                label = glue("Short-term effectiveness: {rr_m1_34$rr_eff}"), 
+                size = 4.5) +
+      # mid term effectiveness
+      geom_segment(y = 0.16, yend = 0.16,
+                   x = 7, xend = 70, size = 1,
+      arrow = arrow(length = unit(0.1, "inches"))) +
+      geom_text(x = 57, y = 0.18, 
+                label = glue("Mid-term effectiveness: {rr_m1_70$rr_eff}"), 
+                size = 4.5) +
+      theme(axis.title.x = element_text(size = 14),
+            plot.title = element_text(size = 14, face = "bold"))
+  
+  
+gg1$table <- gg1$table + 
+      theme(axis.line = element_blank(),
+            axis.title.x = element_blank(),
+            axis.ticks = element_blank(),
+            axis.text.x = element_blank(),
+            plot.title = element_text(size = 14, face = "bold")) 
+
+print(gg1)
+
+```
+
+## Figura 1b
+
+```{r, fig.height = 4, fig.width = 13}
+# Hacer Figura para el modelo 1------------------------------------------------
+base_analisis_m2 <- matching_fcv1_domi_70$tt_tibble %>%
+    mutate(survtime = date_end - date_start)
+
+max_survtime_m2 <- base_analisis_m2 %>% 
+    summarise(max_survtime = as.numeric(max(survtime))) %>% pull()
+  
+print(base_analisis_m2 %>% 
+             tabyl(exposicion, caso) %>%
+             adorn_totals(where = c('row', 'col')) %>%
+             adorn_title())
+
+fit <- survfit(Surv(survtime, caso) ~ exposicion, data = base_analisis_m2) 
+  
+gg2 <- ggsurvplot(fit, data = base_analisis_m2,
+           fun = "event",
+           surv.plot.height	= 0.8,
+           risk.table.height	= 0.2,
+           palette = "lancet",
+           xlab = "Time since start of follow-up (days)",
+           break.x.by = 7,
+           break.y.by = 0.02,
+           font.x = 2,
+           ylab = "Cumulative Incidence",
+           xlim = c(0, 70),
+           ylim = c(0, 0.2),
+           risk.table = "nrisk_cumevents",
+           fontsize = 3.8,
+           order.legend = TRUE,
+           legend = "top",
+           legend.labs = c("No booster", "Booster"),
+           legend.title = " ",
+           title = "B) Infections from 2022-01-04 to 2022-03-31. Matching each boostering day (from 2022-01-03 to 2022-03-30) for home address",
+           font.title = 16,
+           conf.int = FALSE) 
+  
+gg2$plot <- gg2$plot + 
+      geom_vline(xintercept = 7, 
+                          linetype = "dashed", 
+                          size = 0.7,
+                          colour = "dimgrey") +
+      geom_vline(xintercept = 34, 
+                          linetype = "dashed", 
+                          size = 0.7,
+                          colour = "dimgrey") +
+      # short term effectiveness
+      geom_segment(y = 0.18, yend = 0.18,
+                   x = 7, xend = 34, size = 1,
+      arrow = arrow(length = unit(0.1, "inches"))) +
+      geom_text(x = 21, y = 0.2, 
+                label = glue("Short-term effectiveness: {rr_m2_34$rr_eff}"), 
+                size = 4.5) +
+      # mid term effectiveness
+      geom_segment(y = 0.16, yend = 0.16,
+                   x = 7, xend = 70, size = 1,
+      arrow = arrow(length = unit(0.1, "inches"))) +
+      geom_text(x = 57, y = 0.18, 
+                label = glue("Mid-term effectiveness: {rr_m2_70$rr_eff}"), 
+                size = 4.5) +
+      theme(axis.title.x = element_text(size = 14),
+            plot.title = element_text(size = 14, face = "bold"))
+  
+  
+gg2$table <- gg2$table + 
+      theme(axis.line = element_blank(),
+            axis.title.x = element_blank(),
+            axis.ticks = element_blank(),
+            axis.text.x = element_blank(),
+            plot.title = element_text(size = 14, face = "bold")) 
+
+print(gg2)
+
+```
+
+## Figura 1c
+
+```{r, fig.height = 4, fig.width = 13}
+# Hacer Figura para el modelo 1------------------------------------------------
+base_analisis_m3 <- matching_fih1_longer_70$tt_tibble %>%
+    mutate(survtime = date_end - date_start)
+
+max_survtime_m3 <- base_analisis_m3 %>% 
+    summarise(max_survtime = as.numeric(max(survtime))) %>% pull()
+  
+print(base_analisis_m3 %>% 
+             tabyl(exposicion, caso) %>%
+             adorn_totals(where = c('row', 'col')) %>%
+             adorn_title())
+
+fit <- survfit(Surv(survtime, caso) ~ exposicion, data = base_analisis_m3) 
+  
+gg3 <- ggsurvplot(fit, data = base_analisis_m3,
+           fun = "event",
+           surv.plot.height	= 0.8,
+           risk.table.height	= 0.2,
+           palette = "lancet",
+           xlab = "Time since start of follow-up (days)",
+           break.x.by = 7,
+           break.y.by = 0.0002,
+           font.x = 2,
+           ylab = "Cumulative Incidence",
+           xlim = c(0, 70),
+           ylim = c(0, 0.002),
+           risk.table = "nrisk_cumevents",
+           fontsize = 3.8,
+           order.legend = TRUE,
+           legend = "top",
+           legend.labs = c("No booster", "Booster"),
+           legend.title = " ",
+           title = "C) Hospitalisations from 2022-01-04 to 2022-06-13. Matching each boostering day (from 2022-01-03 to 2022-06-12) for age and sex",
+           font.title = 16,
+           conf.int = FALSE) 
+  
+gg3$plot <- gg3$plot + 
+      geom_vline(xintercept = 7, 
+                          linetype = "dashed", 
+                          size = 0.7,
+                          colour = "dimgrey") +
+      geom_vline(xintercept = 34, 
+                          linetype = "dashed", 
+                          size = 0.7,
+                          colour = "dimgrey") +
+      # short term effectiveness
+      geom_segment(y = 0.0016, yend = 0.0016,
+                   x = 7, xend = 34, size = 1,
+      arrow = arrow(length = unit(0.1, "inches"))) +
+      geom_text(x = 21, y = 0.0018, 
+                label = glue("Short-term effectiveness: {rr_m3_34$rr_eff}"), 
+                size = 4.5) +
+      # mid term effectiveness
+      geom_segment(y = 0.0014, yend = 0.0014,
+                   x = 7, xend = 70, size = 1,
+      arrow = arrow(length = unit(0.1, "inches"))) +
+      geom_text(x = 57, y = 0.0016, 
+                label = glue("Mid-term effectiveness: {rr_m3_70$rr_eff}"), 
+                size = 4.5) +
+      theme(axis.title.x = element_text(size = 14),
+            plot.title = element_text(size = 14, face = "bold"))
+  
+  
+gg3$table <- gg2$table + 
+      theme(axis.line = element_blank(),
+            axis.title.x = element_blank(),
+            axis.ticks = element_blank(),
+            axis.text.x = element_blank(),
+            plot.title = element_text(size = 14, face = "bold")) 
+
+print(gg3)
+
+```
+
+
+
+## Figura 1 compuesta
+
+```{r, fig.height = 15, fig.width = 13}
+# componer figura--------------------------------------------------------------
+gg_up <- cowplot::plot_grid(
+                   gg1$plot,  
+                   gg1$table, 
+                   gg2$plot,
+                   gg2$table,
+                   gg3$plot,
+                   gg3$table,
+                   rel_heights = c(3.5, 1, 3.5, 1, 3.5, 1), nrow = 6)
+
+ggsave("Fig1.svg", height = 13, width = 14, units = "in")
+ggsave("Fig1.tiff", height = 13, width = 14, units = "in")
+ggsave("Fig1.pdf", height = 13, width = 14, units = "in")
+ggsave("Fig1.jpg", height = 13, width = 14, units = "in")
+ggsave("Fig1.png", height = 13, width = 14, units = "in")
+
+
+```
+
