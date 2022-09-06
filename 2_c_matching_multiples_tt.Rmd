@@ -594,14 +594,46 @@ saveRDS(matching_fcv1_domi_4, file.path("Resultados",
 
 ```
 
-# fcv1 más tiempo. Matching: Variables como en el artículo
+# Cálculos The Lancet
+
+***
+
+## fcv1 más tiempo. Matching: Variables como en el artículo
 
 ```{r}
-# follow-up = 60, f_fin = 13-04-2022
-matching_fcv1_longer <- f_matching_tt_mult(
+# follow-up = 34,
+matching_fcv1_longer_34 <- f_matching_tt_mult(
                 data = pobana_2,
                 f_ini = "2022-01-03",
-                f_fin = "2022-06-13",
+                f_fin = "2022-03-30",
+                crit_exc = lista_exclusion_dep,
+                exposure = "fvc3",
+                out = "fcv1", 
+                vector_match = variables_matching[c(1, 3:8)], 
+                base_test = test220613_cleaned,
+                temporal_var = "fpauta_90",
+                temporal_var_unit = "weeks",
+                birth_date = "fnac",
+                age_first = 40,
+                age_last = 90,
+                age_by = 5,
+                censoring = "fdef",
+                follow_up = 34,
+                verbose = FALSE,
+                seed = 3)
+
+# guardar resultados-----------------------------------------------------------
+saveRDS(matching_fcv1_longer_34, file.path("Resultados",
+        "matching_fcv1_longer_34.RDS"))
+
+```
+
+```{r}
+# follow-up = 70,
+matching_fcv1_longer_70 <- f_matching_tt_mult(
+                data = pobana_2,
+                f_ini = "2022-01-03",
+                f_fin = "2022-03-30",
                 crit_exc = lista_exclusion_dep,
                 exposure = "fvc3",
                 out = "fcv1", 
@@ -619,19 +651,47 @@ matching_fcv1_longer <- f_matching_tt_mult(
                 seed = 3)
 
 # guardar resultados-----------------------------------------------------------
-saveRDS(matching_fcv1_longer, file.path("Resultados",
-        "matching_fcv1_longer.RDS"))
+saveRDS(matching_fcv1_longer_70, file.path("Resultados",
+        "matching_fcv1_longer_70.RDS"))
 
 ```
 
-# fcv1 más tiempo. Matching: Domicilio
+## fcv1 más tiempo. Matching: Domicilio
 
 ```{r}
 # hacer ajuste con el domicilio como matching----------------------------------
-matching_fcv1_domi <- f_matching_tt_mult(
+matching_fcv1_domi_34 <- f_matching_tt_mult(
                 data = pobana_2 %>% filter(ucn8 >= 2) ,
                 f_ini = "2022-01-03",
-                f_fin = "2022-06-13",
+                f_fin = "2022-03-30",
+                crit_exc = lista_exclusion_dep,
+                exposure = "fvc3",
+                out = "fcv1", 
+                vector_match = "domi", 
+                base_test = NULL,
+                temporal_var = NULL,
+                temporal_var_unit = NULL,
+                birth_date = NULL,
+                age_first = NULL,
+                age_last = NULL,
+                age_by = NULL,
+                censoring = "fdef",
+                follow_up = 34,
+                verbose = FALSE,
+                seed = 3)
+
+# guardar resultados-----------------------------------------------------------
+saveRDS(matching_fcv1_domi_34, file.path("Resultados",
+        "matching_fcv1_domi_34.RDS"))
+
+```
+
+```{r}
+# hacer ajuste con el domicilio como matching----------------------------------
+matching_fcv1_domi_70 <- f_matching_tt_mult(
+                data = pobana_2 %>% filter(ucn8 >= 2) ,
+                f_ini = "2022-01-03",
+                f_fin = "2022-03-30",
                 crit_exc = lista_exclusion_dep,
                 exposure = "fvc3",
                 out = "fcv1", 
@@ -649,19 +709,48 @@ matching_fcv1_domi <- f_matching_tt_mult(
                 seed = 3)
 
 # guardar resultados-----------------------------------------------------------
-saveRDS(matching_fcv1_domi, file.path("Resultados",
-        "matching_fcv1_domi.RDS"))
+saveRDS(matching_fcv1_domi_70, file.path("Resultados",
+        "matching_fcv1_domi_70.RDS"))
 
 ```
 
-# fih1 más tiempo
+## fih1 más tiempo. Matchin por edad y sexo
 
 ```{r}
 # follow-up = 60, f_fin = 13-04-2022
-matching_fih1_longer <- f_matching_tt_mult(
+matching_fih1_longer_34 <- f_matching_tt_mult(
                 data = pobana_2,
                 f_ini = "2022-01-03",
-                f_fin = "2022-06-13",
+                f_fin = "2022-06-12",
+                crit_exc = lista_exclusion_dep,
+                exposure = "fvc3",
+                out = "fih1", 
+                vector_match = variables_matching[c(1)], 
+                base_test = test220613_cleaned,
+                temporal_var = "fpauta_90",
+                temporal_var_unit = "weeks",
+                birth_date = "fnac",
+                age_first = 40,
+                age_last = 90,
+                age_by = 5,
+                censoring = "fdef",
+                follow_up = 34,
+                verbose = FALSE,
+                seed = 3)
+
+# guardar resultados-----------------------------------------------------------
+saveRDS(matching_fih1_longer_34, file.path("Resultados",
+        "matching_fih1_longer_34.RDS"))
+
+```
+
+
+```{r}
+# follow-up = 70, f_fin = 13-04-2022
+matching_fih1_longer_70 <- f_matching_tt_mult(
+                data = pobana_2,
+                f_ini = "2022-01-03",
+                f_fin = "2022-06-12",
                 crit_exc = lista_exclusion_dep,
                 exposure = "fvc3",
                 out = "fih1", 
@@ -679,37 +768,7 @@ matching_fih1_longer <- f_matching_tt_mult(
                 seed = 3)
 
 # guardar resultados-----------------------------------------------------------
-saveRDS(matching_fih1_longer, file.path("Resultados",
-        "matching_fih1_longer.RDS"))
-
-```
-
-# fih1 más tiempo. age 1 year.
-
-```{r}
-# follow-up = 60, f_fin = 13-04-2022
-matching_fih1_longer_2 <- f_matching_tt_mult(
-                data = pobana_2,
-                f_ini = "2022-01-03",
-                f_fin = "2022-06-13",
-                crit_exc = lista_exclusion_dep,
-                exposure = "fvc3",
-                out = "fih1", 
-                vector_match = variables_matching[c(1)], 
-                base_test = test220613_cleaned,
-                temporal_var = "fpauta_90",
-                temporal_var_unit = "weeks",
-                birth_date = "fnac",
-                age_first = 40,
-                age_last = 90,
-                age_by = 1,
-                censoring = "fdef",
-                follow_up = 70,
-                verbose = FALSE,
-                seed = 3)
-
-# guardar resultados-----------------------------------------------------------
-saveRDS(matching_fih1_longer_2, file.path("Resultados",
-        "matching_fih1_longer_2.RDS"))
+saveRDS(matching_fih1_longer_70, file.path("Resultados",
+        "matching_fih1_longer_70.RDS"))
 
 ```

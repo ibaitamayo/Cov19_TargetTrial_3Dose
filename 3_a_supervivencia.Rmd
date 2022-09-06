@@ -95,10 +95,8 @@ matching_fcv1_domi <- readRDS(file.path("Resultados",
 # hospi
 matching_fih1_longer <- readRDS(file.path("Resultados",
         "matching_fih1_longer.RDS"))
-matching_fcv1_domi <- readRDS(file.path("Resultados",
-        "matching_fcv1_domi.RDS"))
-
-
+matching_fih1_longer_2 <- readRDS(file.path("Resultados",
+        "matching_fih1_longer_2.RDS"))
 
 ```
 
@@ -245,13 +243,6 @@ f_analisis(lista = matching_fcv1_domi_4,
 # fcv1 Longer
 
 ```{r}
-# guardar resultados-----------------------------------------------------------
-matching_fcv1_longer <- readRDS(file.path("Resultados",
-        "matching_fcv1_longer.RDS"))
-
-```
-
-```{r}
 # análisis---------------------------------------------------------------------
 f_analisis(lista = matching_fcv1_longer,
            tiempo_efecto = 7,
@@ -300,28 +291,22 @@ f_analisis(lista = matching_fih1_longer_2,
 # Hacer figura para la carta
 
 ```{r, fig.height = 4, fig.width = 6.5}
-f_analisis_lancet <- function(
-                lista,
-                tiempo_efecto = 0,
-                title = "Put a fancy title",
-                lim_1 = 0.88,
-                fecha_censura = "2030-12-31") {
+fecha_censura <- "2022-03-31"
   
-  base_analisis <- lista$tt_tibble %>%
+  base_analisis <- matching_fcv1_longer$tt_tibble %>%
     mutate(date_end = pmin(ymd(fecha_censura), date_end)) %>% 
     mutate(survtime = date_end - date_start)
+
+base_analisis %>% count(survtime)
   
-  max_survtime <- base_analisis %>% 
+```
+
+
+```{r, fig.height = 4, fig.width = 6.5}
+max_survtime <- base_analisis %>% 
     summarise(max_survtime = as.numeric(max(survtime))) %>% pull()
   
-  print(glue("Se está analizando el outcome: {lista$out} \\
-             mediante la emulación de un ensayo clínico  \\
-             con múltiples inicios de tiempo. Se ha utilizado matching por: \\
-             {str_c(lista$vector_match, collapse = ', ')}.
-             
-             "))
-  
-  print(glue("Análisis de supervivencia días 0-{max_survtime}"))  
+ 
   print(base_analisis %>% 
              tabyl(exposicion, caso) %>%
              adorn_totals(where = c('row', 'col')) %>%
@@ -329,8 +314,24 @@ f_analisis_lancet <- function(
 
   fit <- survfit(Surv(survtime, caso) ~ exposicion, data = base_analisis) 
   
-  gg1 <- ggsurvplot(fit, data = base_analisis,
-           fun = tipo,
+  summary(fit)
+  
+  cpp <- coxph(formula = Surv(survtime, caso) ~ exposicion, 
+              data = base_analisis)
+  
+  tt_tibble_eff_short <- base_analisis %>% 
+  # filtrar parejas con seguimiento después del día 7
+      group_by(target_trial_number, par) %>% 
+      filter(min(survtime) >= 7,
+             max(survtime) <= 34) %>%
+      ungroup()
+  
+```
+
+
+```{r, fig.height = 4, fig.width = 6.5}
+gg0 <- ggsurvplot(fit, data = base_analisis,
+           fun = "event",
            surv.plot.height	= 0.8,
            risk.table.height	= 0.2,
            palette = "lancet",
@@ -339,46 +340,83 @@ f_analisis_lancet <- function(
            break.y.by = 0.02,
            font.x = 2,
            ylab = "Cumulative Incidence",
-           ylim = c(0, 1 - lim_1),
+           xlim = c(0, 70),
+           ylim = c(0, 1 - 0.8),
            risk.table = "nrisk_cumevents",
            fontsize = 3.8,
            order.legend = TRUE,
            legend = "top",
            legend.labs = c("No booster", "Booster"),
            legend.title = " ",
-           title = title,
+           title = "Prueba",
            font.title = 16,
            conf.int = FALSE) 
   
-    gg1$plot <- gg1$plot + geom_vline(xintercept = 7, 
+    gg0$plot <- gg0$plot + 
+      geom_vline(xintercept = 7, 
+                          linetype = "dashed", 
+                          size = 0.7,
+                          colour = "dimgrey") +
+      geom_vline(xintercept = 35, 
                           linetype = "dashed", 
                           size = 0.7,
                           colour = "dimgrey") +
       theme(axis.title.x = element_text(size = 14))
   
-    gg1$table <- gg1$table + 
+    gg0$table <- gg0$table + 
       theme(axis.line = element_blank(),
             axis.title.x = element_blank(),
             axis.ticks = element_blank(),
             axis.text.x = element_blank(),
             plot.title = element_text(size = 14, face = "bold")) 
 
-print(gg1)
+print(gg0)
 
+```
+
+
+```{r, fig.height = 4, fig.width = 6.5}
+# Cálculos de la RR
 print("Cálculo del RR")
+
+# arreglar tibble
+  tt_tibble_eff_short <- base_analisis %>% 
+  # filtrar parejas con seguimiento después del día 7
+      group_by(target_trial_number, par) %>% 
+      filter(min(survtime) >= tiempo_efecto,
+             max(survtime) <= 34) %>%
+      ungroup()
+
+eff_short = hacer_grupo_tabla_2(tt_tibble = tt_tibble_eff_short, 
+         group_description = title,
+         number_of_bootstrap = 500)
+
+# arreglar tibble
+  tt_tibble_eff_long <- base_analisis %>% 
+  # filtrar parejas con seguimiento después del día 7
+      group_by(target_trial_number, par) %>% 
+      filter(min(survtime) >= 35,
+             max(survtime) <= 70) %>%
+      ungroup()
+
+
+eff_long = hacer_grupo_tabla_2(tt_tibble = tt_tibble_eff_long, 
+         group_description = title,
+         number_of_bootstrap = 500)
 
 # arreglar tibble
   tt_tibble_eff <- base_analisis %>% 
   # filtrar parejas con seguimiento después del día 7
       group_by(target_trial_number, par) %>% 
-      filter(min(survtime) >= tiempo_efecto) %>%
+      filter(min(survtime) >= 7) %>%
       ungroup()
+
 
 eff = hacer_grupo_tabla_2(tt_tibble = tt_tibble_eff, 
          group_description = title,
          number_of_bootstrap = 500)
 
-return(list(gg = gg1, eff = eff))
+return(list(gg = gg0, eff_short = eff_short, eff_long = eff_long, eff = eff))
 }
 
 ```
@@ -387,10 +425,16 @@ return(list(gg = gg1, eff = eff))
 
 ```{r, fig.height = 4, fig.width = 6.5}
 # hacer matching con las covariables-------------------------------------------
-gg1 <- f_analisis_lancet(matching_fcv1,
+gg1 <- f_analisis_lancet(matching_fcv1_longer,
                          tiempo_efecto = 7,
-                         title = "A) Infections. Matching for characteristics*")
-gg1$eff
+                         lim_1 = 0.85,
+                         title = "A) Infections. Matching for age, sex, previous negative test, primary vaccine type and date, health basic zone, 
+                         migrant status, flu vaccinated in 2020 and in 2021, and the number of people at home",
+                         fecha_censura = "2022-03-31")
+gg1$gg$plot
+gg1$eff_short
+gg1$eff_long
+
 
 ```
 
@@ -398,9 +442,11 @@ gg1$eff
 
 ```{r}
 # hacer matching con el domicilio----------------------------------------------
-gg2 <- f_analisis_lancet(matching_fcv1_domi_2,
+gg2 <- f_analisis_lancet(matching_fcv1_domi,
                          tiempo_efecto = 7,
-                         title = "B) Infections. Matching for home address")
+                         lim_1 = 0.85,
+                         title = "B) Infections. Matching for home address",
+                         fecha_censura = "2022-03-31")
 gg2$eff
 
 ```
@@ -434,8 +480,10 @@ f_analisis_lancet_hosp <- function(
 
   fit <- survfit(Surv(survtime, caso) ~ exposicion, data = base_analisis) 
   
-  gg1 <- ggsurvplot(fit, data = base_analisis,
-           fun = tipo,
+  
+# Hacer figura  
+  gg0 <- ggsurvplot(fit, data = base_analisis,
+           fun = "event",
            surv.plot.height	= 0.8,
            risk.table.height	= 0.2,
            palette = "lancet",
@@ -444,7 +492,7 @@ f_analisis_lancet_hosp <- function(
            break.y.by = 0.0002,
            font.x = 2,
            ylab = "Cumulative Incidence",
-           ylim = c(0, 0.0012),
+           ylim = c(0, 0.0015),
            xlim = c(0, 70),
            risk.table = "nrisk_cumevents",
            fontsize = 3.8,
@@ -456,16 +504,19 @@ f_analisis_lancet_hosp <- function(
            font.title = 16,
            conf.int = FALSE) 
   
-    gg1$plot <- gg1$plot + geom_vline(xintercept = 7, 
+    gg0$plot <- gg0$plot + 
+      geom_vline(xintercept = 7, 
                           linetype = "dashed", 
                           size = 0.7,
                           colour = "dimgrey") +
+      # geom_vline(xintercept = 35, 
+      #                     linetype = "dashed", 
+      #                     size = 0.7,
+      #                     colour = "dimgrey") +
       scale_y_continuous(labels = scales::comma, limits = c(0, 0.0012)) +
-      theme(axis.title.x = element_text(size = 14),
-            plot.title = element_text(hjust = 0.5))
+      theme(axis.title.x = element_text(size = 14))
   
-    gg1$table <- gg1$table +
-      labs(caption = "* Characteristics: age, sex, previous negative test, primary vaccine type and date, health basic zone, migrant status, flu vaccinated in 2020 and in 2021, and the number of people at home.") +
+    gg0$table <- gg0$table +
       theme(axis.line = element_blank(),
             axis.title.x = element_blank(),
             axis.ticks = element_blank(),
@@ -473,22 +524,48 @@ f_analisis_lancet_hosp <- function(
             plot.title = element_text(size = 14, face = "bold"),
             plot.caption = element_text(size = 12, hjust = 0.5)
             ) 
-print(gg1)
+print(gg0)
 
 print("Cálculo del RR")
+
+# arreglar tibble
+  tt_tibble_eff_short <- base_analisis %>% 
+  # filtrar parejas con seguimiento después del día 7
+      group_by(target_trial_number, par) %>% 
+      filter(min(survtime) >= tiempo_efecto,
+             max(survtime) <= 34) %>%
+      ungroup()
+
+eff_short = hacer_grupo_tabla_2(tt_tibble = tt_tibble_eff_short, 
+         group_description = title,
+         number_of_bootstrap = 500)
+
+# arreglar tibble
+  tt_tibble_eff_long <- base_analisis %>% 
+  # filtrar parejas con seguimiento después del día 7
+      group_by(target_trial_number, par) %>% 
+      filter(min(survtime) >= 35,
+             max(survtime) <= 70) %>%
+      ungroup()
+
+
+eff_long = hacer_grupo_tabla_2(tt_tibble = tt_tibble_eff_long, 
+         group_description = title,
+         number_of_bootstrap = 500)
 
 # arreglar tibble
   tt_tibble_eff <- base_analisis %>% 
   # filtrar parejas con seguimiento después del día 7
       group_by(target_trial_number, par) %>% 
-      filter(min(survtime) >= tiempo_efecto) %>%
+      filter(min(survtime) >= 7) %>%
       ungroup()
+
 
 eff = hacer_grupo_tabla_2(tt_tibble = tt_tibble_eff, 
          group_description = title,
          number_of_bootstrap = 500)
 
-return(list(gg = gg1, eff = eff))
+return(list(gg = gg1, eff_short = eff_short, eff_long = eff_long, eff = eff))
 }
 
 ```
@@ -506,19 +583,18 @@ gg3$eff
 
 ## Figura 1 compuesta
 
-```{r, fig.height = 8, fig.width = 13}
+```{r, fig.height = 12, fig.width = 12}
 # componer figura--------------------------------------------------------------
-gg_up <- cowplot::plot_grid(gg1$gg$plot, gg2$gg$plot,
-                   gg1$gg$table, gg2$gg$table, 
-                   rel_heights = c(3.5,1), nrow = 2)
-    
-gg_down <- cowplot::plot_grid(gg3$gg$plot, gg3$gg$table, 
-                   rel_heights = c(3.5,1), nrow = 2) +
-  theme(plot.margin = margin(0, 6, 0, 6, "cm"))
+gg_up <- cowplot::plot_grid(
+                   gg1$gg$plot,  
+                   gg1$gg$table, 
+                   gg2$gg$plot,
+                   gg2$gg$table,
+                   gg3$gg$plot,
+                   gg3$gg$table,
+                   rel_heights = c(3.5, 1, 3.5, 1, 3.5, 1), nrow = 6)
 
-gg_fig1 <- cowplot::plot_grid(gg_up, gg_down, nrow = 2)
-
-ggsave("Fig1.svg", height = 9, width = 16, units = "in")
+ggsave("Fig1.svg", height = 13, width = 12, units = "in")
 
 ```
 
@@ -529,10 +605,20 @@ ggsave("Fig1.svg", height = 9, width = 16, units = "in")
 gg4 <- f_analisis_lancet(matching_fcv1_longer,
                          tiempo_efecto = 7,
                          title = "C) Hospitalisations. Matching for characteristics*",
-                         lim_1 = 0.8)
+                         lim_1 = 0.8,
+                         fecha_censura = "2022-03-31")
 gg4$eff
 
-devtools::install_github("rstudio/radix")
+```
 
+```{r, fig.height = 4, fig.width = 13}
+# hacer matching con el domicilio----------------------------------------------
+gg5 <- f_analisis_lancet(matching_fcv1_domi,
+                         tiempo_efecto = 7,
+                         title = "B) Infections. Matching for home address",
+                         lim_1 = 0.88,
+                         fecha_censura = "2022-03-31")
+gg5$eff
 
 ```
+
