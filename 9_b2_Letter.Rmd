@@ -78,7 +78,7 @@ On each day between Jan 3, and March 30, 2022, we matched individuals who receiv
   
 The estimated effectiveness from day 7 to 34 after a booster was 51·3% (95%CI 50·2, 52·4) in Spain [@Monge2022], meanwhile in Navarra region was `r rr_m1_34$rr_eff` for the short-term (7-34 days) and `r rr_m1_70$rr_eff` for the mid-term (7-70 days). In both settings it is observed differences between the groups in the first 7 days (Fig 1A). However, when the matching is done by the home address, these differences decrease drastically. In this analysis, the short and mid term effectiveness are `r rr_m2_34$rr_eff` and `r rr_m2_70$rr_eff` respectively (Fig 1B). Finally, the mid-term effectiveness of booster in severe cases is high: `r rr_m3_70$rr_eff`, although there are a low number of cases (Fig 1C). 
 
-Summarising, i) in order to emulate the target trials it is interesting have the exact home address of the participants to remove confounding, and ii) the booster has moderate effectiveness against infection, even in the mid-term time, and higher effectiveness against hospitalisations. 
+Summarising, i) in order to emulate the target trials it is interesting to have the exact home address of the participants to remove confounding, and ii) the booster has moderate effectiveness against infection, even in the mid-term time, and higher effectiveness against hospitalisations. 
 
 <br>
 
