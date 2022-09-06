@@ -1,9 +1,26 @@
 ---
-title: "Target Trial: Booster Long-term effectivity against infection and severe cases on Omicron-dominant period in Navarra"
-author: "Francisco Sánchez Sáez"
+title: "Correspondence: Booster Long-term effectivity against infection and severe cases on Omicron-dominant period in Navarra"
+author: 
+  - name          : "Francisco Sanchez-Saez"
+    affiliation   : "1"
+    corresponding : yes    # Define only one corresponding author
+    email         : "sanchez_frasae@gva.es"
+  
+  - name          : "Ibai Tamayo"
+    affiliation   : "2"
+    
+  - name          : "Julián Librero"
+    affiliation   : "2"  
+    
+affiliation:
+  - id            : "1"
+    institution   : "FISABIO. Health services research unit"
+  - id            : "2"
+    institution   : "Navarrabiomed. Methodology department" 
+ 
 date: "`r format(Sys.Date())`"
 output: 
-  bookdown::html_document2:
+  output: radix::radix_article
     keep_md: false 
     theme: cerulean
     highlight: breezedark
@@ -53,22 +70,22 @@ suppressMessages(source_rmd("0_b_funciones.rmd"))
 ```
 
 
-We commend Monge et al for their insightful analysis of the effectivity of the booster vaccines in Spain against the omicron variant of SARS-Cov-2. The omicron (B.1.1.529) variant of SARS-CoV-2 has increased capacity to elude immunity and cause breakthrough infections [@Monge2022]. In this letter we try to answer two of the limitations of the aforementioned work: i) the differences in the exposed and unexposed group before the vaccine can be effective (first seven days) and the long-term effect of the booster in the severe cases. This has been done following the **Target trial emulation** methodology [@Danaei2013]. The results of infections from 2022-01-03 to 2022-02-06 are compared with [@Monge2022] and then the period of the study is enlarged in order to assess the long-term effects against infections and severe cases. 
+We commend Monge et al for their insightful analysis of the effectivity of the booster vaccines in Spain against the omicron variant of SARS-Cov-2 [@Monge2022]. We try to enhance two of the limitations of the aforementioned work: i) the differences in the exposed and unexposed group before the vaccine can be effective (first seven days) and the long-term effect of the booster in infections and in severe cases. This has been done following the target trial emulation methodology [@Danaei2013]. The results of infections from 2022-01-03 to 2022-06-13 are compared with [@Monge2022]. 
 
-In this population cohort study, we linked data from three population registries in Navarra (Vaccination Registry, Laboratory Results Registry, and BARDENA-Population registry) to select community-dwelling individuals aged 40 years or older Who completed their primary vaccine schedule at least 3 months before the start of follow-up, and had not tested positive for SARS-CoV-2 since the start of the pandemic, excluding  educational workers, health-care workers, and nursing home users.
+In this population cohort study, we linked data from three population registries in Navarra (Vaccination Registry, Laboratory Results Registry, and BARDENA-Population registry) to select community-dwelling individuals aged 40 years or older Who completed their primary vaccine schedule at least 3 months before the start of follow-up, and had not tested positive for SARS-CoV-2 since the start of the pandemic, excluding  educational workers, health-care workers, and nursing home residents.
   
-On each day between Jan 3, and Feb 6, 2022, we matched individuals who received a booster mRNA vaccine and controls of the same age (5 years groups), sex, number of previous negative test (0, 1, 2, 3+), type of primary vaccine (homologous or Janssen), time since complete vaccination, health basic zone, migrant status, flu vaccinated in 2020, flu vaccinated in 2021, and the number of people at home (truncated at eight). We estimated risk of laboratory-confirmed SARS-CoV-2 infection using the Kaplan-Meier method and compared groups using risk ratios (RR) and risk differences. Vaccine effectiveness was calculated as one minus RR. In addition, we use the home address for doing the matching in order to reduce the confunding factors among exposed and unexposed groups. Finally, we assess the long-term effect of the booster against severe cases looking 60 days of follow-up on a period from 2022-01-03 to 2022-04-13.
+On each day between Jan 3, and Jun 13, 2022, we matched individuals who received a booster mRNA vaccine (n = 30 962) and controls of the same age (5 years groups), sex, number of previous negative test (0, 1, 2, 3+), type of primary vaccine (homologous or Janssen), time since complete vaccination, health basic zone, migrant status, flu vaccinated in 2020, flu vaccinated in 2021, and the number of people at home (truncated at eight). We estimated risk of laboratory-confirmed SARS-CoV-2 infection using the Kaplan-Meier method and compared groups using risk ratios (RR) and risk differences. Vaccine effectiveness was calculated as one minus RR. In addition, we use the home address for doing the matching in order to reduce the confunding factors among exposed and unexposed groups. Finally, we assess the long-term effect of the booster against severe cases looking 10 weeks of follow-up on a period from 2022-01-03 to 2022-06-13.
   
-The estimated effectiveness from day 7 to 34 after a booster was 51·3% (95%CI 50·2, 52·4) in Spain [@Monge2022], meanwhile in Navarra region was 47·1 % (95%CI 41·5, 52·4). In both settings it is observed differences between the groups, even before the vaccine could be effective (buscar referencia) (Figure 1a). However, when the matching is done by the home address, the differences between the groups in the first 7 days decreases drastically. (the effectiveness is 49·5 % (95%CI 39·4, 57·9 %)) (Figure 1b). Finally, the long-term effectiveness of booster in severe cases is high: 72.2 % (95%CI 25·2 - 89·7 %), although there are a low number of cases. 
+The estimated effectiveness from day 7 to 34 after a booster was 51·3% (95%CI 50·2, 52·4) in Spain [@Monge2022], meanwhile in Navarra region was 47·1 % (95%CI 41·5, 52·4). In both settings it is observed differences between the groups, even before the vaccine could be effective (buscar referencia) (Fig 1A). However, when the matching is done by the home address, the differences between the groups in the first 7 days decreases drastically. (the effectiveness is 49·5 % (95%CI 39·4, 57·9 %)) (Fig 1B). Finally, the long-term effectiveness of booster in severe cases is high: 72.2 % (95%CI 25·2 - 89·7 %), although there are a low number of cases (Fig 1C). 
 
-Summarising, i) in order to emulate the target trials it is interesting have the exact home address of the participants to remove confunding, and ii) the booster has moderate effectiveness against infection, and higher effectiveness against hospitalisations. 
+Summarising, i) in order to emulate the target trials it is interesting have the exact home address of the participants to remove confounding, and ii) the booster has moderate effectiveness against infection, and higher effectiveness against hospitalisations. 
 
 
 <br>
 
-```{r figure}
+```{r figure, width = 16, height = 9}
 # poner la figura con el análisis principal, el del domicilio y el de los casos severos
-
+knitr::include_graphics("Fig1.svg")
 
 ```
 

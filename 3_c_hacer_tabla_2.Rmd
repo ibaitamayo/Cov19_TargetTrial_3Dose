@@ -72,9 +72,6 @@ matching_fcv1_domi <- readRDS(file.path("Resultados",
 
 ***
 
-
-
-
 ```{r}
 # ejecutar la función para hacer la tabla--------------------------------------
 tabla_2_matching_fcv1 <- hacer_tabla_2(tt_tibble = matching_fcv1$tt_tibble)

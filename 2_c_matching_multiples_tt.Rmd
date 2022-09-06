@@ -601,7 +601,7 @@ saveRDS(matching_fcv1_domi_4, file.path("Resultados",
 matching_fcv1_longer <- f_matching_tt_mult(
                 data = pobana_2,
                 f_ini = "2022-01-03",
-                f_fin = "2022-04-13",
+                f_fin = "2022-06-13",
                 crit_exc = lista_exclusion_dep,
                 exposure = "fvc3",
                 out = "fcv1", 
@@ -614,7 +614,7 @@ matching_fcv1_longer <- f_matching_tt_mult(
                 age_last = 90,
                 age_by = 5,
                 censoring = "fdef",
-                follow_up = 60,
+                follow_up = 70,
                 verbose = FALSE,
                 seed = 3)
 
@@ -629,9 +629,9 @@ saveRDS(matching_fcv1_longer, file.path("Resultados",
 ```{r}
 # hacer ajuste con el domicilio como matching----------------------------------
 matching_fcv1_domi <- f_matching_tt_mult(
-                data = pobana_2 %>% filter(ucn8 >= 3) ,
+                data = pobana_2 %>% filter(ucn8 >= 2) ,
                 f_ini = "2022-01-03",
-                f_fin = "2022-04-13",
+                f_fin = "2022-06-13",
                 crit_exc = lista_exclusion_dep,
                 exposure = "fvc3",
                 out = "fcv1", 
@@ -644,7 +644,7 @@ matching_fcv1_domi <- f_matching_tt_mult(
                 age_last = NULL,
                 age_by = NULL,
                 censoring = "fdef",
-                follow_up = 60,
+                follow_up = 70,
                 verbose = FALSE,
                 seed = 3)
 
@@ -661,11 +661,11 @@ saveRDS(matching_fcv1_domi, file.path("Resultados",
 matching_fih1_longer <- f_matching_tt_mult(
                 data = pobana_2,
                 f_ini = "2022-01-03",
-                f_fin = "2022-04-13",
+                f_fin = "2022-06-13",
                 crit_exc = lista_exclusion_dep,
                 exposure = "fvc3",
                 out = "fih1", 
-                vector_match = variables_matching[c(1, 3:4)], 
+                vector_match = variables_matching[c(1)], 
                 base_test = test220613_cleaned,
                 temporal_var = "fpauta_90",
                 temporal_var_unit = "weeks",
@@ -674,7 +674,7 @@ matching_fih1_longer <- f_matching_tt_mult(
                 age_last = 90,
                 age_by = 5,
                 censoring = "fdef",
-                follow_up = 60,
+                follow_up = 70,
                 verbose = FALSE,
                 seed = 3)
 
@@ -684,3 +684,32 @@ saveRDS(matching_fih1_longer, file.path("Resultados",
 
 ```
 
+# fih1 más tiempo. age 1 year.
+
+```{r}
+# follow-up = 60, f_fin = 13-04-2022
+matching_fih1_longer_2 <- f_matching_tt_mult(
+                data = pobana_2,
+                f_ini = "2022-01-03",
+                f_fin = "2022-06-13",
+                crit_exc = lista_exclusion_dep,
+                exposure = "fvc3",
+                out = "fih1", 
+                vector_match = variables_matching[c(1)], 
+                base_test = test220613_cleaned,
+                temporal_var = "fpauta_90",
+                temporal_var_unit = "weeks",
+                birth_date = "fnac",
+                age_first = 40,
+                age_last = 90,
+                age_by = 1,
+                censoring = "fdef",
+                follow_up = 70,
+                verbose = FALSE,
+                seed = 3)
+
+# guardar resultados-----------------------------------------------------------
+saveRDS(matching_fih1_longer_2, file.path("Resultados",
+        "matching_fih1_longer_2.RDS"))
+
+```
