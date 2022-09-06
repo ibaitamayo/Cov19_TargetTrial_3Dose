@@ -703,6 +703,58 @@ f_analisis <- function(
 
 ```
 
+## f_analisis lancet rr
+
+Hacer el análisis para la carta: el rr.
+
+```{r, fig.height = 4, fig.width = 6.5}
+f_analisis_lancet_rr <- function(
+                lista,
+                tiempo_efecto = 0,
+                title = "Put a fancy title",
+                fecha_censura = "2030-12-31") {
+  
+  base_analisis <- lista$tt_tibble %>%
+    mutate(date_end = pmin(ymd(fecha_censura), date_end)) %>% 
+    mutate(survtime = date_end - date_start)
+  
+  max_survtime <- base_analisis %>% 
+    summarise(max_survtime = as.numeric(max(survtime))) %>% pull()
+  
+  print(glue("Se está analizando el outcome: {lista$out} \\
+             mediante la emulación de un ensayo clínico  \\
+             con múltiples inicios de tiempo. Se ha utilizado matching por: \\
+             {str_c(lista$vector_match, collapse = ', ')}.
+             
+             "))
+  
+  print(glue("Análisis de supervivencia días 0-{max_survtime}"))  
+  print(base_analisis %>% 
+             tabyl(exposicion, caso) %>%
+             adorn_totals(where = c('row', 'col')) %>%
+             adorn_title())
+
+  fit <- survfit(Surv(survtime, caso) ~ exposicion, data = base_analisis) 
+  
+# Cálculos de la RR
+print("Cálculo del RR")
+
+# arreglar tibble
+  tt_tibble_eff <- base_analisis %>% 
+  # filtrar parejas con seguimiento después del día 7
+      group_by(target_trial_number, par) %>% 
+      filter(min(survtime) >= tiempo_efecto) %>% 
+      ungroup()
+
+hacer_grupo_tabla_2(
+         tt_tibble = tt_tibble_eff, 
+         group_description = title,
+         number_of_bootstrap = 500)
+}
+
+```
+
+
 ## f_analisis lancet
 
 Hacer el análisis para la carta.
@@ -824,7 +876,7 @@ return(list(gg = gg0, eff_short = eff_short, eff_long = eff_long, eff = eff))
 
 ```
 
-## f_analisis lancet
+## f_analisis lancet hosp
 
 Hacer el análisis para la carta de las hospitalizaciones.
 

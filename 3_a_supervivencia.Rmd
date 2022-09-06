@@ -290,6 +290,14 @@ f_analisis(lista = matching_fih1_longer_2,
 
 # Hacer figura para la carta
 
+```{r}
+f_analisis_lancet_rr()
+
+```
+
+
+
+
 ```{r, fig.height = 4, fig.width = 6.5}
 fecha_censura <- "2022-03-31"
   
@@ -434,7 +442,6 @@ gg1 <- f_analisis_lancet(matching_fcv1_longer,
 gg1$gg$plot
 gg1$eff_short
 gg1$eff_long
-
 
 ```
 
