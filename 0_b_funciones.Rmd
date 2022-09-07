@@ -201,6 +201,9 @@ f_matching_tt <- function(data,
                           temporal_var = NULL,
                           temporal_var_unit = "days",
                           birth_date = NULL,
+                          calcular_edad = NULL,
+                          calcular_test = NULL,
+                          calcular_temp_var = NULL,
                           age_first = NULL,
                           age_last = NULL,
                           age_by = NULL,
@@ -247,6 +250,20 @@ f_matching_tt <- function(data,
   vector_match <- c(vector_match, "n_0")
   }
   
+  # contar número de test negativos previos (si no está en el matching)
+  if (!is.null(calcular_test)) {
+  data <- calcular_test %>% filter(id %in% data$id,
+                               tpos == FALSE,
+                               ftes < tiempo_0) %>% 
+    group_by(id) %>% 
+    summarise(n_0 = max(n)) %>% 
+    right_join(data, by = "id") %>% 
+    mutate(n_0 = case_when(is.na(n_0) ~ 0L, 
+                 n_0 > 3 ~ 3L,
+                 T ~ n_0)) 
+  }
+     
+     
   if (!is.null(dias_a_excluir_test_previos)) {
     ids_a_excluir <- base_test %>% 
       filter(id %in% data$id,
@@ -265,6 +282,13 @@ f_matching_tt <- function(data,
   vector_match <- c(vector_match, "temp_var")
   }
   
+  # Calcular temp_var respecto a tiempo_0 (cuando no está en el matching)
+  if (!is.null(calcular_temp_var)) {
+  data <- data %>% 
+  mutate(temp_var = as.numeric(tiempo_0 - 
+                    floor_date(get(calcular_temp_var), unit = temporal_var_unit)))
+  }   
+     
   # introducir edad como variable de matching respecto a tiempo_0
   if (!is.null(birth_date)) {
     if(is.null(age_first) || is.null(age_last) || is.null(age_by)) {
@@ -283,6 +307,24 @@ f_matching_tt <- function(data,
   
   vector_match <- c(vector_match, "p_edad_cat")
   }
+     
+  # calcular edad (cuando la edad no está en el matching)
+  if (!is.null(calcular_edad)) {
+    if(is.null(age_first) || is.null(age_last) || is.null(age_by)) {
+      stop(strwrap(prefix = " ", initial = "", 
+           "Have you introduced 'age_first', 'age_last',
+           and, 'age_by' arguments properly?"))
+    }
+  data <- data %>% 
+    mutate(p_edad_cat = cut(as.numeric(difftime(tiempo_0, get(calcular_edad), 
+                                              unit = "days"))/365.25,
+                          right = FALSE, 
+                          breaks = c(0,
+                                     seq(age_first, age_last, by = age_by),
+                                     200))) %>% 
+    mutate(p_edad_cat_label = p_edad_cat)
+  }
+     
 
   # exposicion-seguimiento
   data <- data %>% 
@@ -356,6 +398,9 @@ f_matching_tt_mult <- function(
                              temporal_var = NULL,
                              temporal_var_unit = "days",
                              birth_date = NULL,
+                             calcular_edad = NULL,
+                             calcular_test = NULL,
+                             calcular_temp_var = NULL,
                              age_first = NULL,
                              age_last = NULL,
                              age_by = NULL,
@@ -381,6 +426,9 @@ f_matching_tt_mult <- function(
       temporal_var = temporal_var,
       temporal_var_unit = temporal_var_unit,
       birth_date = birth_date,
+      calcular_edad = calcular_edad,
+      calcular_test = calcular_test,
+      calcular_temp_var = calcular_temp_var,
       age_first = age_first,
       age_last = age_last,
       age_by = age_by,
@@ -1054,6 +1102,24 @@ base %>%
 ```
 
 ```{r}
+# Comorbidities----------------------------------------------------------------
+ # función
+hacer_tabla_basal_comor <- function(base, comor, name = "1") {
+  base %>%
+  tabyl({{comor}}, exposicion) %>% 
+  adorn_totals("col") %>%  
+  adorn_percentages("col") %>%
+  adorn_pct_formatting(digits = 1) %>%
+  adorn_ns("front") %>% 
+  filter({{comor}} == 1) %>% 
+  rename(Variable = {{comor}}) %>% 
+  mutate(Variable = name)
+  }
+
+```
+
+
+```{r}
 hacer_tabla_1 <- function(tt_tibble) {
 
   tabla_basal_edad <- hacer_basal_discreta(base = tt_tibble,
@@ -1113,16 +1179,49 @@ hacer_tabla_1 <- function(tt_tibble) {
       t_desde_pauta_completa_cat = factor(t_desde_pauta_completa_cat,
         levels = c("91-150 days", "151-180 days", "&ge; 181 days"))),
     variable = t_desde_pauta_completa_cat)
-
+  
+  tabla_basal_flu_2020 <- hacer_basal_discreta(base = tt_tibble,
+                                         variable = vgp20,
+                                         relabel = c(
+                                           "No",
+                                           "Yes"))
+  
+  tabla_basal_flu_2021 <- hacer_basal_discreta(base = tt_tibble,
+                                         variable = vgp21)
+  
+  tabla_basal_ucn8 <- hacer_basal_discreta(base = tt_tibble,
+                                         variable = ucn8
+                                           )
+  
   tabla_basal <- bind_rows(
                            tabla_basal_edad,
                            tabla_basal_sexo,
                            tabla_basal_n_test,
                            tabla_basal_vaccine_type,
                            tabla_basal_t_pauta_comp,
-                           tabla_basal_booster_type) %>% 
+                           tabla_basal_booster_type,
+                      hacer_tabla_basal_comor(tt_tibble, vgp20,
+                        name = "Flu vaccinated in 2020"),
+                      hacer_tabla_basal_comor(tt_tibble, vgp21,
+                        name = "Flu vaccinated in 2021"),
+                        tabla_basal_ucn8,
+                      hacer_tabla_basal_comor(tt_tibble, diab,
+                        name = "Diabetes mellitus"),
+                      hacer_tabla_basal_comor(tt_tibble, corp,
+                        name = "Coronary artery disease"),
+                      hacer_tabla_basal_comor(tt_tibble, irc,
+                        name = "Chronic kidney failure"),
+                      hacer_tabla_basal_comor(tt_tibble, epoc,
+                        name = "Chronic obstructive pulmonary disease"),
+                      hacer_tabla_basal_comor(tt_tibble, hlip,
+                        name = "hyperdyslipidemia"),
+                      hacer_tabla_basal_comor(tt_tibble, hta,
+                        name = "Hypertension"),
+                      hacer_tabla_basal_comor(tt_tibble, ictu,
+                        name = "Stroke"),
+                      hacer_tabla_basal_comor(tt_tibble, obes,
+                        name = "Obesity")) %>% 
     select(-Total)
-  
   
   n_unexposed <- tt_tibble %>% 
     filter(exposicion == 0) %>%
@@ -1156,6 +1255,10 @@ hacer_tabla_1 <- function(tt_tibble) {
   pack_rows("Type of previous vaccination, n (%)", 18, 21) %>%
   pack_rows("Time since primary vaccine schedule, n (%)", 22, 24) %>%
   pack_rows("Type of booster, n (%)", 25, 26) %>%
+  pack_rows("Vaccinated against flu (2020), n (%)", 27, 27) %>%
+  pack_rows("Vaccinated against flu (2020), n (%)", 28, 28) %>%
+  pack_rows("Household members, n (%)", 29, 36) %>%
+  pack_rows("Comorbidities, n (%)", 37, 44) %>%
   footnote(footnote_as_chunk = TRUE, 
            general = glue("NA = not applicable, *{id_uniques} unique individuals in the no booster group."))
 
