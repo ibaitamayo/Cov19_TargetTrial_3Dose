@@ -5,13 +5,19 @@ author:
  - Ibai Tamayo, NAVARRABIOMED
  - Julian Librero, NAVARRABIOMED
 date: "`r format(Sys.Date())`"
-bookdown::html_document2:
+output: 
+  bookdown::html_document2:
     keep_md: false 
     theme: cerulean
     highlight: breezedark
     css: style.css
     anchor_sections: false
-    toc: no
+    toc: yes
+    toc_float:
+      collapsed: yes
+      smooth_scroll: yes
+      code_folding: show
+    toc_depth: 3
 bibliography: References.bib
 csl: tl.csl
 editor_options: 
@@ -98,7 +104,13 @@ Individuals characteristics in each of the three target trials are presented in 
 
 ```{r tabla1a}
 # ejecutar la función para hacer la tabla--------------------------------------
-table_1_m1 <- hacer_tabla_1(tt_tibble = matching_fcv1_longer_70$tt_tibble)
+table_1_m1 <- hacer_tabla_1(tt_tibble = matching_fcv1_longer_70$tt_tibble,
+                            title = "Characteristics of target trial a)")
+
+```
+
+
+```{r }
 table_1_m1 
 
 ```
@@ -107,21 +119,31 @@ table_1_m1
 
 ```{r tabla1b}
 table_1_m2 <- hacer_tabla_1(tt_tibble = matching_fcv1_domi_70$tt_tibble,
-                            adaptada = "Yes")
-
-table_1_m2
+                            adaptada = "Yes",
+                            title = "Characteristics of target trial b)")
 ```
 
-< br>
+
+```{r}
+table_1_m2
+
+```
+
+<br>
 
 ```{r tabla1c}
-table_1_m4 <- hacer_tabla_1(tt_tibble = matching_fih1_longer_70_bis$tt_tibble)
+table_1_m4 <- hacer_tabla_1(tt_tibble = matching_fih1_longer_70_bis$tt_tibble,
+                            title = "Characteristics of target trial c)")
 
+```
+
+
+```{r}
 table_1_m4
 
 ```
 
-<br<
+<br>
 
 # References
 

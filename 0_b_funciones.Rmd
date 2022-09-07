@@ -878,7 +878,8 @@ hacer_tabla_basal_comor <- function(base, comor, name = "1") {
 
 ```{r}
 hacer_tabla_1 <- function(tt_tibble,
-                          adaptada = NULL) {
+                          adaptada = NULL,
+                          title = "baseline characteristics") {
 
   tabla_basal_edad <- hacer_basal_discreta(base = tt_tibble,
                                          variable = p_edad_cat_label,
@@ -1012,7 +1013,7 @@ if (missing(adaptada)){
                     glue("No booster group (n = {n_unexposed}*)"),
                     glue("Booster group (n = {n_exposed})")),
       table.attr = "style = \"color: black;\"",
-      caption = "Baseline characteristics of the matched study population") %>%
+      caption = title) %>%
   kable_styling(bootstrap_options = c("striped", 
                                       "hover", 
                                       "condensed"),
@@ -1035,7 +1036,7 @@ if (missing(adaptada)){
                     glue("No booster group (n = {n_unexposed}*)"),
                     glue("Booster group (n = {n_exposed})")),
       table.attr = "style = \"color: black;\"",
-      caption = "Baseline characteristics of the matched study population") %>%
+      caption = title) %>%
   kable_styling(bootstrap_options = c("striped", 
                                       "hover", 
                                       "condensed"),
