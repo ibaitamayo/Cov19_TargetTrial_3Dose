@@ -90,7 +90,7 @@ a) Target trial for ascertaining booster effectiveness against infections from 2
 
 b) Target trial for ascertaining booster effectiveness against infections from 2022-01-04 to 2022-03-31. Matching each boostering day (from 2022-01-03 to 2022-03-30) by home address.
 
-c) Target trial for ascertaining booster effectiveness against hospitalisations due to COVID-19 from 2022-01-04 to 2022-06-13. Matching each boostering day (from 2022-01-03 to 2022-06-12) by
+c) Target trial for ascertaining booster effectiveness against hospitalisations due to COVID-19 from 2022-01-04 to 2022-06-13. Matching each boostering day (from 2022-01-03 to 2022-06-12) by age, sex, and comorbidities (diabetes mellitus, coronary artery disease, chronic kidney failure, chronic obstructive pulmonary disease, hyperdyslipidemia, hypertension, stroke, and obesity).
 
 Individuals characteristics in each of the three target trials are presented in Tables \@ref(tab:tabla1a), \@ref(tab:tabla1b), and \@ref(tab:tabla1c).
 
@@ -99,18 +99,17 @@ Individuals characteristics in each of the three target trials are presented in 
 ```{r tabla1a}
 # ejecutar la función para hacer la tabla--------------------------------------
 table_1_m1 <- hacer_tabla_1(tt_tibble = matching_fcv1_longer_70$tt_tibble)
+table_1_m1 
 
 ```
 
 <br>
 
 ```{r tabla1b}
-table_1_m2 <- hacer_tabla_1(tt_tibble = matching_fcv1_domi_70$tt_tibble)
+table_1_m2 <- hacer_tabla_1(tt_tibble = matching_fcv1_domi_70$tt_tibble,
+                            adaptada = "Yes")
 
-table_1_m2 %>% 
-  row_spec(c(29:36), bold = F, color = "black", background = "Chartreuse",
-           extra_css = "vertical-align:middle")
-
+table_1_m2
 ```
 
 < br>
@@ -118,13 +117,11 @@ table_1_m2 %>%
 ```{r tabla1c}
 table_1_m4 <- hacer_tabla_1(tt_tibble = matching_fih1_longer_70_bis$tt_tibble)
 
-table_1_m4 %>% 
-  row_spec(c(1:13, 37:44), bold = F, color = "black", background = "Chartreuse",
-           extra_css = "vertical-align:middle")
+table_1_m4
 
 ```
 
-<br>
+<br<
 
 # References
 

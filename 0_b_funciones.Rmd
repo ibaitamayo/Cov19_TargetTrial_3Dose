@@ -808,249 +808,6 @@ lst(tibble_eff, rr_eff)
 
 ```
 
-
-## f_analisis lancet
-
-Hacer el análisis para la carta.
-
-```{r, fig.height = 4, fig.width = 6.5}
-f_analisis_lancet <- function(
-                lista,
-                tiempo_efecto = 0,
-                title = "Put a fancy title",
-                lim_1 = 0.88,
-                fecha_censura = "2030-12-31") {
-  
-  base_analisis <- lista$tt_tibble %>%
-    mutate(date_end = pmin(ymd(fecha_censura), date_end)) %>% 
-    mutate(survtime = date_end - date_start)
-  
-  max_survtime <- base_analisis %>% 
-    summarise(max_survtime = as.numeric(max(survtime))) %>% pull()
-  
-  print(glue("Se está analizando el outcome: {lista$out} \\
-             mediante la emulación de un ensayo clínico  \\
-             con múltiples inicios de tiempo. Se ha utilizado matching por: \\
-             {str_c(lista$vector_match, collapse = ', ')}.
-             
-             "))
-  
-  print(glue("Análisis de supervivencia días 0-{max_survtime}"))  
-  print(base_analisis %>% 
-             tabyl(exposicion, caso) %>%
-             adorn_totals(where = c('row', 'col')) %>%
-             adorn_title())
-
-  fit <- survfit(Surv(survtime, caso) ~ exposicion, data = base_analisis) 
-  
-  gg0 <- ggsurvplot(fit, data = base_analisis,
-           fun = "event",
-           surv.plot.height	= 0.8,
-           risk.table.height	= 0.2,
-           palette = "lancet",
-           xlab = "Time since start of follow-up (days)",
-           break.x.by = 7,
-           break.y.by = 0.02,
-           font.x = 2,
-           ylab = "Cumulative Incidence",
-           xlim = c(0, 70),
-           ylim = c(0, 1 - lim_1),
-           risk.table = "nrisk_cumevents",
-           fontsize = 3.8,
-           order.legend = TRUE,
-           legend = "top",
-           legend.labs = c("No booster", "Booster"),
-           legend.title = " ",
-           title = title,
-           font.title = 16,
-           conf.int = FALSE) 
-  
-    gg0$plot <- gg0$plot + 
-      geom_vline(xintercept = 7, 
-                          linetype = "dashed", 
-                          size = 0.7,
-                          colour = "dimgrey") +
-      geom_vline(xintercept = 35, 
-                          linetype = "dashed", 
-                          size = 0.7,
-                          colour = "dimgrey") +
-      theme(axis.title.x = element_text(size = 14))
-  
-    gg0$table <- gg0$table + 
-      theme(axis.line = element_blank(),
-            axis.title.x = element_blank(),
-            axis.ticks = element_blank(),
-            axis.text.x = element_blank(),
-            plot.title = element_text(size = 14, face = "bold")) 
-
-print(gg0)
-
-# Cálculos de la RR
-print("Cálculo del RR")
-
-# arreglar tibble
-  tt_tibble_eff_short <- base_analisis %>% 
-  # filtrar parejas con seguimiento después del día 7
-      group_by(target_trial_number, par) %>% 
-      filter(min(survtime) >= tiempo_efecto,
-             max(survtime) <= 34) %>%
-      ungroup()
-
-eff_short = hacer_grupo_tabla_2(tt_tibble = tt_tibble_eff_short, 
-         group_description = title,
-         number_of_bootstrap = 500)
-
-# arreglar tibble
-  tt_tibble_eff_long <- base_analisis %>% 
-  # filtrar parejas con seguimiento después del día 7
-      group_by(target_trial_number, par) %>% 
-      filter(min(survtime) >= 35,
-             max(survtime) <= 70) %>%
-      ungroup()
-
-
-eff_long = hacer_grupo_tabla_2(tt_tibble = tt_tibble_eff_long, 
-         group_description = title,
-         number_of_bootstrap = 500)
-
-# arreglar tibble
-  tt_tibble_eff <- base_analisis %>% 
-  # filtrar parejas con seguimiento después del día 7
-      group_by(target_trial_number, par) %>% 
-      filter(min(survtime) >= 7) %>%
-      ungroup()
-
-
-eff = hacer_grupo_tabla_2(tt_tibble = tt_tibble_eff, 
-         group_description = title,
-         number_of_bootstrap = 500)
-
-return(list(gg = gg0, eff_short = eff_short, eff_long = eff_long, eff = eff))
-}
-
-```
-
-## f_analisis lancet hosp
-
-Hacer el análisis para la carta de las hospitalizaciones.
-
-```{r}
-f_analisis_lancet_hosp <- function(
-                lista,
-                tiempo_efecto = 0,
-                title = "Put a fancy title",
-                lim_1 = 0.88) {
-  
-  base_analisis <- lista$tt_tibble %>% 
-    mutate(survtime = date_end - date_start)
-  
-  max_survtime <- base_analisis %>% 
-    summarise(max_survtime = as.numeric(max(survtime))) %>% pull()
-  
-  print(glue("Se está analizando el outcome: {lista$out} \\
-             mediante la emulación de un ensayo clínico  \\
-             con múltiples inicios de tiempo. Se ha utilizado matching por: \\
-             {str_c(lista$vector_match, collapse = ', ')}.
-             "))
-  
-  print(glue("Análisis de supervivencia días 0-{max_survtime}"))  
-  print(base_analisis %>% 
-             tabyl(exposicion, caso) %>%
-             adorn_totals(where = c('row', 'col')) %>%
-             adorn_title())
-
-  fit <- survfit(Surv(survtime, caso) ~ exposicion, data = base_analisis) 
-  
-  
-# Hacer figura  
-  gg0 <- ggsurvplot(fit, data = base_analisis,
-           fun = "event",
-           surv.plot.height	= 0.8,
-           risk.table.height	= 0.2,
-           palette = "lancet",
-           xlab = "Time since start of follow-up (days)",
-           break.x.by = 7,
-           break.y.by = 0.0002,
-           font.x = 2,
-           ylab = "Cumulative Incidence",
-           ylim = c(0, 0.0015),
-           xlim = c(0, 70),
-           risk.table = "nrisk_cumevents",
-           fontsize = 3.8,
-           order.legend = TRUE,
-           legend = "top",
-           legend.labs = c("No booster", "Booster"),
-           legend.title = " ",
-           title = title,
-           font.title = 16,
-           conf.int = FALSE) 
-  
-    gg0$plot <- gg0$plot + 
-      geom_vline(xintercept = 7, 
-                          linetype = "dashed", 
-                          size = 0.7,
-                          colour = "dimgrey") +
-      # geom_vline(xintercept = 35, 
-      #                     linetype = "dashed", 
-      #                     size = 0.7,
-      #                     colour = "dimgrey") +
-      scale_y_continuous(labels = scales::comma, limits = c(0, 0.0012)) +
-      theme(axis.title.x = element_text(size = 14))
-  
-    gg0$table <- gg0$table +
-      theme(axis.line = element_blank(),
-            axis.title.x = element_blank(),
-            axis.ticks = element_blank(),
-            axis.text.x = element_blank(),
-            plot.title = element_text(size = 14, face = "bold"),
-            plot.caption = element_text(size = 12, hjust = 0.5)
-            ) 
-print(gg0)
-
-print("Cálculo del RR")
-
-# arreglar tibble
-  tt_tibble_eff_short <- base_analisis %>% 
-  # filtrar parejas con seguimiento después del día 7
-      group_by(target_trial_number, par) %>% 
-      filter(min(survtime) >= tiempo_efecto,
-             max(survtime) <= 34) %>%
-      ungroup()
-
-eff_short = hacer_grupo_tabla_2(tt_tibble = tt_tibble_eff_short, 
-         group_description = title,
-         number_of_bootstrap = 500)
-
-# arreglar tibble
-  tt_tibble_eff_long <- base_analisis %>% 
-  # filtrar parejas con seguimiento después del día 7
-      group_by(target_trial_number, par) %>% 
-      filter(min(survtime) >= 35,
-             max(survtime) <= 70) %>%
-      ungroup()
-
-
-eff_long = hacer_grupo_tabla_2(tt_tibble = tt_tibble_eff_long, 
-         group_description = title,
-         number_of_bootstrap = 500)
-
-# arreglar tibble
-  tt_tibble_eff <- base_analisis %>% 
-  # filtrar parejas con seguimiento después del día 7
-      group_by(target_trial_number, par) %>% 
-      filter(min(survtime) >= 7) %>%
-      ungroup()
-
-
-eff = hacer_grupo_tabla_2(tt_tibble = tt_tibble_eff, 
-         group_description = title,
-         number_of_bootstrap = 500)
-
-return(list(gg = gg1, eff_short = eff_short, eff_long = eff_long, eff = eff))
-}
-
-```
-
 ## f_tabla_1
 
 A continuación, se presentan dos funciones auxiliares, que permiten hacer la Tabla 1.
@@ -1120,7 +877,8 @@ hacer_tabla_basal_comor <- function(base, comor, name = "1") {
 
 
 ```{r}
-hacer_tabla_1 <- function(tt_tibble) {
+hacer_tabla_1 <- function(tt_tibble,
+                          adaptada = NULL) {
 
   tabla_basal_edad <- hacer_basal_discreta(base = tt_tibble,
                                          variable = p_edad_cat_label,
@@ -1173,25 +931,37 @@ hacer_tabla_1 <- function(tt_tibble) {
     mutate(
       t_desde_pauta_completa = 90 + temp_var,
       t_desde_pauta_completa_cat = case_when(
-        between(t_desde_pauta_completa, 91, 150) ~  "91-150 days",
-        between(t_desde_pauta_completa, 151, 180) ~ "151-180 days",
-        t_desde_pauta_completa > 180 ~  "&ge; 181 days"),
+        between(t_desde_pauta_completa, 90, 149) ~  "90-149 days",
+        between(t_desde_pauta_completa, 150, 179) ~ "150-179 days",
+        t_desde_pauta_completa >= 180 ~  "&ge; 180 days"),
       t_desde_pauta_completa_cat = factor(t_desde_pauta_completa_cat,
-        levels = c("91-150 days", "151-180 days", "&ge; 181 days"))),
+        levels = c("90-149 days", "150-179 days", "&ge; 180 days"))),
     variable = t_desde_pauta_completa_cat)
   
-  tabla_basal_flu_2020 <- hacer_basal_discreta(base = tt_tibble,
-                                         variable = vgp20,
-                                         relabel = c(
-                                           "No",
-                                           "Yes"))
-  
-  tabla_basal_flu_2021 <- hacer_basal_discreta(base = tt_tibble,
-                                         variable = vgp21)
-  
+  if (missing(adaptada)){
   tabla_basal_ucn8 <- hacer_basal_discreta(base = tt_tibble,
-                                         variable = ucn8
-                                           )
+                                         variable = ucn8,
+                                           relabel = c(
+                                           "1",
+                                           "2",
+                                           "3",
+                                           "4",
+                                           "5",
+                                           "6",
+                                           "7",
+                                           "&ge; 8"))}else{
+    tabla_basal_ucn8 <- hacer_basal_discreta(base = tt_tibble,
+                                         variable = ucn8,
+                                           relabel = c(
+                                           "2",
+                                           "3",
+                                           "4",
+                                           "5",
+                                           "6",
+                                           "7",
+                                           "&ge; 8"))
+                                             
+                                           }
   
   tabla_basal <- bind_rows(
                            tabla_basal_edad,
@@ -1236,7 +1006,7 @@ hacer_tabla_1 <- function(tt_tibble) {
     distinct(id) %>%
     nrow()
   
-  
+if (missing(adaptada)){  
   kable(tabla_basal, align = c("c"), escape = FALSE,
       col.names = c("Variable",
                     glue("No booster group (n = {n_unexposed}*)"),
@@ -1255,12 +1025,35 @@ hacer_tabla_1 <- function(tt_tibble) {
   pack_rows("Type of previous vaccination, n (%)", 18, 21) %>%
   pack_rows("Time since primary vaccine schedule, n (%)", 22, 24) %>%
   pack_rows("Type of booster, n (%)", 25, 26) %>%
-  pack_rows("Vaccinated against flu (2020), n (%)", 27, 27) %>%
-  pack_rows("Vaccinated against flu (2020), n (%)", 28, 28) %>%
+  pack_rows("Vaccinated against flu, n (%)", 27, 28) %>%
   pack_rows("Household members, n (%)", 29, 36) %>%
   pack_rows("Comorbidities, n (%)", 37, 44) %>%
   footnote(footnote_as_chunk = TRUE, 
+           general = glue("NA = not applicable, *{id_uniques} unique individuals in the no booster group."))}else{
+              kable(tabla_basal, align = c("c"), escape = FALSE,
+      col.names = c("Variable",
+                    glue("No booster group (n = {n_unexposed}*)"),
+                    glue("Booster group (n = {n_exposed})")),
+      table.attr = "style = \"color: black;\"",
+      caption = "Baseline characteristics of the matched study population") %>%
+  kable_styling(bootstrap_options = c("striped", 
+                                      "hover", 
+                                      "condensed"),
+                full_width = FALSE, fixed_thead = T) %>%
+  row_spec(0, bold = T, color = "white", background = "dodgerblue",
+           extra_css = "vertical-align:middle") %>% 
+  pack_rows("Age group (years), n (%)", 1, 11) %>%
+  pack_rows("Sex, n (%)", 12, 13) %>%
+  pack_rows("Number of previous SARS-CoV-2 tests, n (%)", 14, 17) %>%
+  pack_rows("Type of previous vaccination, n (%)", 18, 21) %>%
+  pack_rows("Time since primary vaccine schedule, n (%)", 22, 24) %>%
+  pack_rows("Type of booster, n (%)", 25, 26) %>%
+  pack_rows("Vaccinated against flu, n (%)", 27, 28) %>%
+  pack_rows("Household members, n (%)", 29, 35) %>%
+  pack_rows("Comorbidities, n (%)", 36, 43) %>%
+  footnote(footnote_as_chunk = TRUE, 
            general = glue("NA = not applicable, *{id_uniques} unique individuals in the no booster group."))
+           }
 
   }
 
