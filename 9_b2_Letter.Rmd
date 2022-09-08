@@ -1,9 +1,5 @@
 ---
 title: "Correspondence: Booster Long-term effectiveness against infection and severe cases on Omicron-dominant period in Navarra"
-author: 
- - Francisco Sanchez-Saez, FISABIO, sanchez_frasae@gva.es
- - Ibai Tamayo, NAVARRABIOMED
- - Julian Librero, NAVARRABIOMED
 date: "`r format(Sys.Date())`"
 bookdown::html_document2:
     keep_md: false 
@@ -69,15 +65,29 @@ rr_m4_70 <- readRDS(file.path("Resultados", "rr_m4_70.RDS"))
 
 ```
 
-We commend Monge et al for their insightful analysis of the effectiveness of the booster vaccines in Spain against the omicron variant of SARS-Cov-2 [@Monge2022]. We try to enhance two of the limitations of the aforementioned work: i) the differences in the exposed and unexposed group before the booster likely effect (first seven days [@Walsh2020; @Lustig2021]), and ii) the longer effect of the booster in infections and in severe cases. To this end, we followed the target trial emulation methodology [@Danaei2013]. The results of infections from 2022-01-04 to 2022-03-31 (after this date, the infections notified were less reliable) were compared [@Monge2022]. Finally, effectiveness against severe cases was assessed from 2022-01-04 to 2022-06-13.
+*Francisco Sanchez-Saez <sup>1,2</sup>, Ibai Tamayo <sup>2,3</sup>, Ana Ariztegui-Echenique <sup>4</sup>, Javier Gorricho <sup>5</sup>, Julian Librero <sup>2,3</sup>.*
+
+*<sup>1</sup> Health Services Research Unit, Foundation for the Promotion of Health and Biomedical Research of the Valencia Community (FISABIO), Valencia, Spain.*
+
+*<sup>2</sup> Network for Research on Chronicity, Primary Care and Health Promotion (RICAPPS).*
+
+*<sup>3</sup> Unidad de Metodología. Navarrabiomed, Hospital Universitario de Navarra (HUN), Universidad Pública de Navarra (UPNA), IdiSNA, Pamplona, Spain.*
+
+*<sup>4</sup> Subdirección de Cuidados, Atención Domiciliaria, Sociosanitaria y Acciones Comunitarias, Servicio Navarro de Salud-Osasunbidea, Spain.*
+
+*<sup>5</sup> Servicios de Evaluación y Difusión de Resultados, Servicio Navarro de Salud-Osasunbidea, Spain.*
+
+***
+
+We commend Monge et al for their insightful analysis of the effectiveness of the booster vaccines in Spain against the omicron variant of SARS-Cov-2 [@Monge2022]. We try to enhance two of the limitations of the aforementioned work: i) the possible residual confounding expressed by the differences in the exposed and unexposed group before the booster likely effect (first seven days [@Walsh2020; @Lustig2021]), and ii) the longer term effect of the booster in infections and in severe cases. To this end, we followed the target trial emulation methodology [@Danaei2013]. The results of infections from 2022-01-04 to 2022-03-31 (after this date, the infections notified were less reliable) were compared [@Monge2022]. Finally, effectiveness against severe cases was assessed from 2022-01-04 to 2022-06-13.
 
 We selected individuals aged 40 years or older who had completed their primary vaccination at least 3 months before the start of follow-up, and had not tested positive for SARS-CoV-2 since the start of the pandemic, excluding  educational and health-care workers, and nursing home residents from Navarra (region of Spain of 600 000 inhabitants) throughout the BARDENA databases [@Bardena2022].
   
 On each day between Jan 3, and March 30, we matched individuals who had received a booster mRNA vaccine with controls by age (5 years groups), sex, number of previous negative test (0, 1, 2, 3+), type of primary vaccine (homologous or Janssen), time since complete vaccination, health basic zone, migrant status, flu vaccinated in 2020, and in 2021, and the number of people in the households (truncated at eight). We estimated risk of laboratory-confirmed SARS-CoV-2 infection using the Kaplan-Meier method, with 10 weeks of follow-up and we compared groups using risk ratios (RR). Vaccine effectiveness was calculated as one minus RR. In addition, we use the home address for matching in the same period, balancing the exposition in both groups. Finally, we assessed the mid-term effect of the booster against severe cases on a period from 2022-01-03 to 2022-06-13 matching by age, sex and comorbidities.
   
-The estimated effectiveness from day 7 to 34 after a booster was 51·3% (95%CI 50·2, 52·4) in Spain [@Monge2022], meanwhile in Navarra region was `r rr_m1_34$rr_eff` for the short-term (7-34 days) and `r rr_m1_70$rr_eff` for the mid-term (7-70 days). In both settings we observed differences between the groups in the first 7 days (Fig 1A). However, when the matching was based on the home address, these differences decrease drastically. In this analysis, the short and mid term effectiveness are `r rr_m2_34$rr_eff` and `r rr_m2_70$rr_eff` respectively (Fig 1B). Finally, the mid-term effectiveness of booster in severe cases is high: `r rr_m4_70$rr_eff`, although there are a low number of cases (Fig 1C). 
+The estimated effectiveness from day 7 to 34 after a booster was 51·3% (95%CI 50·2, 52·4) in Spain [@Monge2022], meanwhile in Navarra region was `r rr_m1_34$rr_eff` for the short-term (7-34 days) and `r rr_m1_70$rr_eff` for the mid-term (7-70 days). In both settings we observed differences between the groups in the first 7 days (Fig 1A). However, when the matching was based on sharing home, these differences decrease drastically. In this analysis, the short and mid term effectiveness are `r rr_m2_34$rr_eff` and `r rr_m2_70$rr_eff` respectively (Fig 1B). Finally, the mid-term effectiveness of booster in severe cases is high: `r rr_m4_70$rr_eff`, although there are a low number of cases (Fig 1C). 
 
-Summarising, i) it is interesting to have the exact home address of the participants in order to emulate the target trials and remove confounding, and ii) the booster had moderate effectiveness against infection, even in the mid-term time, and higher effectiveness against hospitalisations. 
+Summarising, i) it is interesting to have the pseudonymized home address of the participants in order to emulate the target trials and remove confounding, and ii) the booster had moderate effectiveness against infection, even in the mid-term time, and higher effectiveness against hospitalisations. 
 
 <br>
 
@@ -92,3 +102,5 @@ knitr::include_graphics("Fig1.svg")
 # References
 
 ***
+
+<div class="tocify-extend-page" data-unique="tocify-extend-page" style="height: 0;"></div>

@@ -879,7 +879,9 @@ hacer_tabla_basal_comor <- function(base, comor, name = "1") {
 ```{r}
 hacer_tabla_1 <- function(tt_tibble,
                           adaptada = NULL,
-                          title = "baseline characteristics") {
+                          title = "baseline characteristics",
+                          desc = "tabla1",
+                          path = getwd()) {
 
   tabla_basal_edad <- hacer_basal_discreta(base = tt_tibble,
                                          variable = p_edad_cat_label,
@@ -1006,7 +1008,10 @@ hacer_tabla_1 <- function(tt_tibble,
     filter(exposicion == 0) %>%
     distinct(id) %>%
     nrow()
-  
+
+saveRDS(tabla_basal, file.path(path, "Resultados", "RDS",
+                               glue("{desc}.RDS")))  
+    
 if (missing(adaptada)){  
   kable(tabla_basal, align = c("c"), escape = FALSE,
       col.names = c("Variable",
