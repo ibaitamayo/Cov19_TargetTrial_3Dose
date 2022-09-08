@@ -76,7 +76,9 @@ rr_m4_70 <- readRDS(file.path("Resultados", "rr_m4_70.RDS"))
 
 ```
 
-*Francisco Sanchez-Saez <sup>1,2</sup>, Ibai Tamayo <sup>2,3</sup>, Ana Ariztegui-Echenique <sup>4</sup>, Javier Gorricho <sup>5</sup>, Julian Librero <sup>2,3</sup>.*
+***
+
+***Francisco Sanchez-Saez <sup>1,2</sup>, Ibai Tamayo <sup>2,3</sup>, Ana Ariztegui-Echenique <sup>4</sup>, Javier Gorricho <sup>5</sup>, Julian Librero <sup>2,3</sup>.***
 
 *<sup>1</sup> Health Services Research Unit, Foundation for the Promotion of Health and Biomedical Research of the Valencia Community (FISABIO), Valencia, Spain.*
 
