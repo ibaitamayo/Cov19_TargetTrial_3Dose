@@ -148,3 +148,23 @@ table_1_m4
 # References
 
 ***
+
+
+```{r}
+table_1_m1 %>% 
+rtf_body() %>%                 # Step 1 Add attributes
+  rtf_encode() %>%               # Step 2 Convert attributes to RTF encode
+  write_rtf(file = file.path("Resultados", "Tablas", "tabla_1a_2022_09_08.rtf"))
+
+table_1_m2 %>% 
+rtf_body() %>%                 # Step 1 Add attributes
+  rtf_encode() %>%               # Step 2 Convert attributes to RTF encode
+  write_rtf(file = file.path("Resultados", "Tablas", "tabla_1b_2022_09_08.rtf"))
+
+
+table_1_m4 %>% 
+rtf_body() %>%                 # Step 1 Add attributes
+  rtf_encode() %>%               # Step 2 Convert attributes to RTF encode
+  write_rtf(file = file.path("Resultados", "Tablas", "tabla_1c_2022_09_08.rtf"))
+
+```
