@@ -81,7 +81,9 @@ rr_m4_70 <- readRDS(file.path("Resultados", "rr_m4_70.RDS"))
 
 ***
 
-We commend Monge et al for their insightful analysis of the effectiveness of the booster vaccines in Spain against the omicron variant of SARS-Cov-2 [@Monge2022]. We try to enhance two of the limitations of the aforementioned work: i) the possible residual confounding expressed by the differences in the exposed and unexposed group before the booster likely effect (first seven days [@Walsh2020; @Lustig2021]), and ii) the longer term effect of the booster in infections and in severe cases. To this end, we followed the target trial emulation methodology [@Danaei2013]. The results of infections from 2022-01-04 to 2022-03-31 (after this date, the infections notified were less reliable) were compared [@Monge2022]. Finally, effectiveness against severe cases was assessed from 2022-01-04 to 2022-06-13.
+Recently, some studies assessed the effectiveness of the booster vaccines against the omicron variant of SARS-Cov-2 [@Monge2022]. 
+
+We try to enhance two of the limitations of the aforementioned works: i) the possible residual confounding expressed by the differences in the exposed and unexposed group before the booster likely effect (first seven days [@Walsh2020; @Lustig2021]), and ii) the longer term effect of the booster in infections and in severe cases. To this end, we followed the target trial emulation methodology [@Danaei2013]. The results of infections from 2022-01-04 to 2022-03-31 (after this date, the infections notified were less reliable) were compared [@Monge2022]. Finally, effectiveness against severe cases was assessed from 2022-01-04 to 2022-06-13.
 
 We selected individuals aged 40 years or older who had completed their primary vaccination at least 3 months before the start of follow-up, and had not tested positive for SARS-CoV-2 since the start of the pandemic, excluding  educational and health-care workers, and nursing home residents from Navarra (region of Spain of 600 000 inhabitants) throughout the BARDENA databases [@Bardena2022].
   

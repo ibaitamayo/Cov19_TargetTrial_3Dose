@@ -1,0 +1,162 @@
+---
+title: "MRNA Boosters Long-term effectiveness against COVID-19 infection and severe cases on Omicron-dominant period in Navarre"
+date: "`r format(Sys.Date())`"
+bookdown::html_document2:
+    keep_md: false 
+    theme: cerulean
+    highlight: breezedark
+    css: style.css
+    anchor_sections: false
+    toc: no
+bibliography: References.bib
+csl: tl.csl
+editor_options: 
+  chunk_output_type: inline
+---
+
+```{css, echo=FALSE}
+
+/*-- Add logo (based on https://rstudio4edu.github.io/rstudio4edu-book/rmd-fancy.html): --*/
+#TOC::before {content: ""; display: block; height: 60px; margin: 15px 10px 15px; background-image: url("logo.png"); background-size: contain; background-position: center center; background-repeat: no-repeat}
+body {
+  text-align: justify;
+}
+
+```
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+
+```
+
+```{r echo=FALSE, message=FALSE, include=FALSE, warning=FALSE}
+# source("0_a_librerias.R")
+# ya se cargan cuando se carguen las funciones
+
+```
+
+```{r echo=FALSE, message=FALSE, include=FALSE, warning=FALSE}
+# función para cargar un .Rmd como si se hiciese source de un .r---------------
+source_rmd = function(file, ...) {
+  tmp_file = tempfile(fileext = ".R")
+  on.exit(unlink(tmp_file), add = TRUE)
+  knitr::purl(file, output = tmp_file)
+  source(file = tmp_file, ...)
+}
+
+```
+
+```{r echo=FALSE, message=FALSE, include=FALSE, warning=FALSE}
+# cargar funciones de 0_funciones----------------------------------------------
+if (!exists("se_ha_cargado_f")) {
+suppressMessages(source_rmd("0_b_funciones.rmd"))
+}
+
+```
+
+```{r}
+# cargar resultados------------------------------------------------------------
+rr_m1_34 <- readRDS(file.path("Resultados", "rr_m1_34.RDS"))
+rr_m1_70 <- readRDS(file.path("Resultados", "rr_m1_70.RDS"))
+rr_m2_34 <- readRDS(file.path("Resultados", "rr_m2_34.RDS"))
+rr_m2_70 <- readRDS(file.path("Resultados", "rr_m2_70.RDS"))
+rr_m4_34 <- readRDS(file.path("Resultados", "rr_m4_34.RDS"))
+rr_m4_70 <- readRDS(file.path("Resultados", "rr_m4_70.RDS"))
+
+```
+
+***
+
+***Francisco Sanchez-Saez <sup>1,2</sup>, Ibai Tamayo <sup>2,3</sup>, Ana Ariztegui-Echenique <sup>4</sup>, Javier Gorricho <sup>5</sup>, Julian Librero <sup>2,3</sup>.***
+
+*<sup>1</sup> Health Services Research Unit, Foundation for the Promotion of Health and Biomedical Research of the Valencia Community (FISABIO), Valencia, Spain.*
+
+*<sup>2</sup> Network for Research on Chronicity, Primary Care and Health Promotion (RICAPPS).*
+
+*<sup>3</sup> Unidad de Metodología. Navarrabiomed, Hospital Universitario de Navarra (HUN), Universidad Pública de Navarra (UPNA), IdiSNA, Pamplona, Spain.*
+
+*<sup>4</sup> Subdirección de Cuidados, Atención Domiciliaria, Sociosanitaria y Acciones Comunitarias, Servicio Navarro de Salud-Osasunbidea, Spain.*
+
+*<sup>5</sup> Servicios de Evaluación y Difusión de Resultados, Servicio Navarro de Salud-Osasunbidea, Spain.*
+
+***
+
+# Abstract
+
+***
+
+Recently, some studies assessed the effectiveness of the booster vaccines against the omicron variant of SARS-Cov-2 [@Monge2022]. We try to enhance two of the limitations of the aforementioned works: i) the possible residual confounding expressed by the differences in the exposed and unexposed group before the booster likely effect (first seven days [@Walsh2020; @Lustig2021]), and ii) the longer term effect of the booster in infections and in severe cases. To this end, we followed the target trial emulation methodology [@Danaei2013]. The results of infections from 2022-01-04 to 2022-03-31 (after this date, the infections notified were less reliable) were compared [@Monge2022]. Finally, effectiveness against severe cases was assessed from 2022-01-04 to 2022-06-13.
+
+We selected individuals aged 40 years or older who had completed their primary vaccination at least 3 months before the start of follow-up, and had not tested positive for SARS-CoV-2 since the start of the pandemic, excluding  educational and health-care workers, and nursing home residents from Navarra (region of Spain of 600 000 inhabitants) throughout the BARDENA databases [@Bardena2022]. On each day between Jan 3, and March 30, we matched individuals who had received a booster mRNA vaccine with controls by age (5 years groups), sex, number of previous negative test (0, 1, 2, 3+), type of primary vaccine (homologous or Janssen), time since complete vaccination, health basic zone, migrant status, flu vaccinated in 2020, and in 2021, and the number of people in the households (truncated at eight). We estimated risk of laboratory-confirmed SARS-CoV-2 infection using the Kaplan-Meier method, with 10 weeks of follow-up and we compared groups using risk ratios (RR). Vaccine effectiveness was calculated as one minus RR. In addition, we use the home address for matching in the same period, balancing the exposition in both groups. Finally, we assessed the mid-term effect of the booster against severe cases on a period from 2022-01-03 to 2022-06-13 matching by age, sex and comorbidities.
+
+The estimated effectiveness from day 7 to 34 after a booster was 51·3% (95%CI 50·2, 52·4) in Spain [@Monge2022], meanwhile in Navarra region was `r rr_m1_34$rr_eff` for the short-term (7-34 days) and `r rr_m1_70$rr_eff` for the mid-term (7-70 days). In both settings we observed differences between the groups in the first 7 days (Fig 1A). However, when the matching was based on sharing home, these differences decrease drastically. In this analysis, the short and mid term effectiveness are `r rr_m2_34$rr_eff` and `r rr_m2_70$rr_eff` respectively (Fig 1B). Finally, the mid-term effectiveness of booster in severe cases is high: `r rr_m4_70$rr_eff`, although there are a low number of cases (Fig 1C). 
+
+Summarising, i) it is interesting to have the pseudonymized home address of the participants in order to emulate the target trials and remove confounding, and ii) the booster had moderate effectiveness against infection, even in the mid-term time, and higher effectiveness against hospitalisations.
+
+***
+
+<br>
+
+# Introduction
+
+***
+
+Recently, some studies assessed the effectiveness of the booster vaccines against the omicron variant of SARS-Cov-2 [@Monge2022]. We try to enhance two of the limitations of the aforementioned works: i) the possible residual confounding expressed by the differences in the exposed and unexposed group before the booster likely effect (first seven days [@Walsh2020; @Lustig2021]), and ii) the longer term effect of the booster in infections and in severe cases. To this end, we followed the target trial emulation methodology [@Danaei2013]. The results of infections from 2022-01-04 to 2022-03-31 (after this date, the infections notified were less reliable) were compared [@Monge2022]. Finally, effectiveness against severe cases was assessed from 2022-01-04 to 2022-06-13.
+
+<br>
+
+# Methods
+
+***
+
+We employed the target trial framework. In this approach, we emulate and describe a target random trial with the observational data. In particular, we perform three different target trials to answer each of the three research questions.
+
+## Setting
+
+***
+
+The source population was the whole population of Navarre, a region of Spain of about 600 000 inhabitants. We selected people who have programmed the booster in the omicron-dominant period. Therefore, we selected individuals aged 40 years or older who had completed their primary vaccination at least 3 months before the start of follow-up, and had not tested positive for SARS-CoV-2 since the start of the pandemic. In addition, educational and health-care workers, and nursing home residents are also excluded since their vaccination calendar is different to the general population. We obtain all the information throughout the BARDENA databases [@Bardena2022].
+  
+On each day between Jan 3, and March 30, we matched individuals who had received a booster mRNA vaccine with controls by age (5 years groups), sex, number of previous negative test (0, 1, 2, 3+), type of primary vaccine (homologous or Janssen), time since complete vaccination, health basic zone, migrant status, flu vaccinated in 2020, and in 2021, and the number of people in the households (truncated at eight). We estimated risk of laboratory-confirmed SARS-CoV-2 infection using the Kaplan-Meier method, with 10 weeks of follow-up and we compared groups using risk ratios (RR). Vaccine effectiveness was calculated as one minus RR. In addition, we use the home address for matching in the same period, balancing the exposition in both groups. Finally, we assessed the mid-term effect of the booster against severe cases on a period from 2022-01-03 to 2022-06-13 matching by age, sex and comorbidities.
+
+## The target trial emulation
+
+First, we compare individuals with booster and no booster and we follow them until the infection is produced, death or the end of the follow-up. In case of the non-treated component of the pair receives the booster, both components are censored.
+
+The second trial is identical to the first, but matching for home address. This, allows to reduce the residual confounding between treated and non-treated. However, the sample obtained will be disminished. 
+
+Finally, in the third trial, we compare individuals from 2022-01-04 to 2022-06-13 where the outcome of interest is the severe infection. Severe infection is defined as an hospital admission due to COVID-19.
+
+
+
+<br>
+
+# Results
+
+***
+  
+The estimated effectiveness from day 7 to 34 after a booster was 51·3% (95%CI 50·2, 52·4) in Spain [@Monge2022], meanwhile in Navarra region was `r rr_m1_34$rr_eff` for the short-term (7-34 days) and `r rr_m1_70$rr_eff` for the mid-term (7-70 days). In both settings we observed differences between the groups in the first 7 days (Fig 1A). However, when the matching was based on sharing home, these differences decrease drastically. In this analysis, the short and mid term effectiveness are `r rr_m2_34$rr_eff` and `r rr_m2_70$rr_eff` respectively (Fig 1B). Finally, the mid-term effectiveness of booster in severe cases is high: `r rr_m4_70$rr_eff`, although there are a low number of cases (Fig 1C). 
+
+<br>
+
+# Discussion
+
+***
+
+Summarising, i) it is interesting to have the pseudonymized home address of the participants in order to emulate the target trials and remove confounding, and ii) the booster had moderate effectiveness against infection, even in the mid-term time, and higher effectiveness against hospitalisations. 
+
+<br>
+
+```{r figure, width = 13, height = 15, fig.cap = "Figure 1. Results of the target trial analysis"}
+# poner la figura con el análisis principal, el del domicilio y el de los casos severos
+knitr::include_graphics("Fig1.svg")
+
+```
+
+<br>
+
+# References
+
+***
+
+<div class="tocify-extend-page" data-unique="tocify-extend-page" style="height: 0;"></div>
