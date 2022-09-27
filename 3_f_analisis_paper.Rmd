@@ -148,7 +148,7 @@ gg1 <- ggsurvplot(fit, data = base_analisis_m1,
            font.x = 2,
            ylab = "Cumulative Incidence",
            xlim = c(0, 91),
-           ylim = c(0, 0.2),
+           ylim = c(0, 0.22),
            risk.table = "nrisk_cumevents",
            fontsize = 3.8,
            order.legend = TRUE,
@@ -170,18 +170,18 @@ gg1$plot <- gg1$plot +
                           size = 0.7,
                           colour = "dimgrey") +
       # short term effectiveness
-      geom_segment(y = 0.18, yend = 0.18,
+      geom_segment(y = 0.16, yend = 0.16,
                    x = 7, xend = 35, size = 1,
       arrow = arrow(length = unit(0.1, "inches"))) +
-      geom_text(x = 21, y = 0.2, 
-                label = glue("Short-term effectiveness: {rr_m1_st$rr_eff}"), 
+      geom_text(x = 21, y = 0.18, 
+                label = glue("5-week effectiveness: {rr_m1_st$rr_eff}"), 
                 size = 4.5) +
       # mid term effectiveness
-      geom_segment(y = 0.16, yend = 0.16,
+      geom_segment(y = 0.2, yend = 0.2,
                    x = 7, xend = 91, size = 1,
       arrow = arrow(length = unit(0.1, "inches"))) +
-      geom_text(x = 70, y = 0.18, 
-                label = glue("Mid-term effectiveness: {rr_m1$rr_eff}"), 
+      geom_text(x = 70, y = 0.22, 
+                label = glue("13-week effectiveness: {rr_m1$rr_eff}"), 
                 size = 4.5) +
       theme(axis.title.x = element_text(size = 14),
             plot.title = element_text(size = 14, face = "bold"))
@@ -226,7 +226,7 @@ gg2 <- ggsurvplot(fit, data = base_analisis_m2,
            font.x = 2,
            ylab = "Cumulative Incidence",
            xlim = c(0, 91),
-           ylim = c(0, 0.2),
+           ylim = c(0, 0.22),
            risk.table = "nrisk_cumevents",
            fontsize = 3.8,
            order.legend = TRUE,
@@ -247,18 +247,18 @@ gg2$plot <- gg2$plot +
                           size = 0.7,
                           colour = "dimgrey") +
       # short term effectiveness
-      geom_segment(y = 0.18, yend = 0.18,
+      geom_segment(y = 0.16, yend = 0.16,
                    x = 7, xend = 35, size = 1,
       arrow = arrow(length = unit(0.1, "inches"))) +
-      geom_text(x = 21, y = 0.2, 
-                label = glue("Short-term effectiveness: {rr_m2$rr_eff}"), 
+      geom_text(x = 21, y = 0.18, 
+                label = glue("5-week effectiveness: {rr_m2_st$rr_eff}"), 
                 size = 4.5) +
       # mid term effectiveness
-      geom_segment(y = 0.16, yend = 0.16,
+      geom_segment(y = 0.2, yend = 0.2,
                    x = 7, xend = 91, size = 1,
       arrow = arrow(length = unit(0.1, "inches"))) +
-      geom_text(x = 70, y = 0.18, 
-                label = glue("Mid-term effectiveness: {rr_m2$rr_eff}"), 
+      geom_text(x = 70, y = 0.22, 
+                label = glue("13-week effectiveness: {rr_m2$rr_eff}"), 
                 size = 4.5) +
       theme(axis.title.x = element_text(size = 14),
             plot.title = element_text(size = 14, face = "bold"))
@@ -324,18 +324,18 @@ gg3$plot <- gg3$plot +
                           size = 0.7,
                           colour = "dimgrey") +
       # short term effectiveness
-      geom_segment(y = 0.0016, yend = 0.0016,
+      geom_segment(y = 0.0012, yend = 0.0012,
                    x = 7, xend = 35, size = 1,
       arrow = arrow(length = unit(0.1, "inches"))) +
-      geom_text(x = 21, y = 0.0018, 
-                label = glue("Short-term effectiveness: {rr_m3$rr_eff}"), 
+      geom_text(x = 21, y = 0.0014, 
+                label = glue("5-week effectiveness: {rr_m3_st$rr_eff}"), 
                 size = 4.5) +
       # mid term effectiveness
-      geom_segment(y = 0.0014, yend = 0.0014,
+      geom_segment(y = 0.0018, yend = 0.0018,
                    x = 7, xend = 91, size = 1,
       arrow = arrow(length = unit(0.1, "inches"))) +
-      geom_text(x = 70, y = 0.0016, 
-                label = glue("Mid-term effectiveness: {rr_m3$rr_eff}"), 
+      geom_text(x = 70, y = 0.0020, 
+                label = glue("13-week effectiveness: {rr_m3$rr_eff}"), 
                 size = 4.5) +
       theme(axis.title.x = element_text(size = 14),
             plot.title = element_text(size = 14, face = "bold"))
