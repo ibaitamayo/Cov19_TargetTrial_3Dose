@@ -107,6 +107,8 @@ variables_matching = c(
 
 ```
 
+# Main analyses
+
 ## fcv1 matching por variables
 
 Se utilizan las variables de matching y criterios de exclusión del **análisis principal** como en el artículo.
@@ -205,6 +207,109 @@ paper_fih1 <- f_matching_tt_mult(
 # guardar resultados-----------------------------------------------------------
 saveRDS(paper_fih1, file.path("Resultados",
         "paper_fih1.RDS"))
+
+```
+
+# Short-term analyses
+
+## fcv1 matching por variables
+
+Se utilizan las variables de matching y criterios de exclusión del **análisis principal** como en el artículo.
+
+```{r}
+# hacer ajuste como en el artículo
+paper_fcv1_short_term <- f_matching_tt_mult(
+                data = pobana_2,
+                f_ini = "2021-12-17",
+                f_fin = "2022-03-30",
+                crit_exc = lista_exclusion_dep,
+                exposure = "fvc3",
+                out = "fcv1", 
+                vector_match = variables_matching[c(1, 3:8)], 
+                base_test = test220613_cleaned,
+                temporal_var = "fpauta_90",
+                temporal_var_unit = "weeks",
+                birth_date = "fnac",
+                age_first = 20,
+                age_last = 90,
+                age_by = 5,
+                censoring = "fdef",
+                follow_up = 35,
+                verbose = FALSE,
+                seed = 3,
+                fecha_fin_estudio = ymd("2022-03-31"))
+
+# guardar resultados-----------------------------------------------------------
+saveRDS(paper_fcv1_short_term, file.path("Resultados",
+        "paper_fcv1_short_term.RDS"))
+
+```
+
+## fcv1 con matching por domicilio
+
+```{r}
+# hacer ajuste con el domicilio como matching----------------------------------
+paper_fcv1_domi_short_term <- f_matching_tt_mult(
+                data = pobana_2 %>% filter(ucn8 >= 2) ,
+                f_ini = "2021-12-17",
+                f_fin = "2022-03-30",
+                crit_exc = lista_exclusion_dep,
+                exposure = "fvc3",
+                out = "fcv1", 
+                vector_match = "domi", 
+                base_test = NULL,
+                temporal_var = NULL,
+                birth_date = NULL,
+                calcular_edad = "fnac",
+                calcular_test = test220613_cleaned,
+                calcular_temp_var = "fpauta_90",
+                temporal_var_unit = "weeks",
+                age_first = 40,
+                age_last = 90,
+                age_by = 5,
+                censoring = "fdef",
+                follow_up = 35,
+                verbose = FALSE,
+                seed = 3,
+                fecha_fin_estudio = ymd("2022-03-31"))
+
+# guardar resultados-----------------------------------------------------------
+saveRDS(paper_fcv1_domi_short_term, file.path("Resultados",
+        "paper_fcv1_domi_short_term.RDS"))
+
+```
+
+## fih1 con matching por edad, sexo y comorbilidades
+
+```{r}
+# fih1
+paper_fih1_short_term <- f_matching_tt_mult(
+                data = pobana_2,
+                f_ini = "2021-12-17",
+                f_fin = "2022-06-12",
+                crit_exc = lista_exclusion_dep,
+                exposure = "fvc3",
+                out = "fih1", 
+                vector_match = c("gen", "diab", "corp", "irc", "epoc", "hlip",
+                                 "hta", "ictu", "obes"),
+                # base_test = test220613_cleaned,
+                # temporal_var = "fpauta_90",
+                calcular_temp_var = "fpauta_90",
+                temporal_var_unit = "weeks",
+                calcular_test = test220613_cleaned,
+                birth_date = "fnac",
+                age_first = 40,
+                age_last = 90,
+                age_by = 5,
+                censoring = "fdef",
+                follow_up = 35,
+                verbose = FALSE,
+                seed = 3,
+                fecha_fin_estudio = ymd("2022-06-13"))
+
+# guardar resultados-----------------------------------------------------------
+saveRDS(paper_fih1_short_term, file.path("Resultados",
+        "paper_fih1_short_term.RDS"))
 
 ```
 

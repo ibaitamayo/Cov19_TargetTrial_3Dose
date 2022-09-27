@@ -70,14 +70,20 @@ Cargar datos
 # modelo 1. infección por características
 paper_fcv1 <- readRDS(file.path("Resultados",
         "paper_fcv1.RDS"))
+paper_fcv1_short_term <- readRDS(file.path("Resultados",
+        "paper_fcv1_short_term.RDS"))
 
 # modelo 2. infección por domicilio
 paper_fcv1_domi <- readRDS(file.path("Resultados",
         "paper_fcv1_domi.RDS"))
+paper_fcv1_domi_short_term <- readRDS(file.path("Resultados",
+        "paper_fcv1_domi_short_term.RDS"))
 
 # modelo 3. hospitalización por características
 paper_fih1 <- readRDS(file.path("Resultados",
         "paper_fih1.RDS"))
+paper_fih1_short_term <- readRDS(file.path("Resultados",
+        "paper_fih1_short_term.RDS"))
 
 ```
 
@@ -89,21 +95,26 @@ paper_fih1 <- readRDS(file.path("Resultados",
 # modelo 1. infección por características
 rr_m1 <- f_analisis_lancet_rr(paper_fcv1,
                      tiempo_efecto = 7)
+rr_m1_st <- f_analisis_lancet_rr(paper_fcv1_short_term,
+                     tiempo_efecto = 7)
 
 # modelo 2. infección por domicilio
 rr_m2 <- f_analisis_lancet_rr(paper_fcv1_domi,
                      tiempo_efecto = 7)
-
+rr_m2_st <- f_analisis_lancet_rr(paper_fcv1_domi_short_term,
+                     tiempo_efecto = 7)
 # modelo 3. hospitalización por edad y sexo
 rr_m3 <- f_analisis_lancet_rr(paper_fih1,
                      tiempo_efecto = 7)
-
+rr_m3_st <- f_analisis_lancet_rr(paper_fih1_short_term,
+                     tiempo_efecto = 7)
 # guardar resultados-----------------------------------------------------------
 saveRDS(rr_m1, file.path("Resultados", "rr_m1.RDS"))
 saveRDS(rr_m2, file.path("Resultados", "rr_m2.RDS"))
 saveRDS(rr_m3, file.path("Resultados", "rr_m3.RDS"))
-
-
+saveRDS(rr_m1_st, file.path("Resultados", "rr_m1_st.RDS"))
+saveRDS(rr_m2_st, file.path("Resultados", "rr_m2_st.RDS"))
+saveRDS(rr_m3_st, file.path("Resultados", "rr_m3_st.RDS"))
 
 ```
 
@@ -154,22 +165,22 @@ gg1$plot <- gg1$plot +
                           linetype = "dashed", 
                           size = 0.7,
                           colour = "dimgrey") +
-      geom_vline(xintercept = 34, 
+      geom_vline(xintercept = 35, 
                           linetype = "dashed", 
                           size = 0.7,
                           colour = "dimgrey") +
       # short term effectiveness
       geom_segment(y = 0.18, yend = 0.18,
-                   x = 7, xend = 34, size = 1,
+                   x = 7, xend = 35, size = 1,
       arrow = arrow(length = unit(0.1, "inches"))) +
       geom_text(x = 21, y = 0.2, 
-                label = glue("Short-term effectiveness: {rr_m1$rr_eff}"), 
+                label = glue("Short-term effectiveness: {rr_m1_st$rr_eff}"), 
                 size = 4.5) +
       # mid term effectiveness
       geom_segment(y = 0.16, yend = 0.16,
                    x = 7, xend = 91, size = 1,
       arrow = arrow(length = unit(0.1, "inches"))) +
-      geom_text(x = 57, y = 0.18, 
+      geom_text(x = 70, y = 0.18, 
                 label = glue("Mid-term effectiveness: {rr_m1$rr_eff}"), 
                 size = 4.5) +
       theme(axis.title.x = element_text(size = 14),
@@ -231,22 +242,22 @@ gg2$plot <- gg2$plot +
                           linetype = "dashed", 
                           size = 0.7,
                           colour = "dimgrey") +
-      geom_vline(xintercept = 34, 
+      geom_vline(xintercept = 35, 
                           linetype = "dashed", 
                           size = 0.7,
                           colour = "dimgrey") +
       # short term effectiveness
       geom_segment(y = 0.18, yend = 0.18,
-                   x = 7, xend = 91, size = 1,
+                   x = 7, xend = 35, size = 1,
       arrow = arrow(length = unit(0.1, "inches"))) +
       geom_text(x = 21, y = 0.2, 
                 label = glue("Short-term effectiveness: {rr_m2$rr_eff}"), 
                 size = 4.5) +
       # mid term effectiveness
       geom_segment(y = 0.16, yend = 0.16,
-                   x = 7, xend = 70, size = 1,
+                   x = 7, xend = 91, size = 1,
       arrow = arrow(length = unit(0.1, "inches"))) +
-      geom_text(x = 57, y = 0.18, 
+      geom_text(x = 70, y = 0.18, 
                 label = glue("Mid-term effectiveness: {rr_m2$rr_eff}"), 
                 size = 4.5) +
       theme(axis.title.x = element_text(size = 14),
@@ -308,22 +319,22 @@ gg3$plot <- gg3$plot +
                           linetype = "dashed", 
                           size = 0.7,
                           colour = "dimgrey") +
-      geom_vline(xintercept = 34, 
+      geom_vline(xintercept = 35, 
                           linetype = "dashed", 
                           size = 0.7,
                           colour = "dimgrey") +
       # short term effectiveness
       geom_segment(y = 0.0016, yend = 0.0016,
-                   x = 7, xend = 91, size = 1,
+                   x = 7, xend = 35, size = 1,
       arrow = arrow(length = unit(0.1, "inches"))) +
       geom_text(x = 21, y = 0.0018, 
                 label = glue("Short-term effectiveness: {rr_m3$rr_eff}"), 
                 size = 4.5) +
       # mid term effectiveness
       geom_segment(y = 0.0014, yend = 0.0014,
-                   x = 7, xend = 70, size = 1,
+                   x = 7, xend = 91, size = 1,
       arrow = arrow(length = unit(0.1, "inches"))) +
-      geom_text(x = 57, y = 0.0016, 
+      geom_text(x = 70, y = 0.0016, 
                 label = glue("Mid-term effectiveness: {rr_m3$rr_eff}"), 
                 size = 4.5) +
       theme(axis.title.x = element_text(size = 14),
