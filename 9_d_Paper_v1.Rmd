@@ -118,7 +118,7 @@ This work uses the target trial framework. In this approach, a target randomized
 
 The source population was the whole population of Navarre, a region of Spain of about 600 000 inhabitants. We selected people who had programmed the booster vaccination in the omicron-dominant period. Therefore, we selected individuals aged 18 years or older who had completed their primary vaccination at least 3 months before the start of follow-up, and had not tested positive for SARS-CoV-2 since the start of the pandemic. In addition, educational and health-care workers, and nursing home residents are also excluded since their vaccination calendar is different to the general population. We obtain all the information throughout the BARDENA databases [@Bardena2022].
   
-For assessing the booster effectiveness against COVID-19 infection, the selected period was from 2021-12-25 to 2022-03-31. Omicron was the dominant strain since epidemiological week 52 of 2021 and after Apr 1, 2022 the Spanish government change the surveillance methodology and not all the infections were registered. On the other hand, the selected period for assessing the effectiveness against hospital admissions and deaths due to COVID-19 infection was 2021-12-25 to 2022-06-13 as the data about admissions and deaths is reliable even after the Mar 31, 2022.
+For assessing the booster effectiveness against COVID-19 infection, the selected period was from 2021-12-17 to 2022-03-31. Omicron was the dominant strain since epidemiological week 52 of 2021 and after Apr 1, 2022 the Spanish government change the surveillance methodology and not all the infections were registered. On the other hand, the selected period for assessing the effectiveness against hospital admissions and deaths due to COVID-19 infection was 2021-12-25 to 2022-06-13 as the data about admissions and deaths is reliable even after the Mar 31, 2022.
 
 ## Target trial emulation
 
@@ -144,7 +144,7 @@ In the second target trial (TT B), we use the home address for matching in the s
 
 ***
   
-The estimated effectiveness from day 7 to 34 after a booster was 51·3% (95%CI 50·2, 52·4) in Spain [@Monge2022], meanwhile in Navarra region was `r rr_m1_34$rr_eff` for the short-term (7-34 days) and `r rr_m1_70$rr_eff` for the mid-term (7-70 days). In both settings we observed differences between the groups in the first 7 days (Fig 1A). However, when the matching was based on sharing home, these differences decrease drastically. In this analysis, the short and mid term effectiveness are `r rr_m2_34$rr_eff` and `r rr_m2_70$rr_eff` respectively (Fig 1B). Finally, the mid-term effectiveness of booster in severe cases is high: `r rr_m4_70$rr_eff`, although there are a low number of cases (Fig 1C). 
+The estimated effectiveness from day 7 to 34 after a booster was 51·3% (95%CI 50·2, 52·4) in Spain [@Monge2022], meanwhile in Navarra region was `r rr_m1_st$rr_eff` for the 5-week period and `r rr_m1$rr_eff` for the 13-week period. In both settings we observed differences between the groups in the first 7 days (Fig 1A). However, when the matching was based on sharing home, these differences decrease drastically. In this analysis, the short and mid term effectiveness are `r rr_m2_st$rr_eff` and `r rr_m2$rr_eff` respectively (Fig 1B). Finally, the mid-term effectiveness of booster in severe cases is high: `r rr_m3$rr_eff`, although there are a low number of cases (Fig 1C). 
 
 <br>
 
@@ -158,7 +158,7 @@ Summarising, i) it is interesting to have the pseudonymized home address of the 
 
 ```{r figure, width = 13, height = 15, fig.cap = "Figure 1. Results of the target trial analysis"}
 # poner la figura con el análisis principal, el del domicilio y el de los casos severos
-knitr::include_graphics("Fig1.svg")
+knitr::include_graphics("Fig_paper.jpg")
 
 ```
 

@@ -17,5 +17,10 @@ Fig1.pdf
 Fig1.tiff
 Fig1.png
 Fig1.jpg
-
+*.jpg
+*.png
+*.pdf
+*.tiff
+*.svg
+*.html
 rsconnect

@@ -372,6 +372,5 @@ ggsave("Fig_paper.pdf", height = 15, width = 15, units = "in")
 ggsave("Fig_paper.jpg", height = 15, width = 15, units = "in")
 ggsave("Fig_paper.png", height = 15, width = 15, units = "in")
 
-
 ```
 
