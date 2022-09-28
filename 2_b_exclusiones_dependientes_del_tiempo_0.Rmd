@@ -84,6 +84,8 @@ Cuando se genere nueva casuística, se puede añadir entre el if() y el else() d
 pobana_2 <- pobana_1 %>% 
   # crear fecha 40 cumpleaños
   mutate(fnac_40 = fnac %m+% years(40)) %>% 
+  # crear fecha 40 cumpleaños
+  mutate(fnac_18 = fnac %m+% years(18)) %>% 
   # crear fecha 90 días tras pauta completa
   mutate(fpauta_90 = case_when(
     !is.na(fvc2) ~ fvc2 %m+% days(90),

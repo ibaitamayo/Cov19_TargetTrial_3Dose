@@ -1,5 +1,5 @@
 ---
-title: "mRNA Boosters Long-term effectiveness against COVID-19 infections, hospital admissions and deaths on Omicron-dominant period in Navarre, a 600 000 inhabitants region of Spain. Target trial with matching design"
+title: "Long-term vaccines effectiveness of mRNA boosters against COVID-19 infections, hospital admissions and deaths on Omicron-dominant period in Navarre, a 600 000 inhabitants region of Spain"
 date: "`r format(Sys.Date())`"
 bookdown::html_document2:
     keep_md: false 
@@ -22,7 +22,6 @@ body {
   text-align: justify;
 }
 
-
 ```
 
 ```{r setup, include=FALSE}
@@ -31,7 +30,7 @@ knitr::opts_chunk$set(echo = FALSE)
 ```
 
 ```{r echo=FALSE, message=FALSE, include=FALSE, warning=FALSE}
-# source("0_a_librerias.R")
+# source("0_a_librerias.R")----------------------------------------------------
 # ya se cargan cuando se carguen las funciones
 
 ```
@@ -102,7 +101,9 @@ Summarising, i) it is interesting to have the pseudonymized home address of the 
 
 ***
 
-Omicron has been the dominant strain of SARS-CoV-2 worldwide since endings of 2021. The effectiveness of the booster vaccines against the omicron variant of SARS-CoV-2 in the short term has been assessed in several works [@Monge2022]. However, for the best of our knowledge, there are not assessed the effectiveness in medium or long term. In addition, in some of the observational studies, some confounding remains between booster and non-booster recipients. We overcome two of the limitations of the aforementioned works: i) the possible residual confounding expressed by the differences in the exposed and unexposed group before the booster likely effect (first seven days [@Walsh2020; @Lustig2021]), and ii) the longer term effect of the booster in infections, hospital admissions and in deaths. To this end, we followed the target trial emulation methodology [@Danaei2013]. The effectiveness of the booster against infections, hospital admissions and deaths were assessed in the period where Omicron was the dominant period in Navarre.
+The COVID-19 infectious disease caused a pandemic since 2020. The development of vaccines and the implementation of the vaccination programs against COVID-19 has supposed one of the most effective tools for dealing the disease. In their development, the vaccines have been passed the different phases of the clinical trials in order to grantee their effectiveness and safety. However, this clinical trials are conducted under determined conditions and in different time periods than their application. Thus, real world data is needed in order to generate evidence about the vaccine effectiveness (VE). Moreover, the mutation in the virus and the spread of new strains, such as Omicron, could change the assessed VE. Omicron has been the dominant strain of SARS-CoV-2 worldwide since endings of 2021. Particularly, in Navarra, Omicron was the dominant strain since epidemiological week 52 of 2021 (starting at 25-12-2021). Currently, the booster VE against the omicron variant of SARS-CoV-2 in the short term has been assessed in several works [@Monge2022, PONER MÁS]. However, more evidence is needed in the assessment of the VE in the medium or long term. We assessed the VE in a 5 and 13-weeks period of the mRNA booster in infections, hospital admissions and in deaths. To this end, we followed the target trial emulation methodology [@Danaei2013]. The VE were assessed in the period where Omicron was the dominant period in Navarre, i.e. since 2022-12-25.
+
+In this kind of design, which uses a observational study, some confounding could remain between booster and no booster recipient groups. This is expressed by the differences in the exposed and unexposed group before the booster likely effect (first seven days [@Walsh2020; @Lustig2021]). In order to address this problem we used different matching variables.
 
 <br>
 
@@ -110,7 +111,7 @@ Omicron has been the dominant strain of SARS-CoV-2 worldwide since endings of 20
 
 ***
 
-This work uses the target trial framework. In this approach, a target randomized trial is described and emulated with observational data. In particular, we perform three different target trials to answer each of the three research questions.
+This work uses the target trial framework. In this approach, a target randomized trial is described and emulated with observational data. In particular, we performed four different target trials to answer each of the three research questions. a) infection as outcome and typical matching variables, b) infection as outcome and matching by home address, c) COVID-19 related hospitalisation as outcome and matching by age, sex and comorbidities, and d) COVID-19 related deaths as outcome and the same matching as in c).
 
 ## Setting
 
@@ -118,7 +119,7 @@ This work uses the target trial framework. In this approach, a target randomized
 
 The source population was the whole population of Navarre, a region of Spain of about 600 000 inhabitants. We selected people who had programmed the booster vaccination in the omicron-dominant period. Therefore, we selected individuals aged 18 years or older who had completed their primary vaccination at least 3 months before the start of follow-up, and had not tested positive for SARS-CoV-2 since the start of the pandemic. In addition, educational and health-care workers, and nursing home residents are also excluded since their vaccination calendar is different to the general population. We obtain all the information throughout the BARDENA databases [@Bardena2022].
   
-For assessing the booster effectiveness against COVID-19 infection, the selected period was from 2021-12-17 to 2022-03-31. Omicron was the dominant strain since epidemiological week 52 of 2021 and after Apr 1, 2022 the Spanish government change the surveillance methodology and not all the infections were registered. On the other hand, the selected period for assessing the effectiveness against hospital admissions and deaths due to COVID-19 infection was 2021-12-25 to 2022-06-13 as the data about admissions and deaths is reliable even after the Mar 31, 2022.
+For assessing the booster VE, we select the Omicron dominant period plus a week before this period, when the likely effect of the vaccine is not produced yet. The end of the collected data was 2022-06-13 which determiend the end of study period. However, when the assessed outcome is the COVID-19 infection, the selected end of period was limited to 2022-03-31. After 2022-03-31 the Spanish government changed the surveillance methodology and not all the infections were registered. On the other hand, the selected period for assessing the effectiveness against hospital admissions and deaths due to COVID-19 infection was 2021-12-18 to 2022-06-13 as the data about admissions and deaths is reliable even after 2022-31-03.
 
 ## Target trial emulation
 
@@ -126,9 +127,21 @@ For assessing the booster effectiveness against COVID-19 infection, the selected
 
 First, we compare booster and no booster recipients and we follow them until the infection is produced, death or the end of the follow-up. In case of the non-treated component of the pair receives the booster, both components are censored.
 
-The second trial is identical to the first, but matching for home address. This, allows to reduce the residual confounding between treated and non-treated. However, the sample obtained will be disminished. 
+b) The second trial b) is identical to the first, but matching for home address. This, allows to reduce the residual confounding between treated and non-treated. However, the sample obtained will be diminished. 
 
-Finally, in the third trial, we compare individuals from 2021-12-25 to 2022-06-13 where the outcomes of interest were hospital admissions and deaths. 
+Finally, in the third c) and fourth trial d), we compare individuals where the outcomes of interest were hospital admissions and deaths respectively. 
+
+## Matching
+
+***
+
+a) Matching by 
+
+b)
+
+c and d) Matching by 
+
+
 
 ## Statistical analysis
 
@@ -138,13 +151,15 @@ From eight days before the start to the end of the selected period, individuals 
 
 In the second target trial (TT B), we use the home address for matching in the same period, balancing the exposition in both groups. Finally, in the third target trial (TT C) we assessed the long-term effect of the booster against hospital admissions and deaths matching by age, sex and comorbidities.
 
+
+
 <br>
 
 # Results
 
 ***
   
-The estimated effectiveness from day 7 to 34 after a booster was 51·3% (95%CI 50·2, 52·4) in Spain [@Monge2022], meanwhile in Navarra region was `r rr_m1_st$rr_eff` for the 5-week period and `r rr_m1$rr_eff` for the 13-week period. In both settings we observed differences between the groups in the first 7 days (Fig 1A). However, when the matching was based on sharing home, these differences decrease drastically. In this analysis, the short and mid term effectiveness are `r rr_m2_st$rr_eff` and `r rr_m2$rr_eff` respectively (Fig 1B). Finally, the mid-term effectiveness of booster in severe cases is high: `r rr_m3$rr_eff`, although there are a low number of cases (Fig 1C). 
+The estimated effectiveness from day 7 to 35 after a booster was 51·3% (95%CI 50·2, 52·4) in Spain [@Monge2022], meanwhile in Navarra region was `r rr_m1_st$rr_eff` for the 5-week period and `r rr_m1$rr_eff` for the 13-week period. In both settings we observed differences between the groups in the first 7 days (Fig 1A). However, when the matching was based on sharing home, these differences decrease drastically. In this analysis, the short and mid term effectiveness are `r rr_m2_st$rr_eff` and `r rr_m2$rr_eff` respectively (Fig 1B). Finally, the mid-term effectiveness of booster in severe cases is high: `r rr_m3$rr_eff`, although there are a low number of cases (Fig 1C). 
 
 <br>
 

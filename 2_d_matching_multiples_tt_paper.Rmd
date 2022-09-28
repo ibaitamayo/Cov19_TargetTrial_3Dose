@@ -1,5 +1,5 @@
 ---
-title: "Múltiples tiempos + test"
+title: "Paper matching"
 output: 
   html_document:
     code_folding: show
@@ -70,19 +70,19 @@ test220613_cleaned <- readRDS(file = file.path("Datos", "Procesados",
 lista_exclusion_dep <- list(
   criterios = list(
   c1 = "Excluyendo: infección previa antes del tiempo_0...",
-  # c2 = "Excluyendo: edad < 40 años en tiempo_0...", 
+  c2 = "Excluyendo: edad < 18 años en tiempo_0...", 
   c3 = "Excluyendo: pauta incompleta 90 días antes del tiempo_0...",
   c4 = "Excluyendo: fallecidos antes del tiempo_0...",
   c5 = "Excluyendo: boosting antes del tiempo_0..."),
   variables = list(
   v1 = "fcv1",
-  # v2 = "fnac_40",
+  v2 = "fnac_18",
   v3 = "fpauta_90",
   v4 = "fdef",
   v5 = "fvc3"),
   tipo_var = list(
     "exc",
-    # "inc",
+    "inc",
     "inc",
     "exc",
     "exc")
@@ -161,7 +161,7 @@ paper_fcv1_domi <- f_matching_tt_mult(
                 calcular_test = test220613_cleaned,
                 calcular_temp_var = "fpauta_90",
                 temporal_var_unit = "weeks",
-                age_first = 40,
+                age_first = 20,
                 age_last = 90,
                 age_by = 5,
                 censoring = "fdef",
@@ -195,7 +195,7 @@ paper_fih1 <- f_matching_tt_mult(
                 temporal_var_unit = "weeks",
                 calcular_test = test220613_cleaned,
                 birth_date = "fnac",
-                age_first = 40,
+                age_first = 20,
                 age_last = 90,
                 age_by = 5,
                 censoring = "fdef",
@@ -264,7 +264,7 @@ paper_fcv1_domi_short_term <- f_matching_tt_mult(
                 calcular_test = test220613_cleaned,
                 calcular_temp_var = "fpauta_90",
                 temporal_var_unit = "weeks",
-                age_first = 40,
+                age_first = 20,
                 age_last = 90,
                 age_by = 5,
                 censoring = "fdef",
@@ -298,7 +298,7 @@ paper_fih1_short_term <- f_matching_tt_mult(
                 temporal_var_unit = "weeks",
                 calcular_test = test220613_cleaned,
                 birth_date = "fnac",
-                age_first = 40,
+                age_first = 20,
                 age_last = 90,
                 age_by = 5,
                 censoring = "fdef",
