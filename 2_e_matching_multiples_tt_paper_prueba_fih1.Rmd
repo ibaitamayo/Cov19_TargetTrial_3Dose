@@ -1,0 +1,203 @@
+---
+title: "Paper matching"
+output: 
+  html_document:
+    code_folding: show
+    highlight: espresso
+    css:
+    keep_md: yes
+    number_sections: yes
+    theme: readable
+    toc: yes  
+    toc_float:
+      collapsed: yes
+      smooth_scroll: yes
+      toc_depth: 3     
+editor_options: 
+  chunk_output_type: inline
+---
+
+
+```{r set-global-options, echo = FALSE}
+knitr::opts_chunk$set(eval = TRUE, 
+                      echo = TRUE, 
+                      cache = FALSE,
+                      include = TRUE,
+                      collapse = FALSE,
+                       dependson = NULL,
+                      engine = "R", # Chunks will always have R code, unless noted
+                      error = TRUE,
+                      fig.path="Figures/",  # Set the figure options
+                      fig.align = "center", 
+                      fig.width = 12,
+                      fig.height = 12)
+```
+
+```{r}
+# función para cargar un .Rmd como si se hiciese source de un .r---------------
+source_rmd = function(file, ...) {
+  tmp_file = tempfile(fileext = ".R")
+  on.exit(unlink(tmp_file), add = TRUE)
+  knitr::purl(file, output = tmp_file)
+  source(file = tmp_file, ...)
+}
+
+```
+
+```{r}
+# cargar funciones de 0_funciones----------------------------------------------
+if (!exists("se_ha_cargado_f")) {
+suppressMessages(source_rmd("0_b_funciones.rmd"))
+}
+
+```
+
+
+```{r cargar-datos, echo=FALSE, eval=TRUE, message=FALSE, warning=FALSE}
+# cargar datos-----------------------------------------------------------------
+pobana_2 <- readRDS(file = file.path("Resultados", "pobana_2.RDS"))
+test220613_cleaned <- readRDS(file = file.path("Datos", "Procesados", 
+                                             "test220613_cleaned.RDS"))
+
+```
+
+
+
+
+
+```{r}
+# se crean listas que dependen del proyecto------------------------------------
+lista_exclusion_dep <- list(
+  criterios = list(
+  c1 = "Excluyendo: infección previa antes del tiempo_0...",
+  c2 = "Excluyendo: edad < 18 años en tiempo_0...", 
+  c3 = "Excluyendo: pauta incompleta 90 días antes del tiempo_0...",
+  c4 = "Excluyendo: fallecidos antes del tiempo_0...",
+  c5 = "Excluyendo: boosting antes del tiempo_0..."),
+  variables = list(
+  v1 = "fcv1",
+  v2 = "fnac_18",
+  v3 = "fpauta_90",
+  v4 = "fdef",
+  v5 = "fvc3"),
+  tipo_var = list(
+    "exc",
+    "inc",
+    "inc",
+    "exc",
+    "exc")
+  )
+
+```
+
+```{r}
+# se crean listas que dependen del proyecto------------------------------------
+lista_exclusion_dep_sin_edad <- list(
+  criterios = list(
+  c1 = "Excluyendo: infección previa antes del tiempo_0...",
+  # c2 = "Excluyendo: edad < 18 años en tiempo_0...", 
+  c3 = "Excluyendo: pauta incompleta 90 días antes del tiempo_0...",
+  c4 = "Excluyendo: fallecidos antes del tiempo_0...",
+  c5 = "Excluyendo: boosting antes del tiempo_0..."),
+  variables = list(
+  v1 = "fcv1",
+  # v2 = "fnac_18",
+  v3 = "fpauta_90",
+  v4 = "fdef",
+  v5 = "fvc3"),
+  tipo_var = list(
+    "exc",
+    # "inc",
+    "inc",
+    "exc",
+    "exc")
+  )
+
+```
+
+# variables de matching
+
+```{r}
+# vectores de matching---------------------------------------------------------
+variables_matching = c(
+  "gen",    # 1
+  "gedad",  # 2
+  "czbs",   # 3
+  "tvc1",   # 4
+  "migran", # 5
+  "vgp20",  # 6
+  "vgp21",  # 7
+  "ucn8",   # 8
+  "domi")   # 9
+
+```
+
+```{r}
+# fih1
+paper_fih1_sin_edad <- f_matching_tt_mult(
+                data = pobana_2 %>% select(-fnac_18),
+                f_ini = "2021-12-17",
+                f_fin = "2022-06-12",
+                crit_exc = lista_exclusion_dep_sin_edad,
+                exposure = "fvc3",
+                out = "fih1", 
+                vector_match = c("gen", "diab", "corp", "irc", "epoc", "hlip",
+                                 "hta", "ictu", "obes"),
+                # base_test = test220613_cleaned,
+                # temporal_var = "fpauta_90",
+                calcular_temp_var = "fpauta_90",
+                temporal_var_unit = "weeks",
+                calcular_test = test220613_cleaned,
+                birth_date = "fnac",
+                age_first = 20,
+                age_last = 90,
+                age_by = 5,
+                censoring = "fdef",
+                follow_up = 90,
+                verbose = FALSE,
+                seed = 3,
+                fecha_fin_estudio = ymd("2022-06-13"))
+
+
+```
+
+
+```{r}
+# fih1
+paper_fih1_con_edad <- f_matching_tt_mult(
+                data = pobana_2,
+                f_ini = "2021-12-17",
+                f_fin = "2022-06-12",
+                crit_exc = lista_exclusion_dep,
+                exposure = "fvc3",
+                out = "fih1", 
+                vector_match = c("gen", "diab", "corp", "irc", "epoc", "hlip",
+                                 "hta", "ictu", "obes"),
+                # base_test = test220613_cleaned,
+                # temporal_var = "fpauta_90",
+                calcular_temp_var = "fpauta_90",
+                temporal_var_unit = "weeks",
+                calcular_test = test220613_cleaned,
+                birth_date = "fnac",
+                age_first = 20,
+                age_last = 90,
+                age_by = 5,
+                censoring = "fdef",
+                follow_up = 90,
+                verbose = FALSE,
+                seed = 3,
+                fecha_fin_estudio = ymd("2022-06-13"))
+
+```
+
+```{r}
+f_analisis(paper_fih1_sin_edad, tiempo_efecto = 7, tipo = "event", lim_1 = 0.998)
+
+```
+
+
+```{r}
+f_analisis(paper_fih1_con_edad, tiempo_efecto = 7, tipo = "event", lim_1 = 0.998)
+
+```
+

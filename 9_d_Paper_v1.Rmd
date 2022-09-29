@@ -1,5 +1,5 @@
 ---
-title: "Long-term vaccines effectiveness of mRNA boosters against COVID-19 infections, hospital admissions and deaths on Omicron-dominant period in Navarre, a 600 000 inhabitants region of Spain"
+title: "Long-term vaccines effectiveness of mRNA boosters against COVID-19 infections, severe cases and deaths on Omicron-dominant period in Navarre, a 600,000 inhabitants region of Spain"
 date: "`r format(Sys.Date())`"
 bookdown::html_document2:
     keep_md: false 
@@ -111,7 +111,14 @@ In this kind of design, which uses a observational study, some confounding could
 
 ***
 
-This work uses the target trial framework. In this approach, a target randomized trial is described and emulated with observational data. In particular, we performed four different target trials to answer each of the three research questions. a) infection as outcome and typical matching variables, b) infection as outcome and matching by home address, c) COVID-19 related hospitalisation as outcome and matching by age, sex and comorbidities, and d) COVID-19 related deaths as outcome and the same matching as in c).
+This work uses the target trial framework. In this approach, a target randomized trial is described and emulated with observational data. In particular, we performed four different target trials to answer each of the three research questions. (A) infection as outcome and typical matching variables, (B) infection as outcome and matching by home address, (C) COVID-19 related hospitalisation as outcome and matching by age, sex and comorbidities, and (D) COVID-19 related deaths as outcome and the same matching as in (C).
+
+## Outcomes
+
+COVID-19 infections, severe cases and deaths are considered. COVID-19 infections are determined by PCR or antigen tests. COVID-19 severe cases are defined as the WHO surveillance case definition for severe acute respiratory illness infection: A hospitalized person with acute respiratory infection, with a history of fever or measured fever of $\geq$ 38°C and cough with onset within the last 10 days [@WHO2022]. COVID-19 deaths are defined as
+
+## Time
+
 
 ## Setting
 
@@ -119,39 +126,15 @@ This work uses the target trial framework. In this approach, a target randomized
 
 The source population was the whole population of Navarre, a region of Spain of about 600 000 inhabitants. We selected people who had programmed the booster vaccination in the omicron-dominant period. Therefore, we selected individuals aged 18 years or older who had completed their primary vaccination at least 3 months before the start of follow-up, and had not tested positive for SARS-CoV-2 since the start of the pandemic. In addition, educational and health-care workers, and nursing home residents are also excluded since their vaccination calendar is different to the general population. We obtain all the information throughout the BARDENA databases [@Bardena2022].
   
-For assessing the booster VE, we select the Omicron dominant period plus a week before this period, when the likely effect of the vaccine is not produced yet. The end of the collected data was 2022-06-13 which determiend the end of study period. However, when the assessed outcome is the COVID-19 infection, the selected end of period was limited to 2022-03-31. After 2022-03-31 the Spanish government changed the surveillance methodology and not all the infections were registered. On the other hand, the selected period for assessing the effectiveness against hospital admissions and deaths due to COVID-19 infection was 2021-12-18 to 2022-06-13 as the data about admissions and deaths is reliable even after 2022-31-03.
-
-## Target trial emulation
-
-***
-
-First, we compare booster and no booster recipients and we follow them until the infection is produced, death or the end of the follow-up. In case of the non-treated component of the pair receives the booster, both components are censored.
-
-b) The second trial b) is identical to the first, but matching for home address. This, allows to reduce the residual confounding between treated and non-treated. However, the sample obtained will be diminished. 
-
-Finally, in the third c) and fourth trial d), we compare individuals where the outcomes of interest were hospital admissions and deaths respectively. 
-
-## Matching
-
-***
-
-a) Matching by 
-
-b)
-
-c and d) Matching by 
-
-
+For assessing the booster VE, we select the Omicron dominant period plus a week before this period, when the likely effect of the vaccine is not produced yet. The end of the collected data was 2022-06-13 which determiend the end of study period. However, when the assessed outcome is the COVID-19 infection (A) and (B), the selected end of period was limited to 2022-03-31. After 2022-03-31 the Spanish government changed the surveillance methodology and not all the infections were registered. On the other hand, the selected period for assessing the effectiveness against hospital admissions (C) and deaths (D) due to COVID-19 infection was 2021-12-18 to 2022-06-13 as the data about admissions and deaths is reliable even after 2022-31-03.
 
 ## Statistical analysis
 
 ***
 
-From eight days before the start to the end of the selected period, individuals who had received a booster mRNA vaccine were matched according to the target trial. In the first target trial (TT A) the boosted recipients are matched with no boosted controls by age (5 years groups), sex, number of previous negative test (0, 1, 2, 3+), type of primary vaccine (homologous or Janssen), time since complete vaccination, health basic zone, migrant status, flu vaccinated in 2020, and in 2021, and the number of people in the households (truncated at eight). We estimated risk of laboratory-confirmed SARS-CoV-2 infection using the Kaplan-Meier method, with 10 weeks of follow-up and we compared groups using risk ratios (RR). Vaccine effectiveness was calculated as one minus RR and expressed as percentage. 
+From eight days before the start to the end of the selected period, individuals who had received a booster mRNA vaccine were matched with no booster recipients according to each of the four planned target trial. We compare booster and no booster recipients and we follow them until the outcome is produced, death or the end of the follow-up. In case of the non-treated component of the pair receives the booster, both components are censored. In the first target trial (A), the matching is done by age (5 years groups), sex, number of previous negative test (0, 1, 2, 3+), type of primary vaccine (homologous or Janssen), time since complete vaccination, health basic zone, migrant status, flu vaccinated in 2020, and in 2021, and the number of people in the households (truncated at eight). The second target trial (B) is identical to the first, but matching for home address. This, allows to reduce the residual confounding between treated and non-treated. However, the sample obtained will be diminished. Finally, in the third (C) and fourth (D) target trials, we compare individuals where the outcomes of interest were hospital admissions and deaths respectively, matching by age, sex and comorbidities. The matching comorbidities are diabetes mellitus, coronary artery disease, chronic kidney failure, chronic obstructive pulmonary disease, hyperdyslipidemia, hypertension, stroke and obesity. For each target trial, we estimated risk of outcome using the Kaplan-Meier method, with 13 weeks of follow-up and we compared groups using risk ratios (RR). Finally, VE was calculated as one minus RR and expressed as percentage. 
 
-In the second target trial (TT B), we use the home address for matching in the same period, balancing the exposition in both groups. Finally, in the third target trial (TT C) we assessed the long-term effect of the booster against hospital admissions and deaths matching by age, sex and comorbidities.
-
-
+All the work has been developed following carefully the WHO guidance and the STROBE statement. All the databases management and analysis has been performed using R 4.2.
 
 <br>
 
@@ -166,6 +149,11 @@ The estimated effectiveness from day 7 to 35 after a booster was 51·3% (95%CI 5
 # Discussion
 
 ***
+
+The results point 
+
+This study has some limitations. The possible residual confounding between groups is a source of bias. Nevertheless, introducing the home address as the matching variable improves the similarty between groups in the first week.
+
 
 Summarising, i) it is interesting to have the pseudonymized home address of the participants in order to emulate the target trials and remove confounding, and ii) the booster had moderate effectiveness against infection, even in the mid-term time, and higher effectiveness against hospitalisations. 
 
