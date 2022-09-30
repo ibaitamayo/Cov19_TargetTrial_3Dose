@@ -90,31 +90,6 @@ lista_exclusion_dep <- list(
 
 ```
 
-```{r}
-# se crean listas que dependen del proyecto------------------------------------
-lista_exclusion_dep_sin_edad <- list(
-  criterios = list(
-  c1 = "Excluyendo: infección previa antes del tiempo_0...",
-  # c2 = "Excluyendo: edad < 18 años en tiempo_0...", 
-  c3 = "Excluyendo: pauta incompleta 90 días antes del tiempo_0...",
-  c4 = "Excluyendo: fallecidos antes del tiempo_0...",
-  c5 = "Excluyendo: boosting antes del tiempo_0..."),
-  variables = list(
-  v1 = "fcv1",
-  # v2 = "fnac_18",
-  v3 = "fpauta_90",
-  v4 = "fdef",
-  v5 = "fvc3"),
-  tipo_var = list(
-    "exc",
-    # "inc",
-    "inc",
-    "exc",
-    "exc")
-  )
-
-```
-
 # variables de matching
 
 ```{r}
@@ -132,39 +107,13 @@ variables_matching = c(
 
 ```
 
-```{r}
-# fih1
-paper_fih1_sin_edad <- f_matching_tt_mult(
-                data = pobana_2 %>% select(-fnac_18),
-                f_ini = "2021-12-17",
-                f_fin = "2022-06-12",
-                crit_exc = lista_exclusion_dep_sin_edad,
-                exposure = "fvc3",
-                out = "fih1", 
-                vector_match = c("gen", "diab", "corp", "irc", "epoc", "hlip",
-                                 "hta", "ictu", "obes"),
-                # base_test = test220613_cleaned,
-                # temporal_var = "fpauta_90",
-                calcular_temp_var = "fpauta_90",
-                temporal_var_unit = "weeks",
-                calcular_test = test220613_cleaned,
-                birth_date = "fnac",
-                age_first = 20,
-                age_last = 90,
-                age_by = 5,
-                censoring = "fdef",
-                follow_up = 90,
-                verbose = FALSE,
-                seed = 3,
-                fecha_fin_estudio = ymd("2022-06-13"))
+# Prueba 1
 
-
-```
-
+Añadir tiempo desde pauta primaria completa
 
 ```{r}
 # fih1
-paper_fih1_con_edad <- f_matching_tt_mult(
+paper_fih1_prueba1 <- f_matching_tt_mult(
                 data = pobana_2,
                 f_ini = "2021-12-17",
                 f_fin = "2022-06-12",
@@ -174,8 +123,8 @@ paper_fih1_con_edad <- f_matching_tt_mult(
                 vector_match = c("gen", "diab", "corp", "irc", "epoc", "hlip",
                                  "hta", "ictu", "obes"),
                 # base_test = test220613_cleaned,
-                # temporal_var = "fpauta_90",
-                calcular_temp_var = "fpauta_90",
+                temporal_var = "fpauta_90",
+                # calcular_temp_var = "fpauta_90",
                 temporal_var_unit = "weeks",
                 calcular_test = test220613_cleaned,
                 birth_date = "fnac",
@@ -185,19 +134,53 @@ paper_fih1_con_edad <- f_matching_tt_mult(
                 censoring = "fdef",
                 follow_up = 90,
                 verbose = FALSE,
-                seed = 3,
+                seed = 21,
                 fecha_fin_estudio = ymd("2022-06-13"))
 
 ```
 
 ```{r}
-f_analisis(paper_fih1_sin_edad, tiempo_efecto = 7, tipo = "event", lim_1 = 0.998)
+# análisis
+f_analisis(paper_fih1_prueba1, tiempo_efecto = 7, tipo = "event", lim_1 = 0.998)
 
 ```
 
+# Prueba 2
+
+Añadir a prueba 1 las covariables del matching 1
 
 ```{r}
-f_analisis(paper_fih1_con_edad, tiempo_efecto = 7, tipo = "event", lim_1 = 0.998)
+# fih1
+paper_fih1_prueba2 <- f_matching_tt_mult(
+                data = pobana_2,
+                f_ini = "2021-12-17",
+                f_fin = "2022-06-12",
+                crit_exc = lista_exclusion_dep,
+                exposure = "fvc3",
+                out = "fih1", 
+                vector_match = c("gen", "czbs",
+                                 "diab", "corp", "irc", "epoc", "hlip",
+                                 "hta", "ictu", "obes"),
+                # base_test = test220613_cleaned,
+                temporal_var = "fpauta_90",
+                # calcular_temp_var = "fpauta_90",
+                temporal_var_unit = "weeks",
+                calcular_test = test220613_cleaned,
+                birth_date = "fnac",
+                age_first = 20,
+                age_last = 90,
+                age_by = 5,
+                censoring = "fdef",
+                follow_up = 90,
+                verbose = FALSE,
+                seed = 21,
+                fecha_fin_estudio = ymd("2022-06-13"))
+
+```
+
+```{r}
+# análisis---------------------------------------------------------------------
+f_analisis(paper_fih1_prueba2, tiempo_efecto = 7, tipo = "event", lim_1 = 0.998)
 
 ```
 

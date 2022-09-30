@@ -133,7 +133,7 @@ paper_fcv1 <- f_matching_tt_mult(
                 censoring = "fdef",
                 follow_up = 91,
                 verbose = FALSE,
-                seed = 11,
+                seed = 21,
                 fecha_fin_estudio = ymd("2022-03-31"))
 
 # guardar resultados-----------------------------------------------------------
@@ -167,7 +167,7 @@ paper_fcv1_domi <- f_matching_tt_mult(
                 censoring = "fdef",
                 follow_up = 91,
                 verbose = FALSE,
-                seed = 11,
+                seed = 21,
                 fecha_fin_estudio = ymd("2022-03-31"))
 
 # guardar resultados-----------------------------------------------------------
@@ -201,7 +201,7 @@ paper_fih1 <- f_matching_tt_mult(
                 censoring = "fdef",
                 follow_up = 91,
                 verbose = FALSE,
-                seed = 11,
+                seed = 21,
                 fecha_fin_estudio = ymd("2022-06-13"))
 
 # guardar resultados-----------------------------------------------------------
@@ -236,7 +236,7 @@ paper_fcv1_short_term <- f_matching_tt_mult(
                 censoring = "fdef",
                 follow_up = 35,
                 verbose = FALSE,
-                seed = 11,
+                seed = 21,
                 fecha_fin_estudio = ymd("2022-03-31"))
 
 # guardar resultados-----------------------------------------------------------
@@ -270,7 +270,7 @@ paper_fcv1_domi_short_term <- f_matching_tt_mult(
                 censoring = "fdef",
                 follow_up = 35,
                 verbose = FALSE,
-                seed = 11,
+                seed = 21,
                 fecha_fin_estudio = ymd("2022-03-31"))
 
 # guardar resultados-----------------------------------------------------------
@@ -304,7 +304,7 @@ paper_fih1_short_term <- f_matching_tt_mult(
                 censoring = "fdef",
                 follow_up = 35,
                 verbose = FALSE,
-                seed = 11,
+                seed = 21,
                 fecha_fin_estudio = ymd("2022-06-13"))
 
 # guardar resultados-----------------------------------------------------------
