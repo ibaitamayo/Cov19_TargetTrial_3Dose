@@ -114,11 +114,11 @@ rr_m2_70 <- f_analisis_lancet_rr(matching_fcv1_domi_70,
                      tiempo_efecto = 7)
 
 # modelo 3. hospitalización por edad y sexo
-rr_m3_34 <- f_analisis_lancet_rr(matching_fih1_longer_34,
-                     tiempo_efecto = 7)
-
-rr_m3_70 <- f_analisis_lancet_rr(matching_fih1_longer_70,
-                     tiempo_efecto = 7)
+# rr_m3_34 <- f_analisis_lancet_rr(matching_fih1_longer_34,
+#                      tiempo_efecto = 7)
+# 
+# rr_m3_70 <- f_analisis_lancet_rr(matching_fih1_longer_70,
+#                      tiempo_efecto = 7)
 
 # modelo 4. hospitalización por edad y sexo
 rr_m4_34 <- f_analisis_lancet_rr(matching_fih1_longer_34_bis,
@@ -133,8 +133,8 @@ saveRDS(rr_m1_34, file.path("Resultados", "rr_m1_34.RDS"))
 saveRDS(rr_m1_70, file.path("Resultados", "rr_m1_70.RDS"))
 saveRDS(rr_m2_34, file.path("Resultados", "rr_m2_34.RDS"))
 saveRDS(rr_m2_70, file.path("Resultados", "rr_m2_70.RDS"))
-saveRDS(rr_m3_34, file.path("Resultados", "rr_m3_34.RDS"))
-saveRDS(rr_m3_70, file.path("Resultados", "rr_m3_70.RDS"))
+# saveRDS(rr_m3_34, file.path("Resultados", "rr_m3_34.RDS"))
+# saveRDS(rr_m3_70, file.path("Resultados", "rr_m3_70.RDS"))
 saveRDS(rr_m4_34, file.path("Resultados", "rr_m4_34.RDS"))
 saveRDS(rr_m4_70, file.path("Resultados", "rr_m4_70.RDS"))
 
@@ -303,76 +303,76 @@ print(gg2)
 
 ```{r, fig.height = 4, fig.width = 13}
 # Hacer Figura para el modelo 1------------------------------------------------
-base_analisis_m3 <- matching_fih1_longer_70$tt_tibble %>%
-    mutate(survtime = date_end - date_start)
-
-max_survtime_m3 <- base_analisis_m3 %>% 
-    summarise(max_survtime = as.numeric(max(survtime))) %>% pull()
-  
-print(base_analisis_m3 %>% 
-             tabyl(exposicion, caso) %>%
-             adorn_totals(where = c('row', 'col')) %>%
-             adorn_title())
-
-fit <- survfit(Surv(survtime, caso) ~ exposicion, data = base_analisis_m3) 
-  
-gg3 <- ggsurvplot(fit, data = base_analisis_m3,
-           fun = "event",
-           surv.plot.height	= 0.8,
-           risk.table.height	= 0.2,
-           palette = "lancet",
-           xlab = "Time since start of follow-up (days)",
-           break.x.by = 7,
-           break.y.by = 0.0002,
-           font.x = 2,
-           ylab = "Cumulative Incidence",
-           xlim = c(0, 70),
-           ylim = c(0, 0.002),
-           risk.table = "nrisk_cumevents",
-           fontsize = 3.8,
-           order.legend = TRUE,
-           legend = "top",
-           legend.labs = c("No booster", "Booster"),
-           legend.title = " ",
-           title = "C) Hospitalisations from 2022-01-04 to 2022-06-13. Matching each boostering day (from 2022-01-03 to 2022-06-12) by age and sex",
-           font.title = 16,
-           conf.int = FALSE) 
-  
-gg3$plot <- gg3$plot + 
-      geom_vline(xintercept = 7, 
-                          linetype = "dashed", 
-                          size = 0.7,
-                          colour = "dimgrey") +
-      geom_vline(xintercept = 34, 
-                          linetype = "dashed", 
-                          size = 0.7,
-                          colour = "dimgrey") +
-      # short term effectiveness
-      geom_segment(y = 0.0016, yend = 0.0016,
-                   x = 7, xend = 34, size = 1,
-      arrow = arrow(length = unit(0.1, "inches"))) +
-      geom_text(x = 21, y = 0.0018, 
-                label = glue("Short-term effectiveness: {rr_m3_34$rr_eff}"), 
-                size = 4.5) +
-      # mid term effectiveness
-      geom_segment(y = 0.0014, yend = 0.0014,
-                   x = 7, xend = 70, size = 1,
-      arrow = arrow(length = unit(0.1, "inches"))) +
-      geom_text(x = 57, y = 0.0016, 
-                label = glue("Mid-term effectiveness: {rr_m3_70$rr_eff}"), 
-                size = 4.5) +
-      theme(axis.title.x = element_text(size = 14),
-            plot.title = element_text(size = 14, face = "bold"))
-  
-  
-gg3$table <- gg3$table + 
-      theme(axis.line = element_blank(),
-            axis.title.x = element_blank(),
-            axis.ticks = element_blank(),
-            axis.text.x = element_blank(),
-            plot.title = element_text(size = 14, face = "bold")) 
-
-print(gg3)
+# base_analisis_m3 <- matching_fih1_longer_70$tt_tibble %>%
+#     mutate(survtime = date_end - date_start)
+# 
+# max_survtime_m3 <- base_analisis_m3 %>% 
+#     summarise(max_survtime = as.numeric(max(survtime))) %>% pull()
+#   
+# print(base_analisis_m3 %>% 
+#              tabyl(exposicion, caso) %>%
+#              adorn_totals(where = c('row', 'col')) %>%
+#              adorn_title())
+# 
+# fit <- survfit(Surv(survtime, caso) ~ exposicion, data = base_analisis_m3) 
+#   
+# gg3 <- ggsurvplot(fit, data = base_analisis_m3,
+#            fun = "event",
+#            surv.plot.height	= 0.8,
+#            risk.table.height	= 0.2,
+#            palette = "lancet",
+#            xlab = "Time since start of follow-up (days)",
+#            break.x.by = 7,
+#            break.y.by = 0.0002,
+#            font.x = 2,
+#            ylab = "Cumulative Incidence",
+#            xlim = c(0, 70),
+#            ylim = c(0, 0.002),
+#            risk.table = "nrisk_cumevents",
+#            fontsize = 3.8,
+#            order.legend = TRUE,
+#            legend = "top",
+#            legend.labs = c("No booster", "Booster"),
+#            legend.title = " ",
+#            title = "C) Hospitalisations from 2022-01-04 to 2022-06-13. Matching each boostering day (from 2022-01-03 to 2022-06-12) by age and sex",
+#            font.title = 16,
+#            conf.int = FALSE) 
+#   
+# gg3$plot <- gg3$plot + 
+#       geom_vline(xintercept = 7, 
+#                           linetype = "dashed", 
+#                           size = 0.7,
+#                           colour = "dimgrey") +
+#       geom_vline(xintercept = 34, 
+#                           linetype = "dashed", 
+#                           size = 0.7,
+#                           colour = "dimgrey") +
+#       # short term effectiveness
+#       geom_segment(y = 0.0016, yend = 0.0016,
+#                    x = 7, xend = 34, size = 1,
+#       arrow = arrow(length = unit(0.1, "inches"))) +
+#       geom_text(x = 21, y = 0.0018, 
+#                 label = glue("Short-term effectiveness: {rr_m3_34$rr_eff}"), 
+#                 size = 4.5) +
+#       # mid term effectiveness
+#       geom_segment(y = 0.0014, yend = 0.0014,
+#                    x = 7, xend = 70, size = 1,
+#       arrow = arrow(length = unit(0.1, "inches"))) +
+#       geom_text(x = 57, y = 0.0016, 
+#                 label = glue("Mid-term effectiveness: {rr_m3_70$rr_eff}"), 
+#                 size = 4.5) +
+#       theme(axis.title.x = element_text(size = 14),
+#             plot.title = element_text(size = 14, face = "bold"))
+#   
+#   
+# gg3$table <- gg3$table + 
+#       theme(axis.line = element_blank(),
+#             axis.title.x = element_blank(),
+#             axis.ticks = element_blank(),
+#             axis.text.x = element_blank(),
+#             plot.title = element_text(size = 14, face = "bold")) 
+# 
+# print(gg3)
 
 ```
 
