@@ -80,10 +80,10 @@ matching_fcv1_domi_70 <- readRDS(file.path("Resultados",
         "matching_fcv1_domi_70.RDS"))
 
 # modelo 3. hospitalización por edad y sexo
-matching_fih1_longer_34 <- readRDS(file.path("Resultados",
-        "matching_fih1_longer_34.RDS"))
-matching_fih1_longer_70 <- readRDS(file.path("Resultados",
-        "matching_fih1_longer_70.RDS"))
+# matching_fih1_longer_34 <- readRDS(file.path("Resultados",
+#         "matching_fih1_longer_34.RDS"))
+# matching_fih1_longer_70 <- readRDS(file.path("Resultados",
+#         "matching_fih1_longer_70.RDS"))
 
 # modelo 4. hospitalización por características
 matching_fih1_longer_34_bis <- readRDS(file.path("Resultados",
