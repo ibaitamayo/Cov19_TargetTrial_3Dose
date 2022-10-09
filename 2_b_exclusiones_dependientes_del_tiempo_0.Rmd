@@ -94,9 +94,16 @@ pobana_2 <- pobana_1 %>%
     )) %>%
   mutate(tvc1_label = tvc1) %>% 
   # pautas de Janssen o de la misma vacuna
-  tidylog::filter(tvc1 == "J&J / Janssen" | tvc1 == tvc2)
+  tidylog::filter(tvc1 == "J&J / Janssen" | tvc1 == tvc2) %>% 
+  # añadir renta a partir de tsi de farmacia
+  mutate(renta_tsi = case_when(
+    ctsi %in% c("001", "021", "003") ~ "<18k",
+    ctsi %in% c("022", "004") ~ "18k-100k",
+    ctsi %in% c("006", "otros") ~ "unknown",
+    T ~ NA_character_))
 
 ```
+
 
 
 ```{r}

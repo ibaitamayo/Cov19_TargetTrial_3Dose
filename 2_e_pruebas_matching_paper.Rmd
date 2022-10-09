@@ -107,6 +107,78 @@ variables_matching = c(
 
 ```
 
+# Pruebas en fcv1
+
+Añadir la aportación farmacéutica, que es un proxy de la renta (Probar también emparejar por cormobilidades).
+
+```{r}
+# hacer ajuste como en el artículo
+paper_fcv1_ctsi <- f_matching_tt_mult(
+                data = pobana_2,
+                f_ini = "2021-12-17",
+                f_fin = "2022-03-30",
+                crit_exc = lista_exclusion_dep,
+                exposure = "fvc3",
+                out = "fcv1", 
+                vector_match = c(variables_matching[c(1, 3:8)], "renta_tsi"), 
+                base_test = test220613_cleaned,
+                temporal_var = "fpauta_90",
+                temporal_var_unit = "weeks",
+                birth_date = "fnac",
+                age_first = 20,
+                age_last = 90,
+                age_by = 5,
+                censoring = "fdef",
+                follow_up = 91,
+                verbose = FALSE,
+                seed = 21,
+                fecha_fin_estudio = ymd("2022-03-31"))
+
+# guardar resultados-----------------------------------------------------------
+saveRDS(paper_fcv1_ctsi, file.path("Resultados",
+        "paper_fcv1_ctsi.RDS"))
+
+```
+
+```{r}
+# hacer ajuste como en el artículo
+paper_fcv1_ctsi_comor <- f_matching_tt_mult(
+                data = pobana_2,
+                f_ini = "2021-12-17",
+                f_fin = "2022-03-30",
+                crit_exc = lista_exclusion_dep,
+                exposure = "fvc3",
+                out = "fcv1", 
+                vector_match = c(variables_matching[c(1, 3:8)], "renta_tsi",
+                                 "diab", "corp", "irc", "epoc", "hlip",
+                                 "hta", "ictu", "obes"), 
+                base_test = test220613_cleaned,
+                temporal_var = "fpauta_90",
+                temporal_var_unit = "weeks",
+                birth_date = "fnac",
+                age_first = 20,
+                age_last = 90,
+                age_by = 5,
+                censoring = "fdef",
+                follow_up = 91,
+                verbose = FALSE,
+                seed = 21,
+                fecha_fin_estudio = ymd("2022-03-31"))
+
+# guardar resultados-----------------------------------------------------------
+saveRDS(paper_fcv1_ctsi_comor, file.path("Resultados",
+        "paper_fcv1_ctsi_comor.RDS"))
+
+```
+
+```{r}
+# analizar resultados----------------------------------------------------------
+f_analisis(paper_fcv1, tiempo_efecto = 7, tipo = "event", lim_1 = 0.8)
+f_analisis(paper_fcv1_ctsi, tiempo_efecto = 7, tipo = "event", lim_1 = 0.8)
+f_analisis(paper_fcv1_ctsi_comor, tiempo_efecto = 7, tipo = "event", lim_1 = 0.8)
+
+```
+
 # Prueba 1
 
 Añadir tiempo desde pauta primaria completa

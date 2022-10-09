@@ -1,0 +1,160 @@
+---
+title: "Boosters doses and COVID-19 first infections Temporal evolution"
+output: 
+  html_document:
+    code_folding: show
+    highlight: espresso
+    css: style.css
+    keep_md: yes
+    number_sections: yes
+    theme: readable
+    toc: yes  
+    toc_float:
+      collapsed: yes
+      smooth_scroll: yes
+      toc_depth: 3     
+editor_options: 
+  chunk_output_type: inline
+---
+
+
+```{r set-global-options, echo = FALSE}
+knitr::opts_chunk$set(eval = TRUE, 
+                      echo = FALSE, 
+                      cache = FALSE,
+                      include = TRUE,
+                      collapse = FALSE,
+                       dependson = NULL,
+                      engine = "R", # Chunks will always have R code, unless noted
+                      error = TRUE,
+                      fig.path="Figures/",  # Set the figure options
+                      fig.align = "center", 
+                      fig.width = 12,
+                      fig.height = 12)
+```
+
+```{r, echo=FALSE, message=FALSE, include=FALSE, warning=FALSE}
+# source("0_a_librerias.R")
+# ya se cargan cuando se carguen las funciones
+
+```
+
+```{r}
+# función para cargar un .Rmd como si se hiciese source de un .r---------------
+source_rmd = function(file, ...) {
+  tmp_file = tempfile(fileext = ".R")
+  on.exit(unlink(tmp_file), add = TRUE)
+  knitr::purl(file, output = tmp_file)
+  source(file = tmp_file, ...)
+}
+
+```
+
+```{r}
+# cargar funciones de 0_funciones----------------------------------------------
+if (!exists("se_ha_cargado_f")) {
+suppressMessages(source_rmd("0_b_funciones.rmd"))
+}
+
+```
+
+```{r, echo=FALSE, eval=TRUE, message=FALSE, warning=FALSE}
+# cargar datos-----------------------------------------------------------------
+# load(file.path("Datos", "Brutos", "ttcvc3d_220628.Rdata"))
+pobana_2 <- readRDS(file = file.path("Resultados", "pobana_2.RDS"))
+test220613_cleaned <- readRDS(file = file.path("Datos", "Procesados", 
+                                             "test220613_cleaned.RDS"))
+
+```
+
+# Temporal evolution of booster and infections
+
+***
+
+Plot temporal evolution of COVID-19 first infections and booster administration in the same plot.
+
+<br>
+
+```{r}
+# set dates in english
+Sys.setlocale(category = "LC_ALL", locale = "english")
+
+# count daily boosters
+pobana_2 %>% count(fvc3) %>% 
+  ggplot() +
+  geom_line(aes(x = fvc3, y = n)) +
+  ylim(c(0, 5000)) +
+  scale_x_date(breaks = "month") +
+  theme(axis.text.x = element_text(angle = 90, size = 8))
+# too messy
+
+# count weekly boosters
+pobana_2_booster <- pobana_2 %>% 
+  mutate(mes_booster = ceiling_date(fvc3, unit = "week")) %>% 
+  count(mes_booster, name = "n_booster") %>% 
+  arrange(mes_booster)
+
+# count weekly first covid-19 infections
+pobana_2 %>%     
+  mutate(mes_covid = ceiling_date(fcv1, unit = "week")) %>% 
+  filter(mes_covid >= ymd("2021-11-01")) %>% 
+  count(mes_covid, name = "n_covid") %>% 
+  arrange(mes_covid)  %>% 
+  # join with the booster counts
+  left_join(pobana_2_booster, by = c(mes_covid = "mes_booster")) %>%
+  # long format
+  pivot_longer(n_covid:n_booster) %>% 
+  # do the plot
+  ggplot() +
+  geom_point(aes(x = mes_covid, y = value, colour = name)) +
+  geom_line(aes(x = mes_covid, y = value, colour = name)) +
+  scale_color_manual(name = "",
+                     labels = c("Booster doses administered", 
+                                "First COVID-19 infections"),
+                       values = c("n_booster" = "blue",
+                                 "n_covid" = "red")) +
+  scale_x_date(name = "Date", date_breaks = "month", date_labels = "%b, %y") +
+
+  scale_y_continuous(name = "Weekly counts",
+                     breaks = scales::breaks_pretty(7),
+                     labels = scales::label_number_auto()) +
+  # omicron period annotation
+  geom_vline(xintercept = ymd("2021-12-25"), 
+                          linetype = "dashed", 
+                          size = 0.7,
+                          colour = "dimgrey") +
+  geom_segment(y = 31500, yend = 30000,
+                   x = ymd("2021-12-17"), xend = ymd("2021-12-22"), size = 0.6,
+      arrow = arrow(length = unit(0.1, "inches"))) +
+  geom_text(x = ymd("2021-11-05"), y = 31400, hjust = 0,
+                label = " December 25, 2021.\n Omicron becames \n the dominant strain \n in Navarre, Spain",
+                size = 3) +
+  # modification in surveillance system
+  geom_vline(xintercept = ymd("2022-03-30"), 
+                          linetype = "dashed", 
+                          size = 0.7,
+                          colour = "dimgrey") +
+  geom_segment(y = 28000, yend = 29500,
+                   x = ymd("2022-04-14"), xend = ymd("2022-04-02"), size = 0.6,
+      arrow = arrow(length = unit(0.1, "inches"))) +
+  geom_text(x = ymd("2022-04-15"), y = 28000, hjust = 0,
+                label = " March 30, 2022. \n Modification in the COVID-19 \n spanish surveillance system. \n Only infections in people older \n than 60 years are recorded ",
+                size = 3) +
+  # theme
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 0),
+        axis.ticks.x = element_blank(),
+        axis.line = element_line(),
+        panel.grid = element_blank(),
+        legend.position = "bottom")
+
+```
+
+<br>
+
+```{r}
+# save the plot----------------------------------------------------------------
+
+```
+
+
