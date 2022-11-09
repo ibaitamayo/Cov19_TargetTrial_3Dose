@@ -138,7 +138,7 @@ pobana_2 %>%
                    x = ymd("2022-04-13"), xend = ymd("2022-03-31"), size = 0.6,
       arrow = arrow(length = unit(0.1, "inches"))) +
   geom_text(x = ymd("2022-04-15"), y = 28000, hjust = 0,
-                label = " March 28, 2022. \n Modification in the COVID-19 \n spanish surveillance system. \n A microbiological diagnosis is \n required only for people older \n than 60 years, or hospitalised, \n or vulnerable person of any age.",
+                label = " March 28, 2022. \n Modification in the COVID-19 \n spanish surveillance system. \n A microbiological diagnosis is \n required only for people older \n than 60 years, or hospitalised, \n or vulnerable of any age.",
                 size = 3) +
   # theme
   theme_minimal() +
