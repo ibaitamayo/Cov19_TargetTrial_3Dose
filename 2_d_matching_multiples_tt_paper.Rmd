@@ -118,7 +118,7 @@ Se utilizan las variables de matching y criterios de exclusión del **análisis 
 paper_fcv1 <- f_matching_tt_mult(
                 data = pobana_2,
                 f_ini = "2021-12-17",
-                f_fin = "2022-03-26",
+                f_fin = "2022-03-20",
                 crit_exc = lista_exclusion_dep,
                 exposure = "fvc3",
                 out = "fcv1", 
@@ -136,9 +136,44 @@ paper_fcv1 <- f_matching_tt_mult(
                 seed = 3,
                 fecha_fin_estudio = ymd("2022-03-27"))
 
+paper_fcv1_comor <- f_matching_tt_mult(
+                data = pobana_2,
+                f_ini = "2021-12-17",
+                f_fin = "2022-03-20",
+                crit_exc = lista_exclusion_dep,
+                exposure = "fvc3",
+                out = "fcv1", 
+                vector_match = c(variables_matching[c(1, 3:8)], "diab", "corp", "irc", "epoc", "hlip",
+                                 "hta", "ictu", "obes"), 
+                base_test = test220613_cleaned,
+                temporal_var = "fpauta_90",
+                temporal_var_unit = "weeks",
+                birth_date = "fnac",
+                age_first = 20,
+                age_last = 90,
+                age_by = 5,
+                censoring = "fdef",
+                follow_up = 91,
+                verbose = FALSE,
+                seed = 3,
+                fecha_fin_estudio = ymd("2022-03-27"))
+
+
 # guardar resultados-----------------------------------------------------------
 saveRDS(paper_fcv1, file.path("Resultados",
         "paper_fcv1.RDS"))
+
+saveRDS(paper_fcv1_comor, file.path("Resultados",
+        "paper_fcv1_comor.RDS"))
+
+```
+
+
+```{r}
+f_analisis(paper_fcv1, tiempo_efecto = 7)
+f_analisis(paper_fcv1_comor, tiempo_efecto = 7)
+
+
 
 ```
 

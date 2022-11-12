@@ -87,6 +87,31 @@ paper_fih1_short_term <- readRDS(file.path("Resultados",
 
 ```
 
+# check results
+
+```{r}
+# check matchs of days
+paper_fcv1$tt_tibble |> count(target_trial_number) |> ggplot() +
+  ggplot2::geom_col(aes(x = target_trial_number, y = n))
+
+paper_fcv1_domi$tt_tibble |> count(target_trial_number) |> ggplot() +
+  ggplot2::geom_col(aes(x = target_trial_number, y = n))
+
+paper_fih1$tt_tibble |> count(target_trial_number) |> ggplot() +
+  ggplot2::geom_col(aes(x = target_trial_number, y = n))
+
+paper_fcv1$tt_tibble |> count(target_trial_number) |> ggplot() +
+  ggplot2::geom_col(aes(x = target_trial_number, y = n))
+
+paper_fcv1$tt_tibble |> count(target_trial_number) |> ggplot() +
+  ggplot2::geom_col(aes(x = target_trial_number, y = n))
+
+paper_fcv1$tt_tibble |> count(target_trial_number) |> ggplot() +
+  ggplot2::geom_col(aes(x = target_trial_number, y = n))
+
+```
+
+
 
 # Análisis RR
 
