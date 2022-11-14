@@ -377,12 +377,6 @@ pob13 <- pob12 %>%
 
 ```
 
-# Arreglo outcomes
-
-Se excluyen los ingresos donde han pasado más de 5 días desde la fecha del ingreso hasta fcv1.
-
-Se actualiza la fcv1 con la fih1 correspondiente. Las infecciones nosocomiales se tendrán en cuenta como infección, pero no como ingreso.
-
 ```{r pobana_0}
 # guardar base de pobana antes de hacer las exclusiones------------------------
 pobana_0 <- pob13

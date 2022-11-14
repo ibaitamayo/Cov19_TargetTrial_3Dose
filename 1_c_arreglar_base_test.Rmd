@@ -109,7 +109,7 @@ test1 <- test0 %>%
   select( -c(tres)) %>% 
   mutate(freg = as.Date(tfreg)) %>% 
   mutate(fval = as.Date(tfval)) %>% 
-  # seleccionar fecha de regsitro como fecha del test
+  # seleccionar fecha de registro como fecha del test
   mutate(ftes = freg) %>% 
   select(-tfreg, -tfval) %>% 
   # seleccionar como mucho un test por persona y día

@@ -109,6 +109,16 @@ variables_matching = c(
 
 # Main analyses
 
+```{r}
+# parameters
+start_matching_date <- "2021-12-19"
+end_matching_infections_date <- "2022-03-20"
+end_matching_severe_date <- "2022-06-06"
+end_of_infections_records <- ymd("2022-03-27")
+end_of_study_records <-  ymd("2022-06-13")
+
+```
+
 ## fcv1 matching por variables
 
 Se utilizan las variables de matching y criterios de exclusión del **análisis principal** como en el artículo.
@@ -117,8 +127,8 @@ Se utilizan las variables de matching y criterios de exclusión del **análisis 
 # hacer ajuste como en el artículo
 paper_fcv1 <- f_matching_tt_mult(
                 data = pobana_2,
-                f_ini = "2021-12-17",
-                f_fin = "2022-03-20",
+                f_ini = start_matching_date,
+                f_fin = end_matching_infections_date,
                 crit_exc = lista_exclusion_dep,
                 exposure = "fvc3",
                 out = "fcv1", 
@@ -134,46 +144,39 @@ paper_fcv1 <- f_matching_tt_mult(
                 follow_up = 91,
                 verbose = FALSE,
                 seed = 3,
-                fecha_fin_estudio = ymd("2022-03-27"))
-
-paper_fcv1_comor <- f_matching_tt_mult(
-                data = pobana_2,
-                f_ini = "2021-12-17",
-                f_fin = "2022-03-20",
-                crit_exc = lista_exclusion_dep,
-                exposure = "fvc3",
-                out = "fcv1", 
-                vector_match = c(variables_matching[c(1, 3:8)], "diab", "corp", "irc", "epoc", "hlip",
-                                 "hta", "ictu", "obes"), 
-                base_test = test220613_cleaned,
-                temporal_var = "fpauta_90",
-                temporal_var_unit = "weeks",
-                birth_date = "fnac",
-                age_first = 20,
-                age_last = 90,
-                age_by = 5,
-                censoring = "fdef",
-                follow_up = 91,
-                verbose = FALSE,
-                seed = 3,
-                fecha_fin_estudio = ymd("2022-03-27"))
-
+                fecha_fin_estudio = end_of_infections_records)
 
 # guardar resultados-----------------------------------------------------------
 saveRDS(paper_fcv1, file.path("Resultados",
         "paper_fcv1.RDS"))
 
-saveRDS(paper_fcv1_comor, file.path("Resultados",
-        "paper_fcv1_comor.RDS"))
+# paper_fcv1_comor <- f_matching_tt_mult(
+#                 data = pobana_2,
+#                 f_ini = start_matching_date,
+#                 f_fin = end_matching_infections_date,
+#                 crit_exc = lista_exclusion_dep,
+#                 exposure = "fvc3",
+#                 out = "fcv1", 
+#                 vector_match = c(variables_matching[c(1, 3:8)], "diab", "corp", "irc", "epoc", "hlip",
+#                                  "hta", "ictu", "obes"), 
+#                 base_test = test220613_cleaned,
+#                 temporal_var = "fpauta_90",
+#                 temporal_var_unit = "weeks",
+#                 birth_date = "fnac",
+#                 age_first = 20,
+#                 age_last = 90,
+#                 age_by = 5,
+#                 censoring = "fdef",
+#                 follow_up = 91,
+#                 verbose = FALSE,
+#                 seed = 3,
+#                 fecha_fin_estudio = end_of_infections_records)
 
-```
 
 
-```{r}
-f_analisis(paper_fcv1, tiempo_efecto = 7)
-f_analisis(paper_fcv1_comor, tiempo_efecto = 7)
 
-
+# saveRDS(paper_fcv1_comor, file.path("Resultados",
+#         "paper_fcv1_comor.RDS"))
 
 ```
 
@@ -183,8 +186,8 @@ f_analisis(paper_fcv1_comor, tiempo_efecto = 7)
 # hacer ajuste con el domicilio como matching----------------------------------
 paper_fcv1_domi <- f_matching_tt_mult(
                 data = pobana_2 %>% filter(ucn8 >= 2) ,
-                f_ini = "2021-12-17",
-                f_fin = "2022-03-26",
+                f_ini = start_matching_date,
+                f_fin = end_matching_infections_date,
                 crit_exc = lista_exclusion_dep,
                 exposure = "fvc3",
                 out = "fcv1", 
@@ -203,7 +206,7 @@ paper_fcv1_domi <- f_matching_tt_mult(
                 follow_up = 91,
                 verbose = FALSE,
                 seed = 21,
-                fecha_fin_estudio = ymd("2022-03-27"))
+                fecha_fin_estudio = end_of_infections_records)
 
 # guardar resultados-----------------------------------------------------------
 saveRDS(paper_fcv1_domi, file.path("Resultados",
@@ -217,8 +220,8 @@ saveRDS(paper_fcv1_domi, file.path("Resultados",
 # fih1
 paper_fih1 <- f_matching_tt_mult(
                 data = pobana_2,
-                f_ini = "2021-12-17",
-                f_fin = "2022-06-12",
+                f_ini = start_matching_date,
+                f_fin = end_matching_severe_date,
                 crit_exc = lista_exclusion_dep,
                 exposure = "fvc3",
                 out = "fih1", 
@@ -237,11 +240,45 @@ paper_fih1 <- f_matching_tt_mult(
                 follow_up = 91,
                 verbose = FALSE,
                 seed = 21,
-                fecha_fin_estudio = ymd("2022-06-13"))
+                fecha_fin_estudio = end_of_study_records)
 
 # guardar resultados-----------------------------------------------------------
 saveRDS(paper_fih1, file.path("Resultados",
         "paper_fih1.RDS"))
+
+```
+
+## fdef_covid con matching por edad, sexo y comorbilidades
+
+```{r}
+# fdef
+paper_fdef <- f_matching_tt_mult(
+                data = pobana_2,
+                f_ini = start_matching_date,
+                f_fin = end_matching_severe_date,
+                crit_exc = lista_exclusion_dep,
+                exposure = "fvc3",
+                out = "fdef_covid", 
+                vector_match = c("gen", "diab", "corp", "irc", "epoc", "hlip",
+                                 "hta", "ictu", "obes"),
+                # base_test = test220613_cleaned,
+                # temporal_var = "fpauta_90",
+                calcular_temp_var = "fpauta_90",
+                temporal_var_unit = "weeks",
+                calcular_test = test220613_cleaned,
+                birth_date = "fnac",
+                age_first = 20,
+                age_last = 90,
+                age_by = 5,
+                censoring = "fdef",
+                follow_up = 91,
+                verbose = FALSE,
+                seed = 21,
+                fecha_fin_estudio = end_of_study_records)
+
+# guardar resultados-----------------------------------------------------------
+saveRDS(paper_fdef, file.path("Resultados",
+        "paper_fdef.RDS"))
 
 ```
 
@@ -255,8 +292,8 @@ Se utilizan las variables de matching y criterios de exclusión del **análisis 
 # hacer ajuste como en el artículo
 paper_fcv1_short_term <- f_matching_tt_mult(
                 data = pobana_2,
-                f_ini = "2021-12-17",
-                f_fin = "2022-03-26",
+                f_ini = start_matching_date,
+                f_fin = end_matching_infections_date,
                 crit_exc = lista_exclusion_dep,
                 exposure = "fvc3",
                 out = "fcv1", 
@@ -272,7 +309,7 @@ paper_fcv1_short_term <- f_matching_tt_mult(
                 follow_up = 35,
                 verbose = FALSE,
                 seed = 21,
-                fecha_fin_estudio = ymd("2022-03-27"))
+                fecha_fin_estudio = end_of_infections_records)
 
 # guardar resultados-----------------------------------------------------------
 saveRDS(paper_fcv1_short_term, file.path("Resultados",
@@ -286,8 +323,8 @@ saveRDS(paper_fcv1_short_term, file.path("Resultados",
 # hacer ajuste con el domicilio como matching----------------------------------
 paper_fcv1_domi_short_term <- f_matching_tt_mult(
                 data = pobana_2 %>% filter(ucn8 >= 2) ,
-                f_ini = "2021-12-17",
-                f_fin = "2022-03-26",
+                f_ini = start_matching_date,
+                f_fin = end_matching_infections_date,
                 crit_exc = lista_exclusion_dep,
                 exposure = "fvc3",
                 out = "fcv1", 
@@ -306,7 +343,7 @@ paper_fcv1_domi_short_term <- f_matching_tt_mult(
                 follow_up = 35,
                 verbose = FALSE,
                 seed = 21,
-                fecha_fin_estudio = ymd("2022-03-27"))
+                fecha_fin_estudio = end_of_infections_records)
 
 # guardar resultados-----------------------------------------------------------
 saveRDS(paper_fcv1_domi_short_term, file.path("Resultados",
@@ -320,8 +357,8 @@ saveRDS(paper_fcv1_domi_short_term, file.path("Resultados",
 # fih1
 paper_fih1_short_term <- f_matching_tt_mult(
                 data = pobana_2,
-                f_ini = "2021-12-17",
-                f_fin = "2022-06-12",
+                f_ini = start_matching_date,
+                f_fin = end_matching_severe_date,
                 crit_exc = lista_exclusion_dep,
                 exposure = "fvc3",
                 out = "fih1", 
@@ -340,7 +377,7 @@ paper_fih1_short_term <- f_matching_tt_mult(
                 follow_up = 35,
                 verbose = FALSE,
                 seed = 21,
-                fecha_fin_estudio = ymd("2022-06-13"))
+                fecha_fin_estudio = end_of_study_records)
 
 # guardar resultados-----------------------------------------------------------
 saveRDS(paper_fih1_short_term, file.path("Resultados",
@@ -348,4 +385,75 @@ saveRDS(paper_fih1_short_term, file.path("Resultados",
 
 ```
 
+## fdef_covid con matching por edad, sexo y comorbilidades
 
+```{r}
+# fih1
+paper_fdef_short_term <- f_matching_tt_mult(
+                data = pobana_2,
+                f_ini = start_matching_date,
+                f_fin = end_matching_severe_date,
+                crit_exc = lista_exclusion_dep,
+                exposure = "fvc3",
+                out = "fdef_covid", 
+                vector_match = c("gen", "diab", "corp", "irc", "epoc", "hlip",
+                                 "hta", "ictu", "obes"),
+                # base_test = test220613_cleaned,
+                # temporal_var = "fpauta_90",
+                calcular_temp_var = "fpauta_90",
+                temporal_var_unit = "weeks",
+                calcular_test = test220613_cleaned,
+                birth_date = "fnac",
+                age_first = 20,
+                age_last = 90,
+                age_by = 5,
+                censoring = "fdef",
+                follow_up = 35,
+                verbose = FALSE,
+                seed = 21,
+                fecha_fin_estudio = end_of_study_records)
+
+# guardar resultados-----------------------------------------------------------
+saveRDS(paper_fdef_short_term, file.path("Resultados",
+        "paper_fdef_short_term.RDS"))
+
+```
+
+# check results
+
+```{r}
+# cargar resultados-----------------------------------------------------------
+paper_fcv1 <- readRDS(file.path("Resultados",
+        "paper_fcv1.RDS"))
+
+paper_fcv1_short_term <- readRDS(file.path("Resultados",
+        "paper_fcv1_short_term.RDS"))
+
+paper_fcv1_domi <- readRDS(file.path("Resultados",
+        "paper_fcv1_domi.RDS"))
+
+paper_fcv1_domi_short_term <- readRDS(file.path("Resultados",
+        "paper_fcv1_domi_short_term.RDS"))
+
+paper_fih1 <- readRDS(file.path("Resultados",
+        "paper_fih1.RDS"))
+
+paper_fih1_short_term <- readRDS(file.path("Resultados",
+        "paper_fih1_short_term.RDS"))
+
+paper_fdef <- readRDS(file.path("Resultados",
+        "paper_fdef.RDS"))
+
+paper_def_short_term <- readRDS(file.path("Resultados",
+        "paper_fdef_short_term.RDS"))
+
+f_analisis(paper_fcv1, tiempo_efecto = 7)
+f_analisis(paper_fcv1_short_term, tiempo_efecto = 7)
+f_analisis(paper_fcv1_domi, tiempo_efecto = 7)
+f_analisis(paper_fcv1_domi_short_term, tiempo_efecto = 7)
+f_analisis(paper_fih1, tiempo_efecto = 7)
+f_analisis(paper_fih1_short_term, tiempo_efecto = 7)
+f_analisis(paper_fdef, tiempo_efecto = 7)
+f_analisis(paper_fdef_short_term, tiempo_efecto = 7)
+
+```

@@ -85,6 +85,12 @@ paper_fih1 <- readRDS(file.path("Resultados",
 paper_fih1_short_term <- readRDS(file.path("Resultados",
         "paper_fih1_short_term.RDS"))
 
+# modelo 4. defunción por todas las causas 30 días después de PDIA
+paper_fdef <- readRDS(file.path("Resultados",
+        "paper_fdef.RDS"))
+paper_fdef_short_term <- readRDS(file.path("Resultados",
+        "paper_fdef_short_term.RDS"))
+
 ```
 
 # check results
@@ -111,8 +117,6 @@ paper_fcv1$tt_tibble |> count(target_trial_number) |> ggplot() +
 
 ```
 
-
-
 # Análisis RR
 
 ```{r}
@@ -128,18 +132,26 @@ rr_m2 <- f_analisis_lancet_rr(paper_fcv1_domi,
                      tiempo_efecto = 7)
 rr_m2_st <- f_analisis_lancet_rr(paper_fcv1_domi_short_term,
                      tiempo_efecto = 7)
-# modelo 3. hospitalización por edad y sexo
+# modelo 3. hospitalización por edad, sexo y comor
 rr_m3 <- f_analisis_lancet_rr(paper_fih1,
                      tiempo_efecto = 7)
 rr_m3_st <- f_analisis_lancet_rr(paper_fih1_short_term,
                      tiempo_efecto = 7)
+# modelo 4. defunciones por edad, sexo y comor
+rr_m4 <- f_analisis_lancet_rr(paper_fdef,
+                     tiempo_efecto = 7)
+rr_m4_st <- f_analisis_lancet_rr(paper_fdef_short_term,
+                     tiempo_efecto = 7)
+
 # guardar resultados-----------------------------------------------------------
 saveRDS(rr_m1, file.path("Resultados", "rr_m1.RDS"))
 saveRDS(rr_m2, file.path("Resultados", "rr_m2.RDS"))
 saveRDS(rr_m3, file.path("Resultados", "rr_m3.RDS"))
+saveRDS(rr_m4, file.path("Resultados", "rr_m4.RDS"))
 saveRDS(rr_m1_st, file.path("Resultados", "rr_m1_st.RDS"))
 saveRDS(rr_m2_st, file.path("Resultados", "rr_m2_st.RDS"))
 saveRDS(rr_m3_st, file.path("Resultados", "rr_m3_st.RDS"))
+saveRDS(rr_m4_st, file.path("Resultados", "rr_m4_st.RDS"))
 
 ```
 
@@ -180,7 +192,7 @@ gg1 <- ggsurvplot(fit, data = base_analisis_m1,
            legend = "top",
            legend.labs = c("No booster", "Booster"),
            legend.title = " ",
-           title = "A) Infections from 2022-01-04 to 2022-03-31. Matching each boostering day (from 2022-01-03 to 2022-03-30) by age, sex, previous negative test,
+           title = "A) Infections from 2021-12-26 to 2022-03-27. Matching each boostering day (from 2022-12-19 to 2022-03-20) by age, sex, previous negative test,
            primary vaccine type and date, health basic zone, migrant status, flu vaccinated in 2020 and in 2021, and household members",
            font.title = 16,
            conf.int = FALSE) 
@@ -258,7 +270,7 @@ gg2 <- ggsurvplot(fit, data = base_analisis_m2,
            legend = "top",
            legend.labs = c("No booster", "Booster"),
            legend.title = " ",
-           title = "B) Infections from 2022-01-04 to 2022-03-31. Matching each boostering day (from 2022-01-03 to 2022-03-30) by home address",
+           title = "B) Infections from 2022-12-26 to 2022-03-27. Matching each boostering day (from 2021-12-19 to 2022-03-20) by home address",
            font.title = 16,
            conf.int = FALSE) 
   
@@ -335,7 +347,7 @@ gg3 <- ggsurvplot(fit, data = base_analisis_m3,
            legend = "top",
            legend.labs = c("No booster", "Booster"),
            legend.title = " ",
-           title = "C) Hospitalisations from 2022-01-04 to 2022-06-13. Matching each boostering day (from 2022-01-03 to 2022-06-12) by age, sex, and comorbidities",
+           title = "C) Hospitalisations from 2022-12-26 to 2022-06-13. Matching each boostering day (from 2021-12-19 to 2022-06-06) by age, sex, and comorbidities",
            font.title = 16,
            conf.int = FALSE) 
   
@@ -377,6 +389,82 @@ print(gg3)
 
 ```
 
+## Figura 1d
+
+```{r, fig.height = 4, fig.width = 13}
+# Hacer Figura para el modelo 1------------------------------------------------
+base_analisis_m4 <- paper_fdef$tt_tibble %>%
+    mutate(survtime = date_end - date_start)
+
+max_survtime_m4 <- base_analisis_m4 %>% 
+    summarise(max_survtime = as.numeric(max(survtime))) %>% pull()
+  
+print(base_analisis_m4 %>% 
+             tabyl(exposicion, caso) %>%
+             adorn_totals(where = c('row', 'col')) %>%
+             adorn_title())
+
+fit <- survfit(Surv(survtime, caso) ~ exposicion, data = base_analisis_m4) 
+  
+gg4 <- ggsurvplot(fit, data = base_analisis_m4,
+           fun = "event",
+           surv.plot.height	= 0.8,
+           risk.table.height	= 0.2,
+           palette = "lancet",
+           xlab = "Time since start of follow-up (days)",
+           break.x.by = 7,
+           break.y.by = 0.0002,
+           font.x = 2,
+           ylab = "Cumulative Incidence",
+           xlim = c(0, 91),
+           ylim = c(0, 0.002),
+           risk.table = "nrisk_cumevents",
+           fontsize = 3.8,
+           order.legend = TRUE,
+           legend = "top",
+           legend.labs = c("No booster", "Booster"),
+           legend.title = " ",
+           title = "C) Deaths from 2021-12-26 to 2022-06-13. Matching each boostering day (from 2021-12-19 to 2022-06-06) by age, sex, and comorbidities",
+           font.title = 16,
+           conf.int = FALSE) 
+  
+gg4$plot <- gg4$plot + 
+      geom_vline(xintercept = 7, 
+                          linetype = "dashed", 
+                          size = 0.7,
+                          colour = "dimgrey") +
+      geom_vline(xintercept = 35, 
+                          linetype = "dashed", 
+                          size = 0.7,
+                          colour = "dimgrey") +
+      # short term effectiveness
+      geom_segment(y = 0.0012, yend = 0.0012,
+                   x = 7, xend = 35, size = 1,
+      arrow = arrow(length = unit(0.1, "inches"))) +
+      geom_text(x = 21, y = 0.0014, 
+                label = glue("5-week effectiveness: {rr_m4_st$rr_eff}"), 
+                size = 4.5) +
+      # mid term effectiveness
+      geom_segment(y = 0.0018, yend = 0.0018,
+                   x = 7, xend = 91, size = 1,
+      arrow = arrow(length = unit(0.1, "inches"))) +
+      geom_text(x = 70, y = 0.0020, 
+                label = glue("13-week effectiveness: {rr_m4$rr_eff}"), 
+                size = 4.5) +
+      theme(axis.title.x = element_text(size = 14),
+            plot.title = element_text(size = 14, face = "bold"))
+  
+  
+gg4$table <- gg4$table + 
+      theme(axis.line = element_blank(),
+            axis.title.x = element_blank(),
+            axis.ticks = element_blank(),
+            axis.text.x = element_blank(),
+            plot.title = element_text(size = 14, face = "bold")) 
+
+print(gg4)
+
+```
 
 ## Figura 1 compuesta
 

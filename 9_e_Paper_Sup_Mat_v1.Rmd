@@ -1,0 +1,187 @@
+---
+title: "Supplementary Material. Correspondence: Booster Long-term effectiveness against infection and severe cases on Omicron-dominant period in Navarra"
+date: "`r format(Sys.Date())`"
+bookdown::html_document2:
+    keep_md: false 
+    theme: cerulean
+    highlight: breezedark
+    css: style.css
+    anchor_sections: false
+    toc: no
+bibliography: References.bib
+csl: tl.csl
+editor_options: 
+  chunk_output_type: inline
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+
+```
+
+```{r echo=FALSE, message=FALSE, include=FALSE, warning=FALSE}
+# source("0_a_librerias.R")
+# ya se cargan cuando se carguen las funciones
+
+```
+
+```{r echo=FALSE, message=FALSE, include=FALSE, warning=FALSE}
+# función para cargar un .Rmd como si se hiciese source de un .r---------------
+source_rmd = function(file, ...) {
+  tmp_file = tempfile(fileext = ".R")
+  on.exit(unlink(tmp_file), add = TRUE)
+  knitr::purl(file, output = tmp_file)
+  source(file = tmp_file, ...)
+}
+
+```
+
+```{r echo=FALSE, message=FALSE, include=FALSE, warning=FALSE}
+# cargar funciones de 0_funciones----------------------------------------------
+if (!exists("se_ha_cargado_f")) {
+suppressMessages(source_rmd("0_b_funciones.rmd"))
+}
+
+```
+
+```{r}
+# cargar datos-----------------------------------------------------------------
+
+# modelo 1. infección por características
+matching_fcv1_longer_34 <- readRDS(file.path("Resultados",
+        "matching_fcv1_longer_34.RDS"))
+matching_fcv1_longer_70 <- readRDS(file.path("Resultados",
+        "matching_fcv1_longer_70.RDS"))
+
+# modelo 1. infección por domicilio
+matching_fcv1_domi_34 <- readRDS(file.path("Resultados",
+        "matching_fcv1_domi_34.RDS"))
+matching_fcv1_domi_70 <- readRDS(file.path("Resultados",
+        "matching_fcv1_domi_70.RDS"))
+
+# modelo 3. hospitalización por edad y sexo
+matching_fih1_longer_34_bis <- readRDS(file.path("Resultados",
+        "matching_fih1_longer_34_bis.RDS"))
+matching_fih1_longer_70_bis <- readRDS(file.path("Resultados",
+        "matching_fih1_longer_70_bis.RDS"))
+
+# cargar resultados------------------------------------------------------------
+rr_m1_34 <- readRDS(file.path("Resultados", "rr_m1_34.RDS"))
+rr_m1_70 <- readRDS(file.path("Resultados", "rr_m1_70.RDS"))
+rr_m2_34 <- readRDS(file.path("Resultados", "rr_m2_34.RDS"))
+rr_m2_70 <- readRDS(file.path("Resultados", "rr_m2_70.RDS"))
+rr_m4_34 <- readRDS(file.path("Resultados", "rr_m4_34.RDS"))
+rr_m4_70 <- readRDS(file.path("Resultados", "rr_m4_70.RDS"))
+
+```
+
+***
+
+***Francisco Sanchez-Saez <sup>1,2</sup>, Ibai Tamayo <sup>2,3</sup>, Ana Ariztegui-Echenique <sup>4</sup>, Javier Gorricho <sup>5</sup>, Julian Librero <sup>2,3</sup>.***
+
+*<sup>1</sup> Health Services Research Unit, Foundation for the Promotion of Health and Biomedical Research of the Valencia Community (FISABIO), Valencia, Spain.*
+
+*<sup>2</sup> Network for Research on Chronicity, Primary Care and Health Promotion (RICAPPS).*
+
+*<sup>3</sup> Unidad de Metodología. Navarrabiomed, Hospital Universitario de Navarra (HUN), Universidad Pública de Navarra (UPNA), IdiSNA, Pamplona, Spain.*
+
+*<sup>4</sup> Subdirección de Cuidados, Atención Domiciliaria, Sociosanitaria y Acciones Comunitarias, Servicio Navarro de Salud-Osasunbidea, Spain.*
+
+*<sup>5</sup> Servicios de Evaluación y Difusión de Resultados, Servicio Navarro de Salud-Osasunbidea, Spain.*
+
+***
+
+In this population cohort study, we linked data from three population registries in Navarra (Vaccination Registry, Laboratory Results Registry, and BARDENA-Population registry) to select community-dwelling individuals aged 40 years or older Who completed their primary vaccine schedule at least 3 months before the start of follow-up, and had not tested positive for SARS-CoV-2 since the start of the pandemic, excluding  educational workers, health-care workers, and nursing home residents [@Bardena2022]. We conducted three different target trial emulations.
+
+a) Target trial for ascertaining booster effectiveness against infections from 2022-01-04 to 2022-03-31. Matching each boostering day (from 2022-01-03 to 2022-03-30) by age, sex, previous negative test, primary vaccine type and date, health basic zone, migrant status, flu vaccinated in 2020 and in 2021, and household members.
+
+b) Target trial for ascertaining booster effectiveness against infections from 2022-01-04 to 2022-03-31. Matching each boostering day (from 2022-01-03 to 2022-03-30) by home address.
+
+c) Target trial for ascertaining booster effectiveness against hospitalisations due to COVID-19 from 2022-01-04 to 2022-06-13. Matching each boostering day (from 2022-01-03 to 2022-06-12) by age, sex, and comorbidities (diabetes mellitus, coronary artery disease, chronic kidney failure, chronic obstructive pulmonary disease, hyperdyslipidemia, hypertension, stroke, and obesity).
+
+Individuals characteristics in each of the three target trials are presented in Tables S1, S2, and S3.
+
+<br>
+
+```{r tabla1a}
+# ejecutar la función para hacer la tabla--------------------------------------
+table_1_m1 <- hacer_tabla_1(tt_tibble = matching_fcv1_longer_70$tt_tibble,
+                            title = "Table S1. Characteristics of target trial a)",
+                            desc = "tabla1a",
+                            path = getwd())
+
+```
+
+
+```{r }
+table_1_m1 
+
+```
+
+<br>
+
+```{r tabla1b}
+table_1_m2 <- hacer_tabla_1(tt_tibble = matching_fcv1_domi_70$tt_tibble,
+                            adaptada = "Yes",
+                            title = "Table S2. Characteristics of target trial b)",
+                            desc = "tabla1b",
+                            path = getwd())
+```
+
+
+```{r}
+table_1_m2
+
+```
+
+<br>
+
+```{r tabla1c}
+table_1_m4 <- hacer_tabla_1(tt_tibble = matching_fih1_longer_70_bis$tt_tibble,
+                            title = "Table S3. Characteristics of target trial c)",
+                            desc = "tabla1c",
+                            path = getwd())
+
+```
+
+
+```{r}
+table_1_m4
+
+```
+
+<br>
+
+```{r}
+# tabla1a <- readRDS(file.path("Resultados", "RDS", "Tabla1a.RDS"))
+# tabla1b <- readRDS(file.path("Resultados", "RDS", "Tabla1b.RDS"))
+# tabla1c <- readRDS(file.path("Resultados", "RDS", "Tabla1c.RDS"))
+
+```
+
+
+```{r}
+# tabla1a %>% 
+# rtf_body() %>%                 # Step 1 Add attributes
+#   rtf_encode() %>%               # Step 2 Convert attributes to RTF encode
+#   write_rtf(file = file.path("Resultados", "Tablas", "tabla_1a_2022_09_08.rtf"))
+# 
+# tabla1b %>% 
+# rtf_body() %>%                 # Step 1 Add attributes
+#   rtf_encode() %>%               # Step 2 Convert attributes to RTF encode
+#   write_rtf(file = file.path("Resultados", "Tablas", "tabla_1b_2022_09_08.rtf"))
+# 
+# 
+# tabla1c %>% 
+#   rtf_body() %>%                 # Step 1 Add attributes
+#   rtf_encode() %>%               # Step 2 Convert attributes to RTF encode
+#   write_rtf(file = file.path("Resultados", "Tablas", "tabla_1c_2022_09_08.rtf"))
+
+```
+
+# References
+
+***
+
+<div class="tocify-extend-page" data-unique="tocify-extend-page" style="height: 0;"></div>

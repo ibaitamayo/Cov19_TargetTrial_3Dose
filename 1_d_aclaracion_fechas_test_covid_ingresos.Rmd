@@ -180,6 +180,9 @@ test220613_cleaned <- readRDS(file = file.path("Datos", "Procesados",
 
 ```
 
+Se excluyen los ingresos donde han pasado más de 5 días desde la fecha del ingreso hasta fcv1.
+
+Se actualiza la fcv1 con la fih1 correspondiente. Las infecciones nosocomiales se tendrán en cuenta como infección, pero no como ingreso.
 
 ```{r}
 # fecha covid por test---------------------------------------------------------
@@ -209,11 +212,30 @@ pobana_0b %>% filter(!is.na(fih1), is.na(fcv1))
 
 ```
 
+```{r pobana_0}
+# guardar base de pobana antes de hacer las exclusiones------------------------
+saveRDS(pobana_0b, file = file.path("Datos", "Procesados", "pobana_0b.RDS"))
+
+```
+
+
+# Marcar muerte por COVID-19
+
+```{r}
+# muerte por todas las causas en los 30 días posteriores a una PDIA------------
+pobana_0c <- pobana_0b |> 
+  mutate(fdef_covid = if_else(fdef >= fcv1 & fdef <= fcv1 + days(30), fdef, NA_Date_))
+
+# check numbers
+pobana_0c |> count(is.na(fdef_covid), is.na(fih1))
+
+```
+
 
 
 ```{r pobana_0}
 # guardar base de pobana antes de hacer las exclusiones------------------------
-saveRDS(pobana_0b, file = file.path("Datos", "Procesados", "pobana_0b.RDS"))
+saveRDS(pobana_0c, file = file.path("Datos", "Procesados", "pobana_0c.RDS"))
 
 ```
 
