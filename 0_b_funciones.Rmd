@@ -263,7 +263,6 @@ f_matching_tt <- function(data,
                  T ~ n_0)) 
   }
      
-     
   if (!is.null(dias_a_excluir_test_previos)) {
     ids_a_excluir <- base_test %>% 
       filter(id %in% data$id,
@@ -468,6 +467,29 @@ f_matching_tt_mult <- function(
 
 
 ```
+
+## shorten_tibble
+
+Función para acortar el follow-up sobre los resultados con un follow-up mayor.
+
+```{r}
+# función de matching para acortar el follow-up--------------------------------
+shorten_tibble <- function(result, shorter_follow_up, outcome_var){
+  new_result <- result
+  
+  new_result$tt_tibble <- result$tt_tibble |>
+  # shrinkage of the follow-up
+  mutate(date_end2 = pmin(date_end, date_start %m+% days(shorter_follow_up))) |> 
+  # reasess the case
+  mutate(caso2 = if_else(caso == 1 & date_end2 >= {{outcome_var}}, 1, 0)) |> 
+  # update caso and date_end
+  select(-caso, -date_end) |> 
+  rename(caso = caso2, date_end = date_end2)
+  return(new_result)
+}
+
+```
+
 
 ## f_matching_tncc
 

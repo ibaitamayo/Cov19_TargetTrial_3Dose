@@ -44,9 +44,18 @@ source_rmd = function(file, ...) {
 
 ```
 
+```{r}
+# cargar funciones de 0_funciones----------------------------------------------
+if (!exists("se_ha_cargado_f")) {
+suppressMessages(source_rmd("0_b_funciones.rmd"))
+}
+
+```
+
+# Load mid term results
 
 ```{r}
-# cargar resultados------------------------------------------------------------
+# cargar resultados-----------------------------------------------------------
 paper_fcv1 <- readRDS(file.path("Resultados",
         "paper_fcv1.RDS"))
 
@@ -58,46 +67,49 @@ paper_fih_def <- readRDS(file.path("Resultados",
 
 ```
 
+# Calculare short term results
+
 ```{r}
-midterm_tibble <- paper_fih_def$tt_tibble
+paper_fcv1_short_term <- shorten_tibble(
+  result = paper_fcv1, 
+  shorter_follow_up = 35, 
+  outcome_var = fcv1)
 
-midterm_tibble |> filter(caso == 1) |> 
-  select(target_trial_number, par, id, fih_def, date_start, date_end)
+paper_fcv1_domi_short_term <- shorten_tibble(
+  result = paper_fcv1_domi, 
+  shorter_follow_up = 35, 
+  outcome_var = fcv1)
 
-midterm_tibble |> filter(target_trial_number == 2, 
-                         par %in% c(659, 242, 1150, 1406, 1860)) |> 
-  arrange(par) |> 
-  select(target_trial_number, par, id, fih_def, date_start, date_end, caso)
-
-shortterm_tibble <- midterm_tibble |>
-  # shrinkage of the follow-up
-  mutate(date_end2 = pmin(date_end, date_start %m+% days(35))) |> 
-  # reasess the case
-  mutate(caso2 = if_else(caso == 1 & date_end2 >= fih_def, 1, 0)) |> 
-  # update caso and date_end
-  select(-caso, -date_end) |> 
-  rename(caso = caso2, date_end = date_end2)
-  
-paper_fih_def_short_term2 <- paper_fih_def
-paper_fih_def_short_term2$tt_tibble <- shortterm_tibble
+paper_fih_def_short_term <- shorten_tibble(
+  result = paper_fih_def, 
+  shorter_follow_up = 35, 
+  outcome_var = fih_def)
 
 ```
 
+# Check results
+
+## Matching variables
+
+```{r}
+f_analisis(paper_fcv1, tiempo_efecto = 7)
+f_analisis(paper_fcv1_short_term, tiempo_efecto = 7)
+
+```
+
+## Home Adress
+
+```{r}
+f_analisis(paper_fcv1_domi, tiempo_efecto = 7)
+f_analisis(paper_fcv1_domi_short_term, tiempo_efecto = 7)
+
+```
+
+## Hospitalizations and deaths
 
 ```{r}
 f_analisis(paper_fih_def, tiempo_efecto = 7)
-
-```
-
-
-```{r}
 f_analisis(paper_fih_def_short_term, tiempo_efecto = 7)
-
-```
-
-
-```{r}
-f_analisis(paper_fih_def_short_term2, tiempo_efecto = 7)
 
 ```
 
