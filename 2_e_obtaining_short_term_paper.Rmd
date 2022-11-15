@@ -1,0 +1,103 @@
+---
+title: "Paper matching"
+output: 
+  html_document:
+    code_folding: show
+    highlight: espresso
+    css:
+    keep_md: yes
+    number_sections: yes
+    theme: readable
+    toc: yes  
+    toc_float:
+      collapsed: yes
+      smooth_scroll: yes
+      toc_depth: 3     
+editor_options: 
+  chunk_output_type: inline
+---
+
+
+```{r set-global-options, echo = FALSE}
+knitr::opts_chunk$set(eval = TRUE, 
+                      echo = TRUE, 
+                      cache = FALSE,
+                      include = TRUE,
+                      collapse = FALSE,
+                       dependson = NULL,
+                      engine = "R", # Chunks will always have R code, unless noted
+                      error = TRUE,
+                      fig.path="Figures/",  # Set the figure options
+                      fig.align = "center", 
+                      fig.width = 12,
+                      fig.height = 12)
+```
+
+```{r}
+# función para cargar un .Rmd como si se hiciese source de un .r---------------
+source_rmd = function(file, ...) {
+  tmp_file = tempfile(fileext = ".R")
+  on.exit(unlink(tmp_file), add = TRUE)
+  knitr::purl(file, output = tmp_file)
+  source(file = tmp_file, ...)
+}
+
+```
+
+
+```{r}
+# cargar resultados------------------------------------------------------------
+paper_fcv1 <- readRDS(file.path("Resultados",
+        "paper_fcv1.RDS"))
+
+paper_fcv1_domi <- readRDS(file.path("Resultados",
+        "paper_fcv1_domi.RDS"))
+
+paper_fih_def <- readRDS(file.path("Resultados",
+        "paper_fih_def.RDS"))
+
+```
+
+```{r}
+midterm_tibble <- paper_fih_def$tt_tibble
+
+midterm_tibble |> filter(caso == 1) |> 
+  select(target_trial_number, par, id, fih_def, date_start, date_end)
+
+midterm_tibble |> filter(target_trial_number == 2, 
+                         par %in% c(659, 242, 1150, 1406, 1860)) |> 
+  arrange(par) |> 
+  select(target_trial_number, par, id, fih_def, date_start, date_end, caso)
+
+shortterm_tibble <- midterm_tibble |>
+  # shrinkage of the follow-up
+  mutate(date_end2 = pmin(date_end, date_start %m+% days(35))) |> 
+  # reasess the case
+  mutate(caso2 = if_else(caso == 1 & date_end2 >= fih_def, 1, 0)) |> 
+  # update caso and date_end
+  select(-caso, -date_end) |> 
+  rename(caso = caso2, date_end = date_end2)
+  
+paper_fih_def_short_term2 <- paper_fih_def
+paper_fih_def_short_term2$tt_tibble <- shortterm_tibble
+
+```
+
+
+```{r}
+f_analisis(paper_fih_def, tiempo_efecto = 7)
+
+```
+
+
+```{r}
+f_analisis(paper_fih_def_short_term, tiempo_efecto = 7)
+
+```
+
+
+```{r}
+f_analisis(paper_fih_def_short_term2, tiempo_efecto = 7)
+
+```
+

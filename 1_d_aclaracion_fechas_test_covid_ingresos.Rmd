@@ -218,16 +218,21 @@ saveRDS(pobana_0b, file = file.path("Datos", "Procesados", "pobana_0b.RDS"))
 
 ```
 
-
 # Marcar muerte por COVID-19
 
 ```{r}
 # muerte por todas las causas en los 30 días posteriores a una PDIA------------
 pobana_0c <- pobana_0b |> 
-  mutate(fdef_covid = if_else(fdef >= fcv1 & fdef <= fcv1 + days(30), fdef, NA_Date_))
+  # crear fecha de muerte por covid
+  mutate(fdef_covid = if_else(fdef >= fcv1 & fdef <= fcv1 + days(30), 
+                              fdef, NA_Date_)) |> 
+  # composite fih y fded_covid
+  mutate(fih_def = pmin(fdef_covid, fih1, na.rm = TRUE))
 
 # check numbers
 pobana_0c |> count(is.na(fdef_covid), is.na(fih1))
+pobana_0c |> count(is.na(fih_def), is.na(fdef_covid), is.na(fih1))
+
 
 ```
 

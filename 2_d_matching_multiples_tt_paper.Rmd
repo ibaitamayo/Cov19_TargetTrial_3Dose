@@ -61,10 +61,6 @@ test220613_cleaned <- readRDS(file = file.path("Datos", "Procesados",
 
 ```
 
-
-
-
-
 ```{r}
 # se crean listas que dependen del proyecto------------------------------------
 lista_exclusion_dep <- list(
@@ -103,7 +99,32 @@ variables_matching = c(
   "vgp20",  # 6
   "vgp21",  # 7
   "ucn8",   # 8
-  "domi")   # 9
+  "domi",   # 9
+  "diab",   # 10
+  "corp",   # 11
+  "irc",    # 12
+  "epoc",   # 13
+  "hlip",   # 14
+  "hta",    # 15
+  "ictu",   # 16
+  "obes")   # 17
+
+pobana_2 |> count(gen)
+pobana_2 |> count(gedad)
+pobana_2 |> count(czbs)
+pobana_2 |> count(tvc1)
+pobana_2 |> count(migran)
+pobana_2 |> count(vgp20)
+pobana_2 |> count(vgp21)
+pobana_2 |> count(ucn8)
+pobana_2 |> count(diab)
+pobana_2 |> count(corp)
+pobana_2 |> count(irc)
+pobana_2 |> count(epoc)
+pobana_2 |> count(hlip)
+pobana_2 |> count(hta)
+pobana_2 |> count(ictu)
+pobana_2 |> count(obes)
 
 ```
 
@@ -116,6 +137,35 @@ end_matching_infections_date <- "2022-03-20"
 end_matching_severe_date <- "2022-06-06"
 end_of_infections_records <- ymd("2022-03-27")
 end_of_study_records <-  ymd("2022-06-13")
+matching_by <- c(
+  "gen",    # 1
+  # "gedad",  # 2
+  # "czbs",   # 3
+  "tvc1",   # 4
+  "migran", # 5
+  "vgp20",  # 6
+  "vgp21",  # 7
+  "ucn8",   # 8
+  # "domi",   # 9
+  "diab",   # 10
+  "corp",   # 11
+  "irc",    # 12
+  "epoc",   # 13
+  "hlip",   # 14
+  "hta",    # 15
+  "ictu",   # 16
+  "obes"    # 17
+  )  
+                  
+matching_by_fcv1 <- c(
+  "gen",    # 1
+  "czbs",   # 3
+  "tvc1",   # 4
+  "migran", # 5
+  "vgp20",  # 6
+  "vgp21",  # 7
+  "ucn8"
+  )
 
 ```
 
@@ -132,7 +182,7 @@ paper_fcv1 <- f_matching_tt_mult(
                 crit_exc = lista_exclusion_dep,
                 exposure = "fvc3",
                 out = "fcv1", 
-                vector_match = variables_matching[c(1, 3:8)], 
+                vector_match = matching_by_fcv1, 
                 base_test = test220613_cleaned,
                 temporal_var = "fpauta_90",
                 temporal_var_unit = "weeks",
@@ -149,34 +199,6 @@ paper_fcv1 <- f_matching_tt_mult(
 # guardar resultados-----------------------------------------------------------
 saveRDS(paper_fcv1, file.path("Resultados",
         "paper_fcv1.RDS"))
-
-# paper_fcv1_comor <- f_matching_tt_mult(
-#                 data = pobana_2,
-#                 f_ini = start_matching_date,
-#                 f_fin = end_matching_infections_date,
-#                 crit_exc = lista_exclusion_dep,
-#                 exposure = "fvc3",
-#                 out = "fcv1", 
-#                 vector_match = c(variables_matching[c(1, 3:8)], "diab", "corp", "irc", "epoc", "hlip",
-#                                  "hta", "ictu", "obes"), 
-#                 base_test = test220613_cleaned,
-#                 temporal_var = "fpauta_90",
-#                 temporal_var_unit = "weeks",
-#                 birth_date = "fnac",
-#                 age_first = 20,
-#                 age_last = 90,
-#                 age_by = 5,
-#                 censoring = "fdef",
-#                 follow_up = 91,
-#                 verbose = FALSE,
-#                 seed = 3,
-#                 fecha_fin_estudio = end_of_infections_records)
-
-
-
-
-# saveRDS(paper_fcv1_comor, file.path("Resultados",
-#         "paper_fcv1_comor.RDS"))
 
 ```
 
@@ -214,19 +236,17 @@ saveRDS(paper_fcv1_domi, file.path("Resultados",
 
 ```
 
-## fih1 con matching por edad, sexo y comorbilidades
+## fih_def Composite con matching por edad, sexo y comorbilidades
 
 ```{r}
-# fih1
-paper_fih1 <- f_matching_tt_mult(
+paper_fih_def <- f_matching_tt_mult(
                 data = pobana_2,
                 f_ini = start_matching_date,
                 f_fin = end_matching_severe_date,
                 crit_exc = lista_exclusion_dep,
                 exposure = "fvc3",
-                out = "fih1", 
-                vector_match = c("gen", "diab", "corp", "irc", "epoc", "hlip",
-                                 "hta", "ictu", "obes"),
+                out = "fih_def", 
+                vector_match = matching_by,
                 # base_test = test220613_cleaned,
                 # temporal_var = "fpauta_90",
                 calcular_temp_var = "fpauta_90",
@@ -243,42 +263,8 @@ paper_fih1 <- f_matching_tt_mult(
                 fecha_fin_estudio = end_of_study_records)
 
 # guardar resultados-----------------------------------------------------------
-saveRDS(paper_fih1, file.path("Resultados",
-        "paper_fih1.RDS"))
-
-```
-
-## fdef_covid con matching por edad, sexo y comorbilidades
-
-```{r}
-# fdef
-paper_fdef <- f_matching_tt_mult(
-                data = pobana_2,
-                f_ini = start_matching_date,
-                f_fin = end_matching_severe_date,
-                crit_exc = lista_exclusion_dep,
-                exposure = "fvc3",
-                out = "fdef_covid", 
-                vector_match = c("gen", "diab", "corp", "irc", "epoc", "hlip",
-                                 "hta", "ictu", "obes"),
-                # base_test = test220613_cleaned,
-                # temporal_var = "fpauta_90",
-                calcular_temp_var = "fpauta_90",
-                temporal_var_unit = "weeks",
-                calcular_test = test220613_cleaned,
-                birth_date = "fnac",
-                age_first = 20,
-                age_last = 90,
-                age_by = 5,
-                censoring = "fdef",
-                follow_up = 91,
-                verbose = FALSE,
-                seed = 21,
-                fecha_fin_estudio = end_of_study_records)
-
-# guardar resultados-----------------------------------------------------------
-saveRDS(paper_fdef, file.path("Resultados",
-        "paper_fdef.RDS"))
+saveRDS(paper_fih_def, file.path("Resultados",
+        "paper_fih_def.RDS"))
 
 ```
 
@@ -297,7 +283,7 @@ paper_fcv1_short_term <- f_matching_tt_mult(
                 crit_exc = lista_exclusion_dep,
                 exposure = "fvc3",
                 out = "fcv1", 
-                vector_match = variables_matching[c(1, 3:8)], 
+                vector_match = matching_by_fcv1, 
                 base_test = test220613_cleaned,
                 temporal_var = "fpauta_90",
                 temporal_var_unit = "weeks",
@@ -351,19 +337,18 @@ saveRDS(paper_fcv1_domi_short_term, file.path("Resultados",
 
 ```
 
-## fih1 con matching por edad, sexo y comorbilidades
+## Composite fih_def con matching por edad, sexo y comorbilidades
 
 ```{r}
-# fih1
-paper_fih1_short_term <- f_matching_tt_mult(
+# fih_def
+paper_fih_def_short_term <- f_matching_tt_mult(
                 data = pobana_2,
                 f_ini = start_matching_date,
                 f_fin = end_matching_severe_date,
                 crit_exc = lista_exclusion_dep,
                 exposure = "fvc3",
-                out = "fih1", 
-                vector_match = c("gen", "diab", "corp", "irc", "epoc", "hlip",
-                                 "hta", "ictu", "obes"),
+                out = "fih_def", 
+                vector_match =  matching_by,
                 # base_test = test220613_cleaned,
                 # temporal_var = "fpauta_90",
                 calcular_temp_var = "fpauta_90",
@@ -380,42 +365,8 @@ paper_fih1_short_term <- f_matching_tt_mult(
                 fecha_fin_estudio = end_of_study_records)
 
 # guardar resultados-----------------------------------------------------------
-saveRDS(paper_fih1_short_term, file.path("Resultados",
-        "paper_fih1_short_term.RDS"))
-
-```
-
-## fdef_covid con matching por edad, sexo y comorbilidades
-
-```{r}
-# fih1
-paper_fdef_short_term <- f_matching_tt_mult(
-                data = pobana_2,
-                f_ini = start_matching_date,
-                f_fin = end_matching_severe_date,
-                crit_exc = lista_exclusion_dep,
-                exposure = "fvc3",
-                out = "fdef_covid", 
-                vector_match = c("gen", "diab", "corp", "irc", "epoc", "hlip",
-                                 "hta", "ictu", "obes"),
-                # base_test = test220613_cleaned,
-                # temporal_var = "fpauta_90",
-                calcular_temp_var = "fpauta_90",
-                temporal_var_unit = "weeks",
-                calcular_test = test220613_cleaned,
-                birth_date = "fnac",
-                age_first = 20,
-                age_last = 90,
-                age_by = 5,
-                censoring = "fdef",
-                follow_up = 35,
-                verbose = FALSE,
-                seed = 21,
-                fecha_fin_estudio = end_of_study_records)
-
-# guardar resultados-----------------------------------------------------------
-saveRDS(paper_fdef_short_term, file.path("Resultados",
-        "paper_fdef_short_term.RDS"))
+saveRDS(paper_fih_def_short_term, file.path("Resultados",
+        "paper_fih_def_short_term.RDS"))
 
 ```
 
@@ -435,25 +386,17 @@ paper_fcv1_domi <- readRDS(file.path("Resultados",
 paper_fcv1_domi_short_term <- readRDS(file.path("Resultados",
         "paper_fcv1_domi_short_term.RDS"))
 
-paper_fih1 <- readRDS(file.path("Resultados",
-        "paper_fih1.RDS"))
+paper_fih_def <- readRDS(file.path("Resultados",
+        "paper_fih_def.RDS"))
 
-paper_fih1_short_term <- readRDS(file.path("Resultados",
-        "paper_fih1_short_term.RDS"))
-
-paper_fdef <- readRDS(file.path("Resultados",
-        "paper_fdef.RDS"))
-
-paper_def_short_term <- readRDS(file.path("Resultados",
-        "paper_fdef_short_term.RDS"))
+paper_fih_def_short_term <- readRDS(file.path("Resultados",
+        "paper_fih_def_short_term.RDS"))
 
 f_analisis(paper_fcv1, tiempo_efecto = 7)
 f_analisis(paper_fcv1_short_term, tiempo_efecto = 7)
 f_analisis(paper_fcv1_domi, tiempo_efecto = 7)
 f_analisis(paper_fcv1_domi_short_term, tiempo_efecto = 7)
-f_analisis(paper_fih1, tiempo_efecto = 7)
-f_analisis(paper_fih1_short_term, tiempo_efecto = 7)
-f_analisis(paper_fdef, tiempo_efecto = 7)
-f_analisis(paper_fdef_short_term, tiempo_efecto = 7)
+f_analisis(paper_fih_def, tiempo_efecto = 7)
+f_analisis(paper_fih_def_short_term, tiempo_efecto = 7)
 
 ```
